@@ -1,4 +1,0 @@
-#ifndef AMBIENTLIGHT_H
-#define AMBIENTLIGHT_H
-
-#endif // AMBIENTLIGHT_H

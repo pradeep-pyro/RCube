@@ -7,19 +7,19 @@
 
 class Framebuffer {
 public:
-    Framebuffer();
-    Framebuffer(size_t width, size_t height, TextureInternalFormat cfmt);
+    Framebuffer(size_t width, size_t height);
+    /*Framebuffer(size_t width, size_t height, TextureInternalFormat cfmt);
     Framebuffer(size_t width, size_t height, TextureInternalFormat cfmt,
-                TextureInternalFormat dfmt);
+                TextureInternalFormat dfmt);*/
     Framebuffer(const Framebuffer &other) = delete;
-    ~Framebuffer() {
-        cout << "Framebuffer::Destructor" << endl;
-    }
+    void initialize();
+    bool initialized() const;
+    void release();
     void use();
     void done() const;
-    void release();
     GLuint id() const;
-    unsigned int addColorAttachment(TextureInternalFormat format);
+    void addColorAttachment(TextureInternalFormat format);
+    void addDepthAttachment(TextureInternalFormat format);
     Texture2D * colorAttachment(size_t i=0);
     size_t numColorAttachments() const;
     bool hasDepthStencilAttachment() const;
@@ -37,12 +37,12 @@ public:
 private:
     void addAttachment(GLenum attachment, GLenum data_type, unsigned int *attachment_id);
 
-    unsigned int id_;
-    size_t width_, height_;
+    unsigned int id_ = 0;
+    size_t width_ = 0;
+    size_t height_ = 0;
     std::vector<std::unique_ptr<Texture2D>> colors_;
-    std::unique_ptr<Texture2D> color0_;
     std::unique_ptr<Texture2D> depth_stencil_;
-    bool has_depth_stencil_;
+    bool has_depth_stencil_ = false;
 };
 
 #endif // FRAMEBUFFER_H

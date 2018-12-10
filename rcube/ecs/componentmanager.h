@@ -4,8 +4,6 @@
 #include <map>
 #include <array>
 #include "entity.h"
-#include <iostream>
-using namespace std;
 
 class BaseComponentManager {
 public:
@@ -18,7 +16,6 @@ public:
     typedef unsigned int ComponentIndex;
     virtual ~ComponentManager() = default;
     void add(Entity e, const T &component) {
-        cout << "Adding entity " << e.id <<endl;
         ComponentIndex new_index = ComponentIndex{ component_data_.size };
         component_data_.size += 1;
         entity_map_[e] = new_index;

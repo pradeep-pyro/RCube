@@ -10,6 +10,8 @@ void World::cleanup() {
     for (const auto &sys : systems_) {
         sys->cleanup();
     }
+    systems_.clear();
+    component_mgrs_.clear();
 }
 
 EntityHandle World::createEntity() {

@@ -20,7 +20,7 @@ class RenderSystem;
 class Camera : public Component<Camera> {
 public:
     Camera() : skybox(std::make_shared<TextureCube>()), use_skybox(false),
-        framebuffer(std::make_shared<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8)),
+        //framebuffer(std::make_shared<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8, TextureInternalFormat::Depth24Stencil8)),
         world_to_view(glm::mat4(1)), view_to_projection(glm::mat4(1)), projection_to_viewport(glm::mat4(1)) {
     }
     bool orthographic = false;          /// Whether the camera uses orthographic projection
@@ -41,12 +41,24 @@ public:
     void resize(int width, int height) {
         viewport_size.x = width;
         viewport_size.y = height;
-        framebuffer->resize(width, height);
+        //framebuffer->resize(width, height);
         for (auto eff : postprocess) {
-            eff->resize(width, height);
+            //eff->resize(width, height);
         }
     }
 private:
+    void initFBO() {
+        //if (framebuffer->initialized()) {
+        if (framebuffer != nullptr) {
+            return;
+        }
+        //framebuffer = std::make_shared<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8, TextureInternalFormat::Depth24Stencil8);
+        framebuffer = std::make_shared<Framebuffer>(1280, 720);
+        framebuffer->initialize();
+        framebuffer->addColorAttachment(TextureInternalFormat::RGBA8);
+        framebuffer->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+        //framebuffer->initialize();
+    }
     friend class CameraSystem; // This will update the camera matrices
     friend class RenderSystem; // This will make use of the matrices
     glm::mat4 world_to_view, view_to_projection, projection_to_viewport; // Should these be public?

@@ -1,5 +1,31 @@
 #include "Renderer.h"
 #include "glm/gtx/string_cast.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
+const std::string quad_vert_src = R"(
+#version 420
+layout (location = 0) in vec3 vertex;
+layout (location = 2) in vec2 texcoord;
+out vec2 v_texcoord;
+
+uniform mat4 projection;
+
+void main() {
+    v_texcoord = texcoord;
+    gl_Position = vec4(vertex, 1.0);
+}
+)";
+
+const std::string quad_frag_src = R"(
+#version 420
+in vec2 v_texcoord;
+out vec4 out_color;
+layout (binding=0) uniform sampler2D fbo_texture;
+
+void main() {
+   out_color = texture(fbo_texture, v_texcoord);
+}
+)";
 
 GLRenderer::GLRenderer()
     : top_(0), left_(0), width_(1280), height_(720),
@@ -11,6 +37,8 @@ void GLRenderer::cleanup() {
         glDeleteBuffers(1, &ubo_matrices_);
         glDeleteBuffers(1, &ubo_lights_);
         skybox_.free();
+        quad_mesh_.release();
+        quad_shader_.release();
         init_ = false;
     }
 }
@@ -51,6 +79,18 @@ void GLRenderer::initialize() {
     glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * 12 * 99, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    quad_mesh_.initialize();
+    quad_mesh_.setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
+                       glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)});
+    quad_mesh_.setTextureCoords({glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
+    quad_shader_.setVertexShader(quad_vert_src);
+    quad_shader_.setFragmentShader(quad_frag_src);
+    quad_shader_.link();
+    quad_shader_.use();
+    quad_shader_.setUniform("projection", glm::mat4(1));
+
+    glEnable(GL_SCISSOR_TEST);
+
     init_ = true;
 }
 
@@ -59,7 +99,14 @@ void GLRenderer::resize(int top, int left, int width, int height) {
     left_ = left;
     width_ = width;
     height_ = height;
+
     glViewport(top_, left_, width_, height_);
+    glScissor(top_, left_, width_, height_);
+
+    quad_shader_.use();
+    GLfloat aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    glm::mat4 mat_projection = glm::ortho(-aspectRatio, aspectRatio, -1.f, 1.f);
+    quad_shader_.setUniform("projection", mat_projection);
 }
 
 void GLRenderer::setLightsCamera(const std::vector<Light> &lights, const glm::mat4 &world_to_view,
@@ -132,4 +179,13 @@ void GLRenderer::render(Mesh &mesh, Material *material, const glm::mat4 &model_t
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
     skybox_.texture = cubemap;
     skybox_.render();
+}
+
+void GLRenderer::renderTextureToScreen(Texture2D &tex) {
+    tex.use(0);
+    glDisable(GL_DEPTH_TEST);
+    quad_mesh_.use();
+    quad_shader_.use();
+    //clear();
+    quad_shader_.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }

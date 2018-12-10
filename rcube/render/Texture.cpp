@@ -1,9 +1,11 @@
 #include "Texture.h"
 #include <vector>
 #include "glm/gtc/type_ptr.hpp"
+#include "checkglerror.h"
 
-using namespace std;
-
+const std::string ERROR_IMAGE_TEXTURE_MISMATCH = "Image dimensions are different from allocated texture dimensions";
+const std::string ERROR_IMAGE_CHANNELS_MISMATCH = "Unexpected number of channels, expected 1, 3, or 4";
+const std::string ERROR_TEXTURE_UNINITIALIZED = "Cannot use texture without initializing";
 
 TextureFormat getMatchingFormatForInternalFormat(TextureInternalFormat ifmt) {
     switch (ifmt) {
@@ -181,43 +183,108 @@ size_t Texture1D::width() const {
 // Texture2D
 // --------------------------------------
 
-Texture2D::Texture2D(TextureInternalFormat internal_format) : Texture(internal_format), width_(0), height_(0) {
-    use();
-    setWrapMode(TextureWrapMode::ClampToEdge, TextureWrapMode::ClampToEdge);
-    setFilterMode(TextureFilterMode::Linear, TextureFilterMode::Linear);
-    done();
+Texture2D::Texture2D() : id_(0), width_(0), height_(0) {
+
 }
 
-TextureTarget Texture2D::target() const {
-    return TextureTarget::TwoD;
-}
-
-void Texture2D::setWrapMode(TextureWrapMode s, TextureWrapMode t) {
+void Texture2D::initialize(size_t width, size_t height, size_t levels, TextureInternalFormat format) {
+    if (valid()) {
+        return;
+    }
+    glGenTextures(1, &id_);
     use();
-    glTexParameteri((GLint)target(), GL_TEXTURE_WRAP_S, (GLint)s);
-    glTexParameteri((GLint)target(), GL_TEXTURE_WRAP_T, (GLint)t);
-    done();
-}
-
-void Texture2D::setData(const unsigned char* data, size_t width, size_t height, TextureFormat format) {
-    use();
-    glTexImage2D((GLint)target(), 0, (GLint)internal_format_, width, height, 0, (GLint)format, GL_UNSIGNED_BYTE, data);
+    glTexStorage2D(GL_TEXTURE_2D, levels, (GLenum)format, width, height);
     width_ = width;
     height_ = height;
+    levels_ = levels;
+    internal_format_ = format;
+    setWrapMode(TextureWrapMode::ClampToEdge);
+    setFilterMode(TextureFilterMode::Linear);
+    done();
+    checkGLError();
+}
+
+bool Texture2D::valid() const {
+    return id_ > 0;
+}
+
+void Texture2D::release() {
+    if (valid()) {
+        glDeleteTextures(1, &id_);
+        id_ = 0;
+    }
+}
+
+void Texture2D::setBorderColor(const glm::vec4 &color) {
+    if (valid()) {
+        use();
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
+        done();
+    }
+}
+
+void Texture2D::setFilterMode(TextureFilterMode mode) {
+    use();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    done();
+}
+
+void Texture2D::setFilterModeMin(TextureFilterMode mode) {
+    use();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    done();
+}
+
+void Texture2D::setFilterModeMag(TextureFilterMode mode) {
+    use();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)mode);
+    done();
+}
+
+void Texture2D::generateMipMap() {
+    use();
+    glGenerateMipmap(GL_TEXTURE_2D);
+    done();
+}
+
+void Texture2D::setWrapMode(TextureWrapMode mode) {
+    use();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)mode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)mode);
+    done();
+}
+
+void Texture2D::setWrapModeS(TextureWrapMode mode) {
+    use();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)mode);
+    done();
+}
+
+void Texture2D::setWrapModeT(TextureWrapMode mode) {
+    use();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)mode);
+    done();
+}
+
+void Texture2D::setData(const unsigned char* data, TextureFormat format, size_t level) {
+    use();
+    glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width_, height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
     generateMipMap();
     done();
 }
 
-void Texture2D::setData(const float* data, size_t width, size_t height, TextureFormat format) {
+void Texture2D::setData(const float* data, TextureFormat format, size_t level) {
     use();
-    glTexImage2D((GLint)target(), 0, (GLint)internal_format_, width, height, 0, (GLint)format, GL_FLOAT, data);
-    width_ = width;
-    height_ = height;
+    glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width_, height_, (GLenum)format, GL_FLOAT, data);
     generateMipMap();
     done();
 }
 
 void Texture2D::setData(const Image &im) {
+    if (im.width() != width_ || im.height() != height_) {
+        throw std::invalid_argument(ERROR_IMAGE_TEXTURE_MISMATCH);
+    }
     TextureFormat format;
     if (im.channels() == 3) {
         format = TextureFormat::RGB;
@@ -229,19 +296,9 @@ void Texture2D::setData(const Image &im) {
         format = TextureFormat::Red;
     }
     else {
-        throw std::runtime_error("Unexpected number of channels, expected 1, 3, or 4");
+        throw std::runtime_error(ERROR_IMAGE_CHANNELS_MISMATCH);
     }
-    setData(im.pixels().data(), im.width(), im.height(), format);
-}
-
-void Texture2D::resize(size_t width, size_t height) {
-    use();
-    glTexImage2D((GLint)target(), 0, (GLint)internal_format_, width, height, 0,
-                 (GLint)getMatchingFormatForInternalFormat(internal_format_),
-                 (GLint)getMatchingTypeForInternalFormat(internal_format_), nullptr);
-    width_ = width;
-    height_ = height;
-    done();
+    setData(im.pixels().data(), format);
 }
 
 size_t Texture2D::width() const {
@@ -252,17 +309,33 @@ size_t Texture2D::height() const {
     return height_;
 }
 
-// --------------------------------------
-// TextureRectangle
-// --------------------------------------
-TextureRectangle::TextureRectangle(TextureInternalFormat internal_format) : Texture2D(internal_format) {
+size_t Texture2D::levels() const {
+    return levels_;
 }
 
-TextureTarget TextureRectangle::target() const {
-    return TextureTarget::Rectangle;
+TextureInternalFormat Texture2D::internalFormat() const {
+    return internal_format_;
 }
-void TextureRectangle::generateMipMap() {
-    // Do nothing; Rectangle textures do not support mipmapping
+
+GLuint Texture2D::id() const {
+    return id_;
+}
+
+void Texture2D::use(size_t unit) {
+    if (!valid()) {
+        throw std::runtime_error(ERROR_TEXTURE_UNINITIALIZED);
+    }
+    unit_ = unit;
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, id_);
+}
+
+void Texture2D::done() {
+    if (in_use_) {
+        glActiveTexture(GL_TEXTURE0 + unit_);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        in_use_ = false;
+    }
 }
 
 // --------------------------------------
@@ -295,12 +368,15 @@ void Texture3D::setData(const unsigned char *data, size_t width, size_t height, 
     depth_ = depth;
     done();
 }
+
 size_t Texture3D::width() const {
     return width_;
 }
+
 size_t Texture3D::height() const {
     return height_;
 }
+
 size_t Texture3D::depth() const {
     return depth_;
 }
@@ -314,7 +390,6 @@ TextureCube::TextureCube(TextureInternalFormat internal_format) : Texture(intern
     glTexParameteri(GLint(target()), GL_TEXTURE_WRAP_S, GLint(TextureWrapMode::ClampToEdge));
     glTexParameteri(GLint(target()), GL_TEXTURE_WRAP_T, GLint(TextureWrapMode::ClampToEdge));
     glTexParameteri(GLint(target()), GL_TEXTURE_WRAP_R, GLint(TextureWrapMode::ClampToEdge));
-    cout << "TextureCube Constructor: " << id_ << endl;
     done();
 }
 

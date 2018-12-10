@@ -40,9 +40,14 @@ public:
 
     ~Mesh();
 
-    Mesh(const Mesh &other) = delete;
+    Mesh(const Mesh &other) = default;
 
-    Mesh & operator=(const Mesh &other) = delete;
+    Mesh & operator=(const Mesh &other) = default;
+
+    /**
+     * Initialize actually creates the vertex attribute object and buffers on the OpenGL side
+     */
+    void initialize();
 
     void release();
 
@@ -87,6 +92,7 @@ public:
     void setMeshData(const MeshData &data);
 
 private:
+
     void setArrayBuffer(GLuint id, const float *data, unsigned int count);
 
     void setElementBuffer(const unsigned int *data, unsigned int count);
@@ -105,11 +111,13 @@ private:
     GLBufferIDs glbuf_;
 
     // Number of elements
-    size_t num_vertices_, num_primitives_;
+    size_t num_vertices_ = 0;
+    size_t num_primitives_ = 0;
 
     // Flags
-    bool indexed_;
-    MeshPrimitive primitive_;
+    bool indexed_ = false;
+    bool init_ = false;
+    MeshPrimitive primitive_ = MeshPrimitive::Triangles;
 };
 
 #endif // GEOMETRY_H

@@ -12,8 +12,7 @@ void main() {
 }
 )";
 
-Effect::Effect() : result(std::make_unique<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8)),
-                   shader_(std::make_shared<ShaderProgram>()), init_(false) {
+Effect::Effect() : shader_(std::make_shared<ShaderProgram>()), init_(false) {
     quad_.setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
                        glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)});
     quad_.setTextureCoords({glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
@@ -35,6 +34,9 @@ void Effect::initialize() {
     if (!shader_->link(true)) {
         throw std::runtime_error("Unable to link shader");
     }
+    result = std::make_unique<Framebuffer>(1280, 720);
+    result->initialize();
+    result->addColorAttachment(TextureInternalFormat::RGBA8);
     init_ = true;
 }
 

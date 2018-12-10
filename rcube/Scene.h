@@ -3,14 +3,13 @@
 
 #include "ecs/world.h"
 
-/**
- * Primary interface for the user which includes convenience methods for
- * creating commonly used entities. Additionally, this called adds all available systems
- * for processing various components.
- */
-
 namespace rcube {
 
+/**
+ * Primary interface for the user which includes convenience methods for
+ * creating commonly used entities. Additionally, this adds all available systems
+ * for processing various components.
+ */
 class Scene : public World {
 public:
     Scene();

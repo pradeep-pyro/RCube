@@ -4,7 +4,6 @@
 #include "../ecs/system.h"
 #include "../render/Framebuffer.h"
 #include "../render/Renderer.h"
-#include "../render/Effect.h"
 
 namespace rcube {
 

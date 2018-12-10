@@ -42,8 +42,8 @@ void Material::use() {
     // To minimize program binding change accidentally
     shader_->use();
     // Cache previous state
-    glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_state_.depthmask);
-    glGetBooleanv(GL_DEPTH_TEST, &prev_state_.depthtest);
+    //glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_state_.depthmask);
+    //glGetBooleanv(GL_DEPTH_TEST, &prev_state_.depthtest);
     if (depth_test) {
         glEnable(GL_DEPTH_TEST);
     }
@@ -58,6 +58,7 @@ void Material::use() {
 
 void Material::done() {
     shader_->done();
+    /*
     // Restore previous state
     if (prev_state_.depthtest) {
         glEnable(GL_DEPTH_TEST);
@@ -66,4 +67,5 @@ void Material::done() {
         glDisable(GL_DEPTH_TEST);
     }
     glDepthMask(prev_state_.depthmask);
+    */
 }

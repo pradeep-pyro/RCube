@@ -1,7 +1,7 @@
 #include "BlurEffect.h"
 
 BlurEffect::BlurEffect(unsigned int amount)
-    : amount(amount), tmp(std::make_unique<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8)) {
+    : amount(amount), tmp(std::make_unique<Framebuffer>(1280, 720)) {
 }
 
 void BlurEffect::setUniforms() {
@@ -38,6 +38,10 @@ void main() {
 }
 
 void BlurEffect::apply() {
+    if (!tmp->initialized()) {
+        tmp->initialize();
+        tmp->addColorAttachment(TextureInternalFormat::RGBA8);
+    }
     shader_->use();
     for (unsigned int i = 0; i < amount * 2; ++i) {
         if (i % 2 == 0) {

@@ -94,26 +94,37 @@ protected:
     size_t width_;
 };
 
-class Texture2D : public Texture {
+
+class Texture2D{
 public:
-    Texture2D(TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
-    virtual TextureTarget target() const override;
-    void setWrapMode(TextureWrapMode s, TextureWrapMode t);
-    virtual void setData(const float *data, size_t width, size_t height, TextureFormat format);
-    virtual void setData(const unsigned char *data, size_t width, size_t height, TextureFormat format);
-    virtual void setData(const Image &im);
-    virtual void resize(size_t width, size_t height);
+    Texture2D();
+    void initialize(size_t width, size_t height, size_t levels, TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
+    void release();
+    void setWrapMode(TextureWrapMode mode);
+    void setWrapModeS(TextureWrapMode wrap_s);
+    void setWrapModeT(TextureWrapMode wrap_t);
+    void setData(const float *data, TextureFormat format, size_t level=0);
+    void setData(const unsigned char *data, TextureFormat format, size_t level=0);
+    void setData(const Image &im);
     size_t width() const;
     size_t height() const;
+    size_t levels() const;
+    TextureInternalFormat internalFormat() const;
+    GLuint id() const;
+    void use(size_t unit=0);
+    void done();
+    void setBorderColor(const glm::vec4 &color);
+    void setFilterModeMin(TextureFilterMode min);
+    void setFilterModeMag(TextureFilterMode mag);
+    void setFilterMode(TextureFilterMode mode);
+    void generateMipMap();
+    bool valid() const;
 protected:
-    size_t width_, height_;
-};
-
-class TextureRectangle : public Texture2D {
-public:
-    TextureRectangle(TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
-    virtual TextureTarget target() const override;
-    virtual void generateMipMap() override;
+    GLuint id_ = 0;
+    size_t unit_ = 0;
+    bool in_use_ = false;
+    size_t width_, height_, levels_;
+    TextureInternalFormat internal_format_;
 };
 
 class Texture3D : public Texture {

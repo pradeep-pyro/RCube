@@ -19,6 +19,7 @@
 #include "rcube/controller/OrbitController.h"
 #include "rcube/effects/GrayscaleEffect.h"
 #include "rcube/effects/BlurEffect.h"
+#include "rcube/render/checkglerror.h"
 
 rcube::OrbitController ctrl;
 
@@ -54,19 +55,20 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     cout << "createCamera took : " << e - s << "s" << endl;
     cam.get<rcube::Transform>()->setPosition(glm::vec3(0, 2, 4));
 
-    /*std::vector<Image> ims {Image::fromFile("/home/pradeep/Downloads/Yokohama/posx.jpg", 3),
+    std::vector<Image> ims {Image::fromFile("/home/pradeep/Downloads/Yokohama/posx.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negx.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/posy.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negy.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/posz.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negz.jpg", 3)};
+    checkGLError();
     for (int i = 0; i < 6; ++i) {
-        cam.get<Camera>()->skybox->setData(i, ims[i]);
+        cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    cam.get<Camera>()->use_skybox = true;
-    cam.get<Camera>()->postprocess.push_back(std::make_shared<BlurEffect>());
-    cam.get<Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
-    */
+    checkGLError();
+    cam.get<rcube::Camera>()->use_skybox = true;
+    //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<BlurEffect>());
+    //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
 
     ctrl.setEntity(cam);
     return cam;
@@ -103,7 +105,9 @@ int main(int, char**) {
 
     start = glfwGetTime();
     EntityHandle gridobj = scene.createDrawable();
-    gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
+    gridobj.get<rcube::Drawable>()->mesh.initialize();;
+    //gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
+    gridobj.get<rcube::Drawable>()->mesh.setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
     gridobj.get<rcube::Drawable>()->material = std::make_shared<FlatMaterial>();
 
     /*

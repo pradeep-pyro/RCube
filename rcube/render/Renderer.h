@@ -12,7 +12,6 @@
 #include "Image.h"
 #include "skybox.h"
 
-
 class GLRenderer {
 public:
     GLRenderer();
@@ -43,6 +42,8 @@ public:
 
     void renderSkyBox(std::shared_ptr<TextureCube> cubemap);
 
+    void renderTextureToScreen(Texture2D &tex);
+
     /**
      * @brief clearColor Returns the color that is used to clear the screen i.e.,
      * passed to glClearColor()
@@ -61,7 +62,9 @@ public:
      * @brief clear Clear the screen (calls glClear()) with set clear bits
      */
     void clear(bool color=true, bool depth=true, bool stencil=false);
+
 private:
+
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
 
@@ -79,6 +82,10 @@ private:
     // Cache
     glm::mat4 world_to_view_;
     int num_lights_;
+
+    // Quad
+    Mesh quad_mesh_;
+    ShaderProgram quad_shader_;
 };
 
 

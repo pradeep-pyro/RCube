@@ -34,25 +34,33 @@ void MeshData::append(MeshData &other) {
 //-----------------------------------------------------------------------------
 
 Mesh::Mesh() : num_vertices_(0), num_primitives_(0), indexed_(false), primitive_(MeshPrimitive::Triangles) {
-    // Generate vao and vertex vbo
-    glGenVertexArrays(1, &glbuf_.vao);
-    glBindVertexArray(glbuf_.vao);
-    glGenBuffers(1, &glbuf_.vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, glbuf_.vertices);
-    GLuint vid = static_cast<GLuint>(MeshAttributes::Vertices);
-    glEnableVertexAttribArray(vid);
-    glVertexAttribPointer(vid, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    disableAttribute(MeshAttributes::Colors);
-    disableAttribute(MeshAttributes::Normals);
-    disableAttribute(MeshAttributes::TexCoords);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 Mesh::~Mesh() {
 }
 
+void Mesh::initialize() {
+    if (!init_) {
+        glGenVertexArrays(1, &glbuf_.vao);
+        glBindVertexArray(glbuf_.vao);
+        glGenBuffers(1, &glbuf_.vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, glbuf_.vertices);
+        GLuint vid = static_cast<GLuint>(MeshAttributes::Vertices);
+        glEnableVertexAttribArray(vid);
+        glVertexAttribPointer(vid, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        disableAttribute(MeshAttributes::Colors);
+        disableAttribute(MeshAttributes::Normals);
+        disableAttribute(MeshAttributes::TexCoords);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        init_ = true;
+    }
+}
+
 void Mesh::release() {
+    if (!init_) {
+        return;
+    }
     if (glbuf_.vao != 0) {
         glDeleteVertexArrays(1, &glbuf_.vao);
         glbuf_.vao = 0;
@@ -77,6 +85,7 @@ void Mesh::release() {
         glDeleteBuffers(1, &glbuf_.colors);
         glbuf_.colors = 0;
     }
+    init_ = false;
 }
 
 GLuint Mesh::vao() const {

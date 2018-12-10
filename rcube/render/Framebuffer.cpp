@@ -7,35 +7,9 @@ using namespace std;
 const std::string ERROR_FRAMEBUFFER_UNINITIALIZED = "Cannot use Framebuffer without initializing";
 
 Framebuffer::Framebuffer(size_t width, size_t height) : width_(width), height_(height){
-    //glGenFramebuffers(1, &id_);
     has_depth_stencil_ = false;
     colors_.reserve(8);
-    //checkGLError();
 }
-
-/*
-Framebuffer::Framebuffer(size_t width, size_t height, TextureInternalFormat cfmt)
-    : width_(width), height_(height) {
-    glGenFramebuffers(1, &id_);
-    use();
-    colors_.reserve(8);
-    addColorAttachment(cfmt);  // Color attachment 0
-    done();
-    has_depth_stencil_ = false;
-}
-
-Framebuffer::Framebuffer(size_t width, size_t height, TextureInternalFormat cfmt, TextureInternalFormat dfmt)
-    : id_(0), width_(width), height_(height) {
-    glGenFramebuffers(1, &id_);
-    colors_.reserve(8);
-    addColorAttachment(cfmt);  // Color attachment 0
-    // Depth+Stencil attachment
-    depth_stencil_ = std::make_unique<Texture2D>();
-    addDepthAttachment(dfmt);
-    has_depth_stencil_ = true;
-    checkGLError();
-}
-*/
 
 GLuint Framebuffer::id() const {
     return id_;
@@ -63,10 +37,10 @@ void Framebuffer::release() {
     if (initialized()) {
         glDeleteFramebuffers(1, &id_);
         for (auto &tex : colors_) {
-            tex->release();
+            tex.release();
         }
         if (hasDepthStencilAttachment()) {
-            depth_stencil_->release();
+            depth_stencil_.release();
         }
         id_ = 0;
     }
@@ -91,11 +65,11 @@ bool Framebuffer::isComplete() const {
 
 void Framebuffer::addColorAttachment(TextureInternalFormat internal_format) {
     use();
-    colors_.push_back(std::make_unique<Texture2D>());
+    colors_.push_back(Texture2D());
     unsigned int index = static_cast<unsigned int>(colors_.size());
-    colors_[colors_.size() - 1]->initialize(width_, height_, 1, internal_format);
+    colors_[colors_.size() - 1].initialize(width_, height_, 1, internal_format);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D,
-                           colors_[colors_.size() - 1]->id(), 0);
+                           colors_[colors_.size() - 1].id(), 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
     glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
     done();
@@ -107,16 +81,13 @@ void Framebuffer::resize(int width, int height) {
 
 void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format) {
     use();
-    if (depth_stencil_ != nullptr && depth_stencil_->valid()) {
-        depth_stencil_->release();
-    }
-    if (depth_stencil_ == nullptr) {
-        depth_stencil_ = std::make_unique<Texture2D>();
+    if (depth_stencil_.valid()) {
+        depth_stencil_.release();
     }
 
-    depth_stencil_->initialize(width_, height_, 1, internal_format);
+    depth_stencil_.initialize(width_, height_, 1, internal_format);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-                           depth_stencil_->id(), 0);
+                           depth_stencil_.id(), 0);
     has_depth_stencil_ = true;
     done();
 }
@@ -134,7 +105,7 @@ Texture2D * Framebuffer::colorAttachment(size_t i) {
         throw std::runtime_error("Invalid (out-of-range) index " + std::to_string(i) +
                                  "for color attachments; expected <= " + std::to_string(colors_.size()));
     }
-    return colors_[i].get();
+    return &colors_[i];
 }
 
 void Framebuffer::blit(Framebuffer &target_fbo) {

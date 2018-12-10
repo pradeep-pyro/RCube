@@ -7,9 +7,9 @@
 
 class Framebuffer {
 public:
-    Framebuffer(size_t width, size_t height);
+    Framebuffer();
     Framebuffer(const Framebuffer &other) = delete;
-    void initialize();
+    void initialize(size_t width, size_t height);
     bool initialized() const;
     void release();
     void use();

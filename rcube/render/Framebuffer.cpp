@@ -6,7 +6,7 @@ using namespace std;
 
 const std::string ERROR_FRAMEBUFFER_UNINITIALIZED = "Cannot use Framebuffer without initializing";
 
-Framebuffer::Framebuffer(size_t width, size_t height) : width_(width), height_(height){
+Framebuffer::Framebuffer() {
     has_depth_stencil_ = false;
     colors_.reserve(8);
 }
@@ -23,8 +23,10 @@ size_t Framebuffer::height() const {
     return height_;
 }
 
-void Framebuffer::initialize() {
+void Framebuffer::initialize(size_t width, size_t height) {
     glGenFramebuffers(1, &id_);
+    width_ = width;
+    height_ = height;
     has_depth_stencil_ = false;
     checkGLError();
 }
@@ -57,8 +59,6 @@ void Framebuffer::done() const {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-
-
 bool Framebuffer::isComplete() const {
     return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
@@ -81,10 +81,8 @@ void Framebuffer::resize(int width, int height) {
 
 void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format) {
     use();
-    if (depth_stencil_.valid()) {
-        depth_stencil_.release();
-    }
-
+    depth_stencil_.release();
+    depth_stencil_ = Texture2D();
     depth_stencil_.initialize(width_, height_, 1, internal_format);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
                            depth_stencil_.id(), 0);

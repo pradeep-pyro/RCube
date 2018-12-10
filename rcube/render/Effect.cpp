@@ -34,8 +34,8 @@ void Effect::initialize() {
     if (!shader_->link(true)) {
         throw std::runtime_error("Unable to link shader");
     }
-    result = std::make_unique<Framebuffer>(1280, 720);
-    result->initialize();
+    result = std::make_unique<Framebuffer>();
+    result->initialize(1280, 720);
     result->addColorAttachment(TextureInternalFormat::RGBA8);
     init_ = true;
 }

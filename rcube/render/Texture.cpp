@@ -183,21 +183,20 @@ size_t Texture1D::width() const {
 // Texture2D
 // --------------------------------------
 
-Texture2D::Texture2D() : id_(0), width_(0), height_(0) {
-
+Texture2D::Texture2D() : id_(0) {
 }
 
-void Texture2D::initialize(size_t width, size_t height, size_t levels, TextureInternalFormat format) {
+void Texture2D::initialize(size_t width, size_t height, size_t levels, TextureInternalFormat internal_format) {
     if (valid()) {
         return;
     }
-    glGenTextures(1, &id_);
-    use();
-    glTexStorage2D(GL_TEXTURE_2D, levels, (GLenum)format, width, height);
     width_ = width;
     height_ = height;
     levels_ = levels;
-    internal_format_ = format;
+    internal_format_ = internal_format;
+    glGenTextures(1, &id_);
+    use();
+    glTexStorage2D(GL_TEXTURE_2D, levels_, (GLenum)internal_format_, width_, height_);
     setWrapMode(TextureWrapMode::ClampToEdge);
     setFilterMode(TextureFilterMode::Linear);
     done();
@@ -216,11 +215,9 @@ void Texture2D::release() {
 }
 
 void Texture2D::setBorderColor(const glm::vec4 &color) {
-    if (valid()) {
-        use();
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
-        done();
-    }
+    use();
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
+    done();
 }
 
 void Texture2D::setFilterMode(TextureFilterMode mode) {

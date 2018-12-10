@@ -53,8 +53,8 @@ private:
             return;
         }
         //framebuffer = std::make_shared<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8, TextureInternalFormat::Depth24Stencil8);
-        framebuffer = std::make_shared<Framebuffer>(1280, 720);
-        framebuffer->initialize();
+        framebuffer = std::make_shared<Framebuffer>();
+        framebuffer->initialize(1280, 720);
         framebuffer->addColorAttachment(TextureInternalFormat::RGBA8);
         framebuffer->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
         //framebuffer->initialize();

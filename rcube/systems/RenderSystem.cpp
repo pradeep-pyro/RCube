@@ -42,6 +42,7 @@ void RenderSystem::initialize() {
     const auto &camera_entities = registered_entities_[filters_[1]];
     for (const auto &e : camera_entities) {
         Camera *cam = world_->getComponent<Camera>(e);
+        cam->initFBO();
         for (auto eff : cam->postprocess) {
             eff->initialize();
         }
@@ -53,13 +54,11 @@ void RenderSystem::cleanup() {
     const auto &renderable_entities = registered_entities_[filters_[2]];
     for (const auto &e : renderable_entities) {
         Drawable *dr = world_->getComponent<Drawable>(e);
-        dr->mesh->release();
         dr->material->shader()->release();
     }
     const auto &camera_entities = registered_entities_[filters_[1]];
     for (const auto &e : camera_entities) {
         Camera *cam = world_->getComponent<Camera>(e);
-        cam->initFBO();
         for (auto item : cam->postprocess) {
             item->shader()->release();
             item->result->release();

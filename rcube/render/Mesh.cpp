@@ -53,6 +53,7 @@ std::shared_ptr<Mesh> Mesh::create() {
     mesh->disableAttribute(MeshAttributes::TexCoords);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    mesh->init_ = true;
     return mesh;
 }
 

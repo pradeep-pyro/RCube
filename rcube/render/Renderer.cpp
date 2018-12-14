@@ -115,9 +115,9 @@ void GLRenderer::cleanup() {
     if (init_) {
         glDeleteBuffers(1, &ubo_matrices_);
         glDeleteBuffers(1, &ubo_lights_);
-        skybox_mesh_.release();
+        skybox_mesh_->release();
         skybox_shader_.release();
-        quad_mesh_.release();
+        quad_mesh_->release();
         quad_shader_.release();
         init_ = false;
     }
@@ -160,10 +160,10 @@ void GLRenderer::initialize() {
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Full screen quad
-    quad_mesh_.initialize();
-    quad_mesh_.setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
+    quad_mesh_ = Mesh::create();
+    quad_mesh_->setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
                        glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)});
-    quad_mesh_.setTextureCoords({glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
+    quad_mesh_->setTextureCoords({glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
     quad_shader_.setVertexShader(quad_vert_src);
     quad_shader_.setFragmentShader(quad_frag_src);
     quad_shader_.link();
@@ -171,8 +171,8 @@ void GLRenderer::initialize() {
     quad_shader_.setUniform("projection", glm::mat4(1));
 
     // Skybox
-    skybox_mesh_.initialize();
-    skybox_mesh_.setVertices(skybox_vertices);
+    skybox_mesh_ = Mesh::create();
+    skybox_mesh_->setVertices(skybox_vertices);
     skybox_shader_.setVertexShader(skybox_vert_src);
     skybox_shader_.setFragmentShader(skybox_frag_src);
     skybox_shader_.link();
@@ -273,7 +273,7 @@ void GLRenderer::updateSettings(const RenderSettings &settings) {
     }
 }
 
-void GLRenderer::render(Mesh &mesh, Material *material, const glm::mat4 &model_to_world) {
+void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world) {
     glm::mat4 model_view = world_to_view_ * model_to_world;
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_view)));
 
@@ -289,14 +289,14 @@ void GLRenderer::render(Mesh &mesh, Material *material, const glm::mat4 &model_t
     sh->setUniform("normal_matrix",normal_matrix);
     sh->setUniform("num_lights", static_cast<int>(num_lights_));
 
-    mesh.use();
-    if (!mesh.indexed()) {
-        material->shader()->drawArrays(static_cast<GLint>(mesh.primitive()),
-                                                0, mesh.numVertices());
+    mesh->use();
+    if (!mesh->indexed()) {
+        material->shader()->drawArrays(static_cast<GLint>(mesh->primitive()),
+                                                0, mesh->numVertices());
     }
     else {
-        material->shader()->drawElements(static_cast<GLint>(mesh.primitive()),
-                                                  0, mesh.numPrimitives());
+        material->shader()->drawElements(static_cast<GLint>(mesh->primitive()),
+                                                  0, mesh->numPrimitives());
     }
 }
 
@@ -307,7 +307,7 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
     glDepthFunc(GL_LEQUAL);
     cubemap->use(3);
     skybox_shader_.use();
-    skybox_mesh_.use();
+    skybox_mesh_->use();
     skybox_shader_.drawArrays(GL_TRIANGLES, 0, 36);
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
@@ -317,7 +317,7 @@ void GLRenderer::renderTextureToScreen(Texture2D &tex) {
     tex.use(0);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
-    quad_mesh_.use();
+    quad_mesh_->use();
     quad_shader_.use();
     //clear();
     quad_shader_.drawArrays(GL_TRIANGLE_STRIP, 0, 4);

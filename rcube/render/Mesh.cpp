@@ -39,22 +39,21 @@ Mesh::Mesh() : num_vertices_(0), num_primitives_(0), indexed_(false), primitive_
 Mesh::~Mesh() {
 }
 
-void Mesh::initialize() {
-    if (!init_) {
-        glGenVertexArrays(1, &glbuf_.vao);
-        glBindVertexArray(glbuf_.vao);
-        glGenBuffers(1, &glbuf_.vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, glbuf_.vertices);
-        GLuint vid = static_cast<GLuint>(MeshAttributes::Vertices);
-        glEnableVertexAttribArray(vid);
-        glVertexAttribPointer(vid, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-        disableAttribute(MeshAttributes::Colors);
-        disableAttribute(MeshAttributes::Normals);
-        disableAttribute(MeshAttributes::TexCoords);
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        init_ = true;
-    }
+std::shared_ptr<Mesh> Mesh::create() {
+    auto mesh = std::make_shared<Mesh>();
+    glGenVertexArrays(1, &mesh->glbuf_.vao);
+    glBindVertexArray(mesh->glbuf_.vao);
+    glGenBuffers(1, &mesh->glbuf_.vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->glbuf_.vertices);
+    GLuint vid = static_cast<GLuint>(MeshAttributes::Vertices);
+    glEnableVertexAttribArray(vid);
+    glVertexAttribPointer(vid, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    mesh->disableAttribute(MeshAttributes::Colors);
+    mesh->disableAttribute(MeshAttributes::Normals);
+    mesh->disableAttribute(MeshAttributes::TexCoords);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return mesh;
 }
 
 void Mesh::release() {

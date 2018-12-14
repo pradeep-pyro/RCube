@@ -4,7 +4,7 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "glad/glad.h"
-#include <bitset>
+#include <memory>
 
 enum class MeshPrimitive {
     Points = GL_POINTS, Lines = GL_LINES, Triangles = GL_TRIANGLES
@@ -40,14 +40,14 @@ public:
 
     ~Mesh();
 
-    Mesh(const Mesh &other) = default;
+    Mesh(const Mesh &other) = delete;
 
-    Mesh & operator=(const Mesh &other) = default;
+    Mesh & operator=(const Mesh &other) = delete;
 
     /**
      * Initialize actually creates the vertex attribute object and buffers on the OpenGL side
      */
-    void initialize();
+    static std::shared_ptr<Mesh> create();
 
     void release();
 

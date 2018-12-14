@@ -10,7 +10,6 @@
 #include "Effect.h"
 #include "Light.h"
 #include "Image.h"
-#include "skybox.h"
 #include "RenderSettings.h"
 
 class GLRenderer {
@@ -41,7 +40,7 @@ public:
     void setLightsCamera(const std::vector<Light> &lights, const glm::mat4 &world_to_view,
                          const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
 
-    void render(Mesh &mesh, Material *material, const glm::mat4 &model_to_world);
+    void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
 
     void renderSkyBox(std::shared_ptr<TextureCube> cubemap);
 
@@ -71,7 +70,7 @@ private:
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
 
-    Mesh skybox_mesh_;
+    std::shared_ptr<Mesh> skybox_mesh_;
     ShaderProgram skybox_shader_;
 
     // Viewport size
@@ -88,7 +87,7 @@ private:
     int num_lights_;
 
     // Quad
-    Mesh quad_mesh_;
+    std::shared_ptr<Mesh> quad_mesh_;
     ShaderProgram quad_shader_;
 };
 

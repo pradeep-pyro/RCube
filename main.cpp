@@ -103,15 +103,15 @@ int main(int, char**) {
 
     start = glfwGetTime();
     EntityHandle gridobj = scene.createDrawable();
-    gridobj.get<rcube::Drawable>()->mesh.initialize();;
+    gridobj.get<rcube::Drawable>()->mesh = Mesh::create();
     //gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
-    gridobj.get<rcube::Drawable>()->mesh.setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
+    gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
     gridobj.get<rcube::Drawable>()->material = std::make_shared<FlatMaterial>();
 
     start = glfwGetTime();
     EntityHandle circ = scene.createDrawable();
-    circ.get<rcube::Drawable>()->mesh.initialize();
-    circ.get<rcube::Drawable>()->mesh.setMeshData(cylinder(1, 1.5, 3, 30, 10));
+    circ.get<rcube::Drawable>()->mesh = Mesh::create();
+    circ.get<rcube::Drawable>()->mesh->setMeshData(cylinder(1, 1.5, 3, 30, 10));
     cout << "createDrawable cylinder took " << end - start << "s" << endl;
 
     auto phong = std::make_shared<BlinnPhongMaterial>();

@@ -25,8 +25,7 @@ public:
     Drawable(Drawable &&other) = default;
     virtual ~Drawable() = default;
 
-    Mesh mesh;
-    //std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
     bool visible;
 };

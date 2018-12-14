@@ -53,7 +53,7 @@ void RenderSystem::cleanup() {
     const auto &renderable_entities = registered_entities_[filters_[2]];
     for (const auto &e : renderable_entities) {
         Drawable *dr = world_->getComponent<Drawable>(e);
-        dr->mesh.release();
+        dr->mesh->release();
         dr->material->shader()->release();
     }
     const auto &camera_entities = registered_entities_[filters_[1]];
@@ -107,7 +107,7 @@ void RenderSystem::update(bool /* force */) {
             assert(dr->material != nullptr && dr->mesh != nullptr);
             Transform *tr = world_->getComponent<Transform>(render_entity);
             if (dr->material->renderPriority() == RenderPriority::Opaque) {
-                renderer.render(dr->mesh, dr->material.get(), tr->worldTransform());
+                renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
             }
         }
         checkGLError();
@@ -123,7 +123,7 @@ void RenderSystem::update(bool /* force */) {
             assert(dr->material != nullptr && dr->mesh != nullptr);
             Transform *tr = world_->getComponent<Transform>(render_entity);
             if (dr->material->renderPriority() == RenderPriority::Transparent) {
-                renderer.render(dr->mesh, dr->material.get(), tr->worldTransform());
+                renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
             }
         }
 

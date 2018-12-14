@@ -2,15 +2,16 @@
 #define ORBITCONTROLLER_H
 
 #include "glm/glm.hpp"
-#include "CameraController.h"
+#include "PanZoomController.h"
 #include "../components/Camera.h"
 
 namespace rcube {
 
-class OrbitController : public CameraController {
+class OrbitController : public PanZoomController {
 public:
-    float min_horizontal_angle_, max_horizontal_angle_;
-    float min_vertical_angle_, max_vertical_angle_;
+    float min_horizontal_angle, max_horizontal_angle;
+    float min_vertical_angle, max_vertical_angle;
+    float orbit_speed = 1.0f;
 
     OrbitController();
     virtual void update(const CameraController::InputState &state) override;

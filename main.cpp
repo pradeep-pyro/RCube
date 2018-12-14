@@ -51,6 +51,7 @@ static void onResize(GLFWwindow * /*window*/, int w, int h) {
 EntityHandle setupCamera(rcube::Scene &scene) {
     double s = glfwGetTime();
     EntityHandle cam = scene.createCamera();
+    cam.get<rcube::Camera>()->fov = glm::radians(30.f);
     double e = glfwGetTime();
     cout << "createCamera took : " << e - s << "s" << endl;
     cam.get<rcube::Transform>()->setPosition(glm::vec3(0, 2, 4));
@@ -92,34 +93,31 @@ int main(int, char**) {
     }
     glfwSetFramebufferSizeCallback(window, onResize);
 
-    double start = glfwGetTime();
     rcube::Scene scene;
-    double end = glfwGetTime();
 
-    start = glfwGetTime();
     EntityHandle cam = setupCamera(scene);
-    end = glfwGetTime();
-    cout << "setupCamera took " << end - start << "s" << endl;
 
-    start = glfwGetTime();
     EntityHandle gridobj = scene.createDrawable();
     gridobj.get<rcube::Drawable>()->mesh = Mesh::create();
-    //gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
     gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
     gridobj.get<rcube::Drawable>()->material = std::make_shared<FlatMaterial>();
 
-    start = glfwGetTime();
-    EntityHandle circ = scene.createDrawable();
-    circ.get<rcube::Drawable>()->mesh = Mesh::create();
-    circ.get<rcube::Drawable>()->mesh->setMeshData(cylinder(1, 1.5, 3, 30, 10));
-    cout << "createDrawable cylinder took " << end - start << "s" << endl;
 
-    auto phong = std::make_shared<BlinnPhongMaterial>();
-    phong->diffuse_color = glm::vec3(0, 0, 1);
-    phong->environment_map = cam.get<rcube::Camera>()->skybox;
-    phong->use_environment_map = true;
-    //phong->show_wireframe = true;
-    circ.get<rcube::Drawable>()->material = phong;
+    for (int i = -10; i < 10; ++i) {
+        for (int j = -10; j < 10; ++j) {
+            auto phong = std::make_shared<BlinnPhongMaterial>();
+            phong->diffuse_color = glm::vec3(0, 1, 1);
+            phong->environment_map = cam.get<rcube::Camera>()->skybox;
+            phong->use_environment_map = true;
+
+            auto cyl = Mesh::create();
+            cyl->setMeshData(cylinder(0.45, 0.45, 1, 20, 20));
+            EntityHandle circ = scene.createDrawable();
+            circ.get<rcube::Drawable>()->mesh = cyl;
+            circ.get<rcube::Transform>()->translate(glm::vec3(i, 0, j));
+            circ.get<rcube::Drawable>()->material = phong;
+        }
+    }
 
     EntityHandle light = scene.createPointLight();
     light.get<rcube::PointLight>()->setRadius(10.f);

@@ -30,35 +30,11 @@ public:
     /**
      * Constructor
      */
-    CameraController(int width, int height, float move_speed=1.f, float rotate_speed=1.f);
+    CameraController(int width, int height);
     /**
      * Virtual destructor
      */
     virtual ~CameraController() = default;
-
-    /**
-     * Get the camera movement speed
-     * @return movement speed
-     */
-    virtual float moveSpeed() const;
-
-    /**
-     * Set the camera movement speed
-     * @param movement speed
-     */
-    virtual void setMoveSpeed(float val);
-
-    /**
-     * Get the camera rotation speed
-     * @param rotation speed
-     */
-    virtual float rotateSpeed() const;
-
-    /**
-     * Set the camera rotation speed
-     * @param rotation speed
-     */
-    virtual void setRotateSpeed(float val);
 
     /**
      * Set the size of the viewport when it is resized.
@@ -79,7 +55,6 @@ protected:
     Camera *camera_;
     Transform *transform_;
     float width_, height_;
-    float move_speed_, rotate_speed_;
 };
 
 } // namespace rcube

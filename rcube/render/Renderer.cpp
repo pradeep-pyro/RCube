@@ -301,11 +301,11 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
     skybox_mesh_->use();
     skybox_shader_->drawArrays(GL_TRIANGLES, 0, 36);
     glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
 }
 
 void GLRenderer::renderTextureToScreen(Texture2D &tex) {
     tex.use(0);
+    //clear();
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     quad_mesh_->use();

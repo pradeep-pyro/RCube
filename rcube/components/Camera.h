@@ -41,23 +41,15 @@ public:
     void resize(int width, int height) {
         viewport_size.x = width;
         viewport_size.y = height;
-        //framebuffer->resize(width, height);
-        for (auto eff : postprocess) {
-            //eff->resize(width, height);
-        }
     }
 private:
     void initFBO() {
-        //if (framebuffer->initialized()) {
         if (framebuffer != nullptr) {
             return;
         }
-        //framebuffer = std::make_shared<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8, TextureInternalFormat::Depth24Stencil8);
-        framebuffer = std::make_shared<Framebuffer>();
-        framebuffer->initialize(1280, 720);
+        framebuffer = Framebuffer::create(1280, 720);
         framebuffer->addColorAttachment(TextureInternalFormat::RGBA8);
         framebuffer->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
-        //framebuffer->initialize();
     }
     friend class CameraSystem; // This will update the camera matrices
     friend class RenderSystem; // This will make use of the matrices

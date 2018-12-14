@@ -1,24 +1,16 @@
 #ifndef MODES_H
 #define MODES_H
 
+#include "glad/glad.h"
 #include <stdexcept>
 
 /**
  *
  */
-enum class Blend {
+enum class Combine {
     Multiply = 0,
     Add = 1,
     Mix = 2
-};
-
-/**
- *
- */
-enum class Draw {
-    Front = 0,
-    Back = 1,
-    Both = 2
 };
 
 enum class Medium {

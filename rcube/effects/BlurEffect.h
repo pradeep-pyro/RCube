@@ -17,9 +17,8 @@ public:
     std::string fragmentShader() override;
     void setUniforms() override;
     void apply() override;
-    void resize(int width, int height) override;
 private:
-    std::unique_ptr<Framebuffer> tmp;
+    std::shared_ptr<Framebuffer> tmp;
 };
 
 #endif // BLUREFFECT_H

@@ -1,7 +1,6 @@
 #include "Material.h"
 
-Material::Material() : depth_test(true), depth_mask(true),
-    shader_(std::make_shared<ShaderProgram>()), init_(false) {
+Material::Material() : shader_(std::make_shared<ShaderProgram>()), init_(false) {
 }
 
 Material::~Material() {
@@ -39,33 +38,10 @@ std::shared_ptr<ShaderProgram> Material::shader() const {
 }
 
 void Material::use() {
-    // To minimize program binding change accidentally
     shader_->use();
-    // Cache previous state
-    //glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_state_.depthmask);
-    //glGetBooleanv(GL_DEPTH_TEST, &prev_state_.depthtest);
-    if (depth_test) {
-        glEnable(GL_DEPTH_TEST);
-    }
-    else {
-        glDisable(GL_DEPTH_TEST);
-    }
-    glDepthMask(depth_mask);
-
-    // Bind shader and set uniforms
     setUniforms();
 }
 
 void Material::done() {
     shader_->done();
-    /*
-    // Restore previous state
-    if (prev_state_.depthtest) {
-        glEnable(GL_DEPTH_TEST);
-    }
-    else {
-        glDisable(GL_DEPTH_TEST);
-    }
-    glDepthMask(prev_state_.depthmask);
-    */
 }

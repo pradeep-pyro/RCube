@@ -1,6 +1,8 @@
 #include "Renderer.h"
 #include "glm/gtx/string_cast.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "checkglerror.h"
+#include "../materials/FlatMaterial.h"
 
 const std::string quad_vert_src = R"(
 #version 420
@@ -153,18 +155,54 @@ void GLRenderer::setLightsCamera(const std::vector<Light> &lights, const glm::ma
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo_lights_);
 }
 
+void GLRenderer::updateSettings(const RenderSettings &settings) {
+    // Depth test
+    if (settings.depth_test) {
+        glEnable(GL_DEPTH_TEST);
+    }
+    else {
+        glDisable(GL_DEPTH_TEST);
+    }
+
+    // Depth write
+    glDepthMask(static_cast<GLboolean>(settings.depth_write));
+
+    // Blending
+    if (settings.blending) {
+        glEnable(GL_BLEND);
+        glBlendFunc(static_cast<GLenum>(settings.blendfunc_src),
+                    static_cast<GLenum>(settings.blendfunc_dst));
+    }
+    else {
+        glDisable(GL_BLEND);
+    }
+
+    // Face Culling
+    if (settings.culling) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(static_cast<GLenum>(settings.cull_mode));
+    }
+    else {
+        glDisable(GL_CULL_FACE);
+    }
+}
+
 void GLRenderer::render(Mesh &mesh, Material *material, const glm::mat4 &model_to_world) {
     glm::mat4 model_view = world_to_view_ * model_to_world;
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_view)));
 
     assert (material != nullptr);
+
+    // Update settings
+    updateSettings(material->render_settings);
+
+    // Use shader and set uniforms
     material->use();
     std::shared_ptr<ShaderProgram> sh = material->shader();
     sh->setUniform("modelview_matrix", model_view);
     sh->setUniform("normal_matrix",normal_matrix);
     sh->setUniform("num_lights", static_cast<int>(num_lights_));
 
-    //  Draw
     mesh.use();
     if (!mesh.indexed()) {
         material->shader()->drawArrays(static_cast<GLint>(mesh.primitive()),
@@ -174,6 +212,7 @@ void GLRenderer::render(Mesh &mesh, Material *material, const glm::mat4 &model_t
         material->shader()->drawElements(static_cast<GLint>(mesh.primitive()),
                                                   0, mesh.numPrimitives());
     }
+    glDepthMask(GL_TRUE);
 }
 
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
@@ -184,6 +223,7 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
 void GLRenderer::renderTextureToScreen(Texture2D &tex) {
     tex.use(0);
     glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
     quad_mesh_.use();
     quad_shader_.use();
     //clear();

@@ -24,16 +24,18 @@ public:
     int renderPriority() const override;
 
     // Colors
-    glm::vec3 diffuse_color, specular_color;
-    float shininess, reflectivity;
+    glm::vec3 diffuse_color;
+    glm::vec3 specular_color;
+    float shininess;              /// Shininess is the specular exponent. Higher values result in smaller but sharper highlights
+    float reflectivity;           /// Reflectivity [0.0, 1.0] controls the amount of reflection of the environment map
     // Wireframe
-    bool show_wireframe;
-    float wireframe_thickness;
-    glm::vec3 wireframe_color;
+    bool show_wireframe;          /// Show/hide wireframe
+    float wireframe_thickness;    /// Thickness of wireframe lines
+    glm::vec3 wireframe_color;    /// Color fo the wireframe lines
     // Textures
     std::shared_ptr<Texture2D> diffuse_texture, specular_texture;
     std::shared_ptr<TextureCube> environment_map;
-    Blend blend_environment_map;
+    Combine blend_environment_map;
     bool use_diffuse_texture, use_specular_texture, use_environment_map;
     // Rendering customizations
     bool show_backface;

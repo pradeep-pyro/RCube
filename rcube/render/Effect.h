@@ -17,8 +17,7 @@ public:
     virtual std::string fragmentShader() = 0;
     virtual void setUniforms() = 0;
     virtual void apply() = 0;
-    virtual void resize(int width, int height);
-    std::unique_ptr<Framebuffer> result;
+    std::shared_ptr<Framebuffer> result;
 protected:
     void renderQuad();
     std::shared_ptr<ShaderProgram> shader_;

@@ -97,8 +97,10 @@ protected:
 
 class Texture2D{
 public:
-    Texture2D();
-    void initialize(size_t width, size_t height, size_t levels, TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
+    Texture2D() = default;
+    ~Texture2D();
+    static std::shared_ptr<Texture2D> create(size_t width, size_t height, size_t levels,
+                                             TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
     void release();
     void setWrapMode(TextureWrapMode mode);
     void setWrapModeS(TextureWrapMode wrap_s);
@@ -119,7 +121,7 @@ public:
     void setFilterMode(TextureFilterMode mode);
     void generateMipMap();
     bool valid() const;
-protected:
+private:
     GLuint id_ = 0;
     size_t unit_ = 0;
     bool in_use_ = false;

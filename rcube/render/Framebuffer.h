@@ -9,7 +9,8 @@ class Framebuffer {
 public:
     Framebuffer();
     Framebuffer(const Framebuffer &other) = delete;
-    void initialize(size_t width, size_t height);
+    ~Framebuffer();
+    static std::shared_ptr<Framebuffer> create(size_t width, size_t height);
     bool initialized() const;
     void release();
     void use();
@@ -20,7 +21,6 @@ public:
     Texture2D * colorAttachment(size_t i=0);
     size_t numColorAttachments() const;
     bool hasDepthStencilAttachment() const;
-    void resize(int width, int height);
     size_t width() const;
     size_t height() const;
     bool isComplete() const;
@@ -37,8 +37,8 @@ private:
     unsigned int id_ = 0;
     size_t width_ = 0;
     size_t height_ = 0;
-    std::vector<Texture2D> colors_;
-    Texture2D depth_stencil_;
+    std::vector<std::shared_ptr<Texture2D>> colors_;
+    std::shared_ptr<Texture2D> depth_stencil_;
     bool has_depth_stencil_ = false;
 };
 

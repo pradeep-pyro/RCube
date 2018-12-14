@@ -183,24 +183,25 @@ size_t Texture1D::width() const {
 // Texture2D
 // --------------------------------------
 
-Texture2D::Texture2D() : id_(0) {
+std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t levels,
+                                                    TextureInternalFormat internal_format) {
+    auto tex = std::make_shared<Texture2D>();
+    tex->width_ = width;
+    tex->height_ = height;
+    tex->levels_ = levels;
+    tex->internal_format_ = internal_format;
+    glGenTextures(1, &tex->id_);
+    tex->use();
+    glTexStorage2D(GL_TEXTURE_2D, levels, (GLenum)internal_format, width, height);
+    tex->setWrapMode(TextureWrapMode::ClampToEdge);
+    tex->setFilterMode(TextureFilterMode::Linear);
+    tex->done();
+    checkGLError();
+    return tex;
 }
 
-void Texture2D::initialize(size_t width, size_t height, size_t levels, TextureInternalFormat internal_format) {
-    if (valid()) {
-        return;
-    }
-    width_ = width;
-    height_ = height;
-    levels_ = levels;
-    internal_format_ = internal_format;
-    glGenTextures(1, &id_);
-    use();
-    glTexStorage2D(GL_TEXTURE_2D, levels_, (GLenum)internal_format_, width_, height_);
-    setWrapMode(TextureWrapMode::ClampToEdge);
-    setFilterMode(TextureFilterMode::Linear);
-    done();
-    checkGLError();
+Texture2D::~Texture2D() {
+    release();
 }
 
 bool Texture2D::valid() const {

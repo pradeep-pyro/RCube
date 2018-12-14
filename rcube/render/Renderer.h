@@ -11,6 +11,7 @@
 #include "Light.h"
 #include "Image.h"
 #include "skybox.h"
+#include "RenderSettings.h"
 
 class GLRenderer {
 public:
@@ -34,6 +35,8 @@ public:
      * @param height height if the viewport
      */
     void resize(int top, int left, int width, int height);
+
+    void updateSettings(const RenderSettings &settings);
 
     void setLightsCamera(const std::vector<Light> &lights, const glm::mat4 &world_to_view,
                          const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);

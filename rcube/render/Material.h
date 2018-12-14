@@ -4,13 +4,7 @@
 #include <memory>
 #include "ShaderProgram.h"
 #include "Texture.h"
-
-enum RenderPriority {
-    Opaque = 0,
-    Background = 10,
-    Transparent = 20,
-    Overlay = 30
-};
+#include "RenderSettings.h"
 
 class Material {
 public:
@@ -28,15 +22,10 @@ public:
     virtual void use();
     virtual void done();
 
-    bool depth_test, depth_mask;
+    RenderSettings render_settings;
+
 protected:
-
-    struct GLState {
-        GLboolean depthmask, depthtest;
-    };
-    GLState prev_state_;
     std::shared_ptr<ShaderProgram> shader_;
-
     bool init_;
 };
 

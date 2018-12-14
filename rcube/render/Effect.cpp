@@ -34,18 +34,13 @@ void Effect::initialize() {
     if (!shader_->link(true)) {
         throw std::runtime_error("Unable to link shader");
     }
-    result = std::make_unique<Framebuffer>();
-    result->initialize(1280, 720);
+    result = Framebuffer::create(1280, 720);
     result->addColorAttachment(TextureInternalFormat::RGBA8);
     init_ = true;
 }
 
 std::shared_ptr<ShaderProgram> Effect::shader() const {
     return shader_;
-}
-
-void Effect::resize(int width, int height) {
-    result->resize(width, height);
 }
 
 void Effect::renderQuad() {

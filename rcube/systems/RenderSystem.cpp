@@ -101,12 +101,14 @@ void RenderSystem::update(bool /* force */) {
         renderer.setLightsCamera(lights, cam->world_to_view, cam->view_to_projection, cam->projection_to_viewport);
         checkGLError();
 
-        // Draw all meshes
+        // Draw all opaque
         for (const auto &render_entity : renderable_entities) {
             Drawable *dr = world_->getComponent<Drawable>(render_entity);
             assert(dr->material != nullptr && dr->mesh != nullptr);
             Transform *tr = world_->getComponent<Transform>(render_entity);
-            renderer.render(dr->mesh, dr->material.get(), tr->worldTransform());
+            if (dr->material->renderPriority() == RenderPriority::Opaque) {
+                renderer.render(dr->mesh, dr->material.get(), tr->worldTransform());
+            }
         }
         checkGLError();
 
@@ -114,9 +116,21 @@ void RenderSystem::update(bool /* force */) {
         if (cam->use_skybox) {
             renderer.renderSkyBox(cam->skybox);
         }
+
+        // Draw all transparent
+        for (const auto &render_entity : renderable_entities) {
+            Drawable *dr = world_->getComponent<Drawable>(render_entity);
+            assert(dr->material != nullptr && dr->mesh != nullptr);
+            Transform *tr = world_->getComponent<Transform>(render_entity);
+            if (dr->material->renderPriority() == RenderPriority::Transparent) {
+                renderer.render(dr->mesh, dr->material.get(), tr->worldTransform());
+            }
+        }
+
         cam->framebuffer->done();
-        renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
+
         // Postprocess
+        renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
         if (cam->postprocess.size() > 0) {
             for (int i = 0; i < cam->postprocess.size(); ++i) {
                 Effect *curr_effect = cam->postprocess[i].get();
@@ -125,11 +139,9 @@ void RenderSystem::update(bool /* force */) {
                 prev_fbo->colorAttachment(0)->use();
                 curr_effect->apply();
             }
-            //cam->postprocess.back()->result->blitToScreen(cam->viewport_origin, cam->viewport_origin + cam->viewport_size);
             renderer.renderTextureToScreen(*cam->postprocess.back()->result->colorAttachment(0));
         }
         else {
-            //cam->framebuffer->blitToScreen(cam->viewport_origin, cam->viewport_origin + cam->viewport_size);
             renderer.renderTextureToScreen(*cam->framebuffer->colorAttachment(0));
         }
     }

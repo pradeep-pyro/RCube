@@ -259,10 +259,11 @@ BlinnPhongMaterial::BlinnPhongMaterial(glm::vec3 diffuse_color, glm::vec3 specul
     : Material(), diffuse_color(diffuse_color), specular_color(specular_color), shininess(shininess),
       reflectivity(0.5), show_wireframe(false), wireframe_thickness(1.0), wireframe_color(glm::vec3(0)),
       use_diffuse_texture(false), use_specular_texture(false), use_environment_map(false), show_backface(false) {
-    diffuse_texture = std::make_shared<Texture2D>();
-    specular_texture = std::make_shared<Texture2D>();
-    environment_map = std::make_shared<TextureCube>();
-    blend_environment_map = Blend::Multiply;
+    blend_environment_map = Combine::Multiply;
+    render_settings.depth_test = true;
+    render_settings.depth_write = true;
+    render_settings.blending = false;
+    render_settings.culling = false;
 }
 std::string BlinnPhongMaterial::vertexShader() {
     return vert_str;

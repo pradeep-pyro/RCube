@@ -38,8 +38,8 @@ void main() {
 }
 
 void BlurEffect::apply() {
-    if (!tmp->initialized()) {
-        tmp->initialize(1280, 720);
+    if (tmp == nullptr) {
+        tmp = Framebuffer::create(1280, 720);
         tmp->addColorAttachment(TextureInternalFormat::RGBA8);
     }
     shader_->use();
@@ -65,7 +65,3 @@ void BlurEffect::apply() {
     }
 }
 
-void BlurEffect::resize(int width, int height) {
-    Effect::resize(width, height);
-    tmp->resize(width, height);
-}

@@ -61,11 +61,9 @@ EntityHandle setupCamera(rcube::Scene &scene) {
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negy.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/posz.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negz.jpg", 3)};
-    checkGLError();
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    checkGLError();
     cam.get<rcube::Camera>()->use_skybox = true;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<BlurEffect>());
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
@@ -110,18 +108,19 @@ int main(int, char**) {
     gridobj.get<rcube::Drawable>()->mesh.setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
     gridobj.get<rcube::Drawable>()->material = std::make_shared<FlatMaterial>();
 
-    /*
     start = glfwGetTime();
-    EntityHandle circ = rcube::createDrawable(*scene);
-    circ.get<rcube::Drawable>()->mesh->setMeshData(cylinder(1, 1.5, 3, 30, 10));
+    EntityHandle circ = scene.createDrawable();
+    circ.get<rcube::Drawable>()->mesh.initialize();
+    circ.get<rcube::Drawable>()->mesh.setMeshData(cylinder(1, 1.5, 3, 30, 10));
     cout << "createDrawable cylinder took " << end - start << "s" << endl;
 
     auto phong = std::make_shared<BlinnPhongMaterial>();
     phong->diffuse_color = glm::vec3(0, 0, 1);
     phong->environment_map = cam.get<rcube::Camera>()->skybox;
     phong->use_environment_map = true;
+    //phong->show_wireframe = true;
     circ.get<rcube::Drawable>()->material = phong;
-    */
+
     EntityHandle light = scene.createPointLight();
     light.get<rcube::PointLight>()->setRadius(10.f);
     light.get<rcube::Transform>()->setPosition(glm::vec3(0));

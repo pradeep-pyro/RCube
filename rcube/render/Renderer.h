@@ -71,7 +71,8 @@ private:
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
 
-    Skybox skybox_;
+    Mesh skybox_mesh_;
+    ShaderProgram skybox_shader_;
 
     // Viewport size
     int top_, left_, width_, height_;

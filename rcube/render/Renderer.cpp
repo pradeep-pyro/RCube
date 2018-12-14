@@ -4,6 +4,83 @@
 #include "checkglerror.h"
 #include "../materials/FlatMaterial.h"
 
+const std::vector<glm::vec3> skybox_vertices = {
+    glm::vec3(-1.0f,  1.0f, -1.0f),
+    glm::vec3(-1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f,  1.0f, -1.0f),
+    glm::vec3(-1.0f,  1.0f, -1.0f),
+
+    glm::vec3(-1.0f, -1.0f,  1.0f),
+    glm::vec3(-1.0f, -1.0f, -1.0f),
+    glm::vec3(-1.0f,  1.0f, -1.0f),
+    glm::vec3(-1.0f,  1.0f, -1.0f),
+    glm::vec3(-1.0f,  1.0f,  1.0f),
+    glm::vec3(-1.0f, -1.0f,  1.0f),
+
+    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f,  1.0f),
+    glm::vec3(1.0f,  1.0f,  1.0f),
+    glm::vec3(1.0f,  1.0f,  1.0f),
+    glm::vec3(1.0f,  1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),
+
+    glm::vec3(-1.0f, -1.0f,  1.0f),
+    glm::vec3(-1.0f,  1.0f,  1.0f),
+    glm::vec3(1.0f,  1.0f,  1.0f),
+    glm::vec3(1.0f,  1.0f,  1.0f),
+    glm::vec3(1.0f, -1.0f,  1.0f),
+    glm::vec3(-1.0f, -1.0f,  1.0f),
+
+    glm::vec3(-1.0f,  1.0f, -1.0f),
+    glm::vec3(1.0f,  1.0f, -1.0f),
+    glm::vec3(1.0f,  1.0f,  1.0f),
+    glm::vec3(1.0f,  1.0f,  1.0f),
+    glm::vec3(-1.0f,  1.0f,  1.0f),
+    glm::vec3(-1.0f,  1.0f, -1.0f),
+
+    glm::vec3(-1.0f, -1.0f, -1.0f),
+    glm::vec3(-1.0f, -1.0f,  1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(-1.0f, -1.0f,  1.0f),
+    glm::vec3(1.0f, -1.0f,  1.0f)
+};
+
+const std::string skybox_vert_src = R"(
+#version 420
+
+layout (location = 0) in vec3 position;
+out vec3 texcoords;
+
+layout (std140, binding=0) uniform Matrices {
+    mat4 view_matrix;
+    mat4 projection_matrix;
+    mat4 viewport_matrix;
+};
+
+void main() {
+    texcoords = position;
+    vec4 pos = projection_matrix * mat4(mat3(view_matrix)) * vec4(position, 1.0);
+    gl_Position = pos.xyww;
+}
+)";
+
+const std::string skybox_frag_src = R"(
+#version 420
+
+out vec4 frag_color;
+in vec3 texcoords;
+
+layout(binding = 3) uniform samplerCube skybox;
+
+void main() {
+    frag_color = texture(skybox, texcoords);
+}
+)";
+
+
 const std::string quad_vert_src = R"(
 #version 420
 layout (location = 0) in vec3 vertex;
@@ -38,7 +115,8 @@ void GLRenderer::cleanup() {
     if (init_) {
         glDeleteBuffers(1, &ubo_matrices_);
         glDeleteBuffers(1, &ubo_lights_);
-        skybox_.free();
+        skybox_mesh_.release();
+        skybox_shader_.release();
         quad_mesh_.release();
         quad_shader_.release();
         init_ = false;
@@ -81,6 +159,7 @@ void GLRenderer::initialize() {
     glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * 12 * 99, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    // Full screen quad
     quad_mesh_.initialize();
     quad_mesh_.setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
                        glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)});
@@ -91,7 +170,13 @@ void GLRenderer::initialize() {
     quad_shader_.use();
     quad_shader_.setUniform("projection", glm::mat4(1));
 
-    glEnable(GL_SCISSOR_TEST);
+    // Skybox
+    skybox_mesh_.initialize();
+    skybox_mesh_.setVertices(skybox_vertices);
+    skybox_shader_.setVertexShader(skybox_vert_src);
+    skybox_shader_.setFragmentShader(skybox_frag_src);
+    skybox_shader_.link();
+    skybox_shader_.use();
 
     init_ = true;
 }
@@ -102,6 +187,7 @@ void GLRenderer::resize(int top, int left, int width, int height) {
     width_ = width;
     height_ = height;
 
+    glEnable(GL_SCISSOR_TEST);
     glViewport(top_, left_, width_, height_);
     glScissor(top_, left_, width_, height_);
 
@@ -212,12 +298,19 @@ void GLRenderer::render(Mesh &mesh, Material *material, const glm::mat4 &model_t
         material->shader()->drawElements(static_cast<GLint>(mesh.primitive()),
                                                   0, mesh.numPrimitives());
     }
-    glDepthMask(GL_TRUE);
 }
 
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
-    skybox_.texture = cubemap;
-    skybox_.render();
+    //skybox_.texture = cubemap;
+    //skybox_.render();
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
+    cubemap->use(3);
+    skybox_shader_.use();
+    skybox_mesh_.use();
+    skybox_shader_.drawArrays(GL_TRIANGLES, 0, 36);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
 }
 
 void GLRenderer::renderTextureToScreen(Texture2D &tex) {

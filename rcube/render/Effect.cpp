@@ -22,18 +22,8 @@ void Effect::initialize() {
     if (init_) {
         return;
     }
-    if (!shader_->setVertexShader(vs_src, true)) {
-        throw std::runtime_error("Unable to compile vertex shader");
-    }
     std::string frag_src = fragmentShader();
-    if (frag_src.size() > 0) {
-        if (!shader_->setFragmentShader(frag_src, true)) {
-            throw std::runtime_error("Unable to compile fragment shader");
-        }
-    }
-    if (!shader_->link(true)) {
-        throw std::runtime_error("Unable to link shader");
-    }
+    shader_ = ShaderProgram::create(vs_src, frag_src ,true);
     result = Framebuffer::create(1280, 720);
     result->addColorAttachment(TextureInternalFormat::RGBA8);
     init_ = true;

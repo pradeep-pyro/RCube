@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_integer.hpp"
@@ -11,14 +12,23 @@
 class ShaderProgram {
 public:
     ShaderProgram();
+    ShaderProgram(const ShaderProgram &other) = delete;
     ~ShaderProgram();
     void release();
-    bool setVertexShader(const std::string &src, bool debug=false);
-    bool setVertexShaderFromFile(const std::string &filename, bool debug=false);
-    bool setFragmentShader(const std::string &src, bool debug=false);
-    bool setFragmentShaderFromFile(const std::string &filename, bool debug=false);
-    bool setGeometryShader(const std::string &src, bool debug=false);
-    bool setGeometryShaderFromFile(const std::string &filename, bool debug=false);
+    static std::shared_ptr<ShaderProgram> create(const std::string &vertex_shader,
+                                                 const std::string &fragment_shader,
+                                                 bool debug=false);
+    static std::shared_ptr<ShaderProgram> create(const std::string &vertex_shader,
+                                                 const std::string &geometry_shader,
+                                                 const std::string &fragment_shader,
+                                                 bool debug=false);
+    static std::shared_ptr<ShaderProgram> createFromFile(const std::string &vertex_shader,
+                                                         const std::string &fragment_shader,
+                                                         bool debug=false);
+    static std::shared_ptr<ShaderProgram> createFromFile(const std::string &vertex_shader,
+                                                         const std::string &geometry_shader,
+                                                         const std::string &fragment_shader,
+                                                         bool debug=false);
     void drawArrays(GLint mode, uint32_t first, uint32_t count) const;
     void drawElements(GLint mode, uint32_t first, uint32_t count) const;
     bool link(bool debug=false);
@@ -40,7 +50,8 @@ public:
     void setUniform(const std::string &name, const glm::mat4 &mat);
     void showWarnings(bool flag);
 private:
-    bool addShader(GLuint type, const std::string &source, bool debug=false);
+    void addShader(GLuint type, const std::string &source, bool debug=false);
+    void addShaderFromFile(GLuint type, const std::string &filename, bool debug=false);
     GLuint id_;
     std::vector<GLint> shaders_;
     bool warn_;

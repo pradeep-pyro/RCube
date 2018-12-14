@@ -71,7 +71,7 @@ private:
     GLuint ubo_matrices_, ubo_lights_;
 
     std::shared_ptr<Mesh> skybox_mesh_;
-    ShaderProgram skybox_shader_;
+    std::shared_ptr<ShaderProgram> skybox_shader_;
 
     // Viewport size
     int top_, left_, width_, height_;
@@ -88,7 +88,7 @@ private:
 
     // Quad
     std::shared_ptr<Mesh> quad_mesh_;
-    ShaderProgram quad_shader_;
+    std::shared_ptr<ShaderProgram> quad_shader_;
 };
 
 

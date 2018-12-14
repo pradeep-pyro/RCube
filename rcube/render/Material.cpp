@@ -13,23 +13,11 @@ void Material::initialize() {
     std::string vert_src = vertexShader();
     std::string frag_src = fragmentShader();
     std::string geom_src = geometryShader();
-    if (vert_src.size() > 0) {
-        if (!shader_->setVertexShader(vert_src, true)) {
-            throw std::runtime_error("Unable to compile vertex shader");
-        }
-    }
-    if (frag_src.size() > 0) {
-        if (!shader_->setFragmentShader(frag_src, true)) {
-            throw std::runtime_error("Unable to compile fragment shader");
-        }
-    }
     if (geom_src.size() > 0) {
-        if (!shader_->setGeometryShader(geom_src, true)) {
-            throw std::runtime_error("Unable to compile geometry shader");
-        }
+        shader_ = ShaderProgram::create(vert_src, geom_src, frag_src, true);
     }
-    if (!shader_->link(true)) {
-        throw std::runtime_error("Unable to link shader");
+    else {
+        shader_ = ShaderProgram::create(vert_src, frag_src, true);
     }
 }
 

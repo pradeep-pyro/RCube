@@ -3,21 +3,55 @@
 #include <fstream>
 #include <sstream>
 
-bool getStringFromFile(const std::string &filename, std::string &str) {
+std::string getStringFromFile(const std::string &filename) {
     std::ifstream f(filename);
     if (!f.is_open()) {
-        return false;
+        throw std::runtime_error("Unable to open shader source file: " + filename);
     }
     std::stringstream ss;
     ss << f.rdbuf();
-    str = ss.str();
-    return true;
+    return ss.str();
 }
 
 ShaderProgram::ShaderProgram() : id_(0), warn_(false) {
 }
 
 ShaderProgram::~ShaderProgram() {
+    release();
+}
+
+std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
+                                                     const std::string &fragment_shader,
+                                                     bool debug) {
+    auto prog = std::make_shared<ShaderProgram>();
+    prog->addShader(GL_VERTEX_SHADER, vertex_shader, debug);
+    prog->addShader(GL_FRAGMENT_SHADER, fragment_shader, debug);
+    prog->link();
+    return prog;
+}
+
+std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
+                                                     const std::string &geometry_shader,
+                                                     const std::string &fragment_shader,
+                                                     bool debug) {
+    auto prog = std::make_shared<ShaderProgram>();
+    prog->addShader(GL_VERTEX_SHADER, vertex_shader, debug);
+    prog->addShader(GL_GEOMETRY_SHADER, geometry_shader, debug);
+    prog->addShader(GL_FRAGMENT_SHADER, fragment_shader, debug);
+    prog->link();
+    return prog;
+}
+
+std::shared_ptr<ShaderProgram> ShaderProgram::createFromFile(const std::string &vertex_shader,
+                                                             const std::string &fragment_shader,
+                                                             bool debug) {
+
+}
+std::shared_ptr<ShaderProgram> ShaderProgram::createFromFile(const std::string &vertex_shader,
+                                                             const std::string &geometry_shader,
+                                                             const std::string &fragment_shader,
+                                                             bool debug) {
+
 }
 
 void ShaderProgram::release() {
@@ -25,48 +59,6 @@ void ShaderProgram::release() {
         glDeleteProgram(id_);
         id_ = 0;
     }
-}
-
-// Assign and compile vertex shader
-bool ShaderProgram::setVertexShader(const std::string &src, bool debug) {
-    return addShader(GL_VERTEX_SHADER, src, debug);
-}
-
-// Assign and compile vertex shader form external file
-bool ShaderProgram::setVertexShaderFromFile(const std::string &filename, bool debug) {
-    std::string src;
-    if (!getStringFromFile(filename, src)) {
-        return false;
-    }
-    return addShader(GL_VERTEX_SHADER, src, debug);
-}
-
-// Assign and compile fragment shader
-bool ShaderProgram::setFragmentShader(const std::string &src, bool debug) {
-    return addShader(GL_FRAGMENT_SHADER, src, debug);
-}
-
-// Assign and compile fragment shader form external file
-bool ShaderProgram::setFragmentShaderFromFile(const std::string &filename, bool debug) {
-    std::string src;
-    if (!getStringFromFile(filename, src)) {
-        return false;
-    }
-    return addShader(GL_FRAGMENT_SHADER, src, debug);
-}
-
-// Assign and compile geometry shader
-bool ShaderProgram::setGeometryShader(const std::string &src, bool debug) {
-    return addShader(GL_GEOMETRY_SHADER, src, debug);
-}
-
-// Assign and compile geometry shader form external file
-bool ShaderProgram::setGeometryShaderFromFile(const std::string &filename, bool debug) {
-    std::string src;
-    if (!getStringFromFile(filename, src)) {
-        return false;
-    }
-    return addShader(GL_GEOMETRY_SHADER, src, debug);
 }
 
 // Draw the data represented by the bound VAO with glDrawArrays
@@ -267,7 +259,7 @@ void ShaderProgram::setUniform(const std::string &name, const glm::mat4 &mat) {
     }
 }
 
-bool ShaderProgram::addShader(GLuint type, const std::string &source, bool debug) {
+void ShaderProgram::addShader(GLuint type, const std::string &source, bool debug) {
     // Create a new program if not already done
     if (id_ == 0) {
         id_ = glCreateProgram();
@@ -297,12 +289,16 @@ bool ShaderProgram::addShader(GLuint type, const std::string &source, bool debug
             else if (type == GL_GEOMETRY_SHADER) {
                 str_type = "geometry";
             }
-            std::cout<< "Compilation error in " << str_type << " shader:\n" << log << std::endl;
+            std::cerr << "Compilation error in " << str_type << " shader:\n" << log << std::endl;
         }
-        return false;
+        throw std::runtime_error("Unable to compile shader");
     }
     // Shader compilation successful; attach the shader to the program
     glAttachShader(id_, shader);
     shaders_.push_back(shader);
-    return true;
+}
+
+void ShaderProgram::addShaderFromFile(GLuint type, const std::string &filename, bool debug) {
+    std::string src = getStringFromFile(filename);
+    addShader(type, src, debug);
 }

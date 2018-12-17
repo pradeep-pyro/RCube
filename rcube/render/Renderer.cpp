@@ -303,9 +303,20 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
     glDepthFunc(GL_LESS);
 }
 
-void GLRenderer::renderTextureToScreen(Texture2D &tex) {
-    tex.use(0);
-    //clear();
+void GLRenderer::renderEffect(Effect *effect, Texture2D *input) {
+    input->use(0);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    quad_mesh_->use();
+    effect->use();
+    effect->shader()->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    effect->done();
+}
+
+void GLRenderer::renderTextureToScreen(Texture2D *tex) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    tex->use(0);
+    clear();
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     quad_mesh_->use();

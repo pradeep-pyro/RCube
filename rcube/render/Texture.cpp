@@ -191,8 +191,10 @@ std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t
     tex->levels_ = levels;
     tex->internal_format_ = internal_format;
     glGenTextures(1, &tex->id_);
+    checkGLError();
     tex->use();
     glTexStorage2D(GL_TEXTURE_2D, levels, (GLenum)internal_format, width, height);
+    checkGLError();
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
     tex->done();

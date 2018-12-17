@@ -16,12 +16,11 @@ public:
     std::shared_ptr<ShaderProgram> shader() const;
     virtual std::string fragmentShader() = 0;
     virtual void setUniforms() = 0;
-    virtual void apply() = 0;
     std::shared_ptr<Framebuffer> result;
+    virtual void use();
+    virtual void done();
 protected:
-    void renderQuad();
     std::shared_ptr<ShaderProgram> shader_;
-    Mesh quad_;
     bool init_;
 };
 

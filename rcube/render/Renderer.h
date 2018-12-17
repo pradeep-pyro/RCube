@@ -44,7 +44,9 @@ public:
 
     void renderSkyBox(std::shared_ptr<TextureCube> cubemap);
 
-    void renderTextureToScreen(Texture2D &tex);
+    void renderTextureToScreen(Texture2D *tex);
+
+    void renderEffect(Effect *effect, Texture2D *input);
 
     /**
      * @brief clearColor Returns the color that is used to clear the screen i.e.,

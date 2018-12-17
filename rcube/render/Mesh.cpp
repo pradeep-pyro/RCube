@@ -1,8 +1,9 @@
 #include <stdexcept>
 #include "Mesh.h"
 #include "glm/gtc/type_ptr.hpp"
-#include <iostream>
-using namespace std;
+
+
+const std::string ERROR_MESH_UNINITIALIZED = "Cannot use Mesh without initializing";
 
 //-----------------------------------------------------------------------------
 // MeshData
@@ -48,12 +49,12 @@ std::shared_ptr<Mesh> Mesh::create() {
     GLuint vid = static_cast<GLuint>(MeshAttributes::Vertices);
     glEnableVertexAttribArray(vid);
     glVertexAttribPointer(vid, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    mesh->init_ = true;
     mesh->disableAttribute(MeshAttributes::Colors);
     mesh->disableAttribute(MeshAttributes::Normals);
     mesh->disableAttribute(MeshAttributes::TexCoords);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    mesh->init_ = true;
     return mesh;
 }
 
@@ -90,6 +91,10 @@ void Mesh::release() {
 
 GLuint Mesh::vao() const {
     return glbuf_.vao;
+}
+
+bool Mesh::valid() const {
+    return init_;
 }
 
 void Mesh::enableAttribute(MeshAttributes attr) {
@@ -137,6 +142,9 @@ void Mesh::disableAttribute(MeshAttributes attr) {
 }
 
 void Mesh::use() const {
+    if (!valid()) {
+        throw std::runtime_error(ERROR_MESH_UNINITIALIZED);
+    }
     glBindVertexArray(glbuf_.vao);
 }
 

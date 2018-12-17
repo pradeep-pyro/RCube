@@ -13,9 +13,8 @@ void main() {
 )";
 
 Effect::Effect() : shader_(std::make_shared<ShaderProgram>()), init_(false) {
-    quad_.setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
-                       glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)});
-    quad_.setTextureCoords({glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
+    result = Framebuffer::create(1280, 720);
+    result->addColorAttachment(TextureInternalFormat::RGBA8);
 }
 
 void Effect::initialize() {
@@ -24,8 +23,6 @@ void Effect::initialize() {
     }
     std::string frag_src = fragmentShader();
     shader_ = ShaderProgram::create(vs_src, frag_src ,true);
-    result = Framebuffer::create(1280, 720);
-    result->addColorAttachment(TextureInternalFormat::RGBA8);
     init_ = true;
 }
 
@@ -33,11 +30,13 @@ std::shared_ptr<ShaderProgram> Effect::shader() const {
     return shader_;
 }
 
-void Effect::renderQuad() {
+void Effect::use() {
     initialize();
-    glDisable(GL_DEPTH_TEST);
-    quad_.use();
     shader_->use();
+    result->use();
     setUniforms();
-    shader_->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void Effect::done() {
+    // Nothing to do by default
 }

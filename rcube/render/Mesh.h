@@ -53,6 +53,8 @@ public:
 
     GLuint vao() const;
 
+    bool valid() const;
+
     void use() const;
 
     void done() const;

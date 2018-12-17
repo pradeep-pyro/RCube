@@ -107,27 +107,21 @@ int main(int, char**) {
 
     EntityHandle cam = setupCamera(scene);
 
-    EntityHandle gridobj = scene.createDrawable();
-    gridobj.get<rcube::Drawable>()->mesh = Mesh::create();
-    gridobj.get<rcube::Drawable>()->mesh->setMeshData(grid(3, 3, 10, 10, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.4)));
-    gridobj.get<rcube::Drawable>()->material = std::make_shared<FlatMaterial>();
-
-
-    for (int i = -10; i < 10; ++i) {
-        for (int j = -10; j < 10; ++j) {
-            auto phong = std::make_shared<BlinnPhongMaterial>();
-            phong->diffuse_color = glm::vec3(0, 1, 1);
-            phong->environment_map = cam.get<rcube::Camera>()->skybox;
-            phong->use_environment_map = true;
-
-            auto cyl = Mesh::create();
-            cyl->setMeshData(cylinder(0.45, 0.45, 1, 20, 20));
-            EntityHandle circ = scene.createDrawable();
-            circ.get<rcube::Drawable>()->mesh = cyl;
-            circ.get<rcube::Transform>()->translate(glm::vec3(i, 0, j));
-            circ.get<rcube::Drawable>()->material = phong;
-        }
-    }
+    EntityHandle cube = scene.createDrawable();
+    auto cube_drawable = cube.get<rcube::Drawable>();
+    cube_drawable->mesh = Mesh::create();
+    cube_drawable->mesh->setMeshData(box(2, 2, 2, 10, 10, 10));
+    auto phong = std::make_shared<BlinnPhongMaterial>();
+    auto diff = Texture2D::create(500, 500, 1);
+    auto spec = Texture2D::create(500, 500, 1, TextureInternalFormat::R8);
+    diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
+    spec->setData(Image::fromFile("/home/pradeep/specular.png", 1));
+    phong->diffuse_texture = diff;
+    phong->specular_texture = spec;
+    phong->shininess = 64.f;
+    phong->use_diffuse_texture = true;
+    phong->use_specular_texture = true;
+    cube_drawable->material = phong;
 
     EntityHandle light = scene.createPointLight();
     light.get<rcube::PointLight>()->setRadius(10.f);

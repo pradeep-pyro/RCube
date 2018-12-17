@@ -141,8 +141,6 @@ struct Light {
     vec4 color_coneangle;
 };
 
-// uniform Light lights[MAX_LIGHTS];
-
 layout (std140, binding=2) uniform Lights {
     Light lights[MAX_LIGHTS];
 };
@@ -159,11 +157,12 @@ struct Material {
 uniform Material material;
 
 layout (binding = 0) uniform sampler2D diffuse_tex;
+layout (binding = 1) uniform sampler2D specular_tex;
 layout (binding = 3) uniform samplerCube env_map;
 
 uniform bool show_wireframe;
 uniform bool show_backface;
-uniform bool use_diffuse_texture, use_environment_map;
+uniform bool use_diffuse_texture, use_specular_texture, use_environment_map;
 uniform int blend_environment_map;
 
 struct Line {
@@ -193,6 +192,7 @@ void main() {
     else {
         material_diffuse = material.diffuse * g_color;
     }
+    float specular_tex_val = use_specular_texture ? texture(specular_tex, g_texture).r : 1.0;
 
     vec3 N = normalize(g_normal);        // Surface normal
     vec3 V = normalize(vec3(-g_vertex)); // Surface to eye
@@ -218,7 +218,7 @@ void main() {
         float diff_contrib = show_backface ? abs(LdotN) : max(LdotN, 0.0);
         float spec_contrib = 0.0;
         if (LdotN > 0.0) {
-            spec_contrib = pow(max(0, dot(N, H)), material.shininess);
+            spec_contrib = specular_tex_val * pow(max(0, dot(N, H)), material.shininess);
         }
         vec3 light_color = att * lights[i].color_coneangle.xyz;
         result += light_color * (diff_contrib * material_diffuse + spec_contrib * material.specular);
@@ -249,9 +249,7 @@ void main() {
         }
     }
 
-    vec3 gamma = vec3(1.0/2.2);
-    vec3 final_color = pow(result, gamma);
-    out_color = vec4(final_color, 1);
+    out_color = vec4(result, 1);
 }
 )";
 
@@ -279,9 +277,9 @@ void BlinnPhongMaterial::use() {
     if (diffuse_texture != nullptr && use_diffuse_texture) {
         diffuse_texture->use(0);
     }
-    /*if (specular_texture != nullptr && use_specular_texture) {
+    if (specular_texture != nullptr && use_specular_texture) {
         specular_texture->use(1);
-    }*/
+    }
     if (environment_map != nullptr && use_environment_map) {
         environment_map->use(3);
     }
@@ -297,6 +295,7 @@ void BlinnPhongMaterial::setUniforms() {
     shader_->setUniform("show_backface", show_backface);
 
     shader_->setUniform("use_diffuse_texture", use_diffuse_texture);
+    shader_->setUniform("use_specular_texture", use_specular_texture);
 
     shader_->setUniform("use_environment_map", use_environment_map);
     shader_->setUniform("blend_environment_map", static_cast<int>(blend_environment_map));

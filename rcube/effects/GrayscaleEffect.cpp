@@ -1,6 +1,7 @@
 #include "GrayscaleEffect.h"
 
 GrayscaleEffect::GrayscaleEffect() {
+    initialize();
 }
 
 std::string GrayscaleEffect::fragmentShader() {
@@ -19,9 +20,4 @@ void main() {
 }
 
 void GrayscaleEffect::setUniforms() {
-}
-
-void GrayscaleEffect::apply() {
-    result->use();
-    renderQuad();
 }

@@ -18,7 +18,7 @@
 #include "rcube/systems/CameraSystem.h"
 #include "rcube/controller/OrbitController.h"
 #include "rcube/effects/GrayscaleEffect.h"
-#include "rcube/effects/BlurEffect.h"
+#include "rcube/effects/GammaCorrectionEffect.h"
 #include "rcube/render/checkglerror.h"
 
 rcube::OrbitController ctrl;
@@ -75,8 +75,8 @@ EntityHandle setupCamera(rcube::Scene &scene) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
     cam.get<rcube::Camera>()->use_skybox = true;
-    //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<BlurEffect>());
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
+    cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 
     ctrl.setEntity(cam);
     return cam;
@@ -122,6 +122,9 @@ int main(int, char**) {
     phong->use_diffuse_texture = true;
     phong->use_specular_texture = true;
     cube_drawable->material = phong;
+    phong.reset();
+    diff.reset();
+    spec.reset();
 
     EntityHandle light = scene.createPointLight();
     light.get<rcube::PointLight>()->setRadius(10.f);

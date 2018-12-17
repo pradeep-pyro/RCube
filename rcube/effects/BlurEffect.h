@@ -16,7 +16,8 @@ public:
     BlurEffect(unsigned int amount=1);
     std::string fragmentShader() override;
     void setUniforms() override;
-    void apply() override;
+    void use() override;
+    void done() override;
 private:
     std::shared_ptr<Framebuffer> tmp;
 };

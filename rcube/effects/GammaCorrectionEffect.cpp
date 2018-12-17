@@ -18,8 +18,3 @@ void main() {
 void GammaCorrectionEffect::setUniforms() {
     // Nothing to do
 }
-
-void GammaCorrectionEffect::apply() {
-    result->use();
-    renderQuad();
-}

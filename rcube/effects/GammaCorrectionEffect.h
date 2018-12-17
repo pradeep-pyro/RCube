@@ -11,10 +11,9 @@
  */
 class GammaCorrectionEffect : public Effect {
 public:
-    GammaCorrectionEffect();
+    GammaCorrectionEffect() = default;
     std::string fragmentShader() override;
     void setUniforms() override;
-    void apply() override;
 };
 
 #endif // GAMMACORRECTION_H

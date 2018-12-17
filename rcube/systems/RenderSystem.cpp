@@ -116,32 +116,22 @@ void RenderSystem::update(bool /* force */) {
             renderer.renderSkyBox(cam->skybox);
         }
 
-        // Draw all transparent
-        for (const auto &render_entity : renderable_entities) {
-            Drawable *dr = world_->getComponent<Drawable>(render_entity);
-            assert(dr->material != nullptr && dr->mesh != nullptr);
-            Transform *tr = world_->getComponent<Transform>(render_entity);
-            if (dr->material->renderPriority() == RenderPriority::Transparent) {
-                renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
-            }
-        }
-
         cam->framebuffer->done();
 
         // Postprocess
-        renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
         if (cam->postprocess.size() > 0) {
             for (int i = 0; i < cam->postprocess.size(); ++i) {
                 Effect *curr_effect = cam->postprocess[i].get();
                 Framebuffer *prev_fbo = (i == 0) ? cam->framebuffer.get() : cam->postprocess[i - 1]->result.get();
-                curr_effect->result->use();
-                prev_fbo->colorAttachment(0)->use();
-                curr_effect->apply();
+                renderer.renderEffect(curr_effect, prev_fbo->colorAttachment(0));
+                //renderer.renderTextureToScreen(curr_effect->result->colorAttachment(0));
             }
-            renderer.renderTextureToScreen(*cam->postprocess.back()->result->colorAttachment(0));
+            renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
+            renderer.renderTextureToScreen(cam->postprocess.back()->result->colorAttachment(0));
         }
         else {
-            renderer.renderTextureToScreen(*cam->framebuffer->colorAttachment(0));
+            renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
+            renderer.renderTextureToScreen(cam->framebuffer->colorAttachment(0));
         }
     }
 }

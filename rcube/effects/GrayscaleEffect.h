@@ -14,7 +14,6 @@ public:
     GrayscaleEffect();
     std::string fragmentShader() override;
     void setUniforms() override;
-    void apply() override;
 };
 
 #endif // GRAYSCALEEFFECT_H

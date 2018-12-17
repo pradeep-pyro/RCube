@@ -18,13 +18,24 @@ class CameraController {
 public:
 
     struct InputState {
+        InputState() {
+            clear();
+        }
         int x, y;
-        bool mouse_left;
-        bool mouse_middle;
-        bool mouse_right;
-        bool alt;
-        bool ctrl;
-        bool shift;
+        bool mouse_left, mouse_middle, mouse_right;
+        bool alt, ctrl, shift;
+        double scroll_x, scroll_y;
+        void clear() {
+            x = 0;
+            y = 0;
+            mouse_middle = false;
+            mouse_right = false;
+            alt = false;
+            ctrl = false;
+            shift = false;
+            scroll_x = 0.0;
+            scroll_y = 0.0;
+        }
     };
 
     /**

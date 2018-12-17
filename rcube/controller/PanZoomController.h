@@ -8,7 +8,7 @@ namespace rcube {
 class PanZoomController : public CameraController {
 public:
     float pan_speed = 1.0f;
-    float zoom_speed = 1.0f;
+    float zoom_speed = 0.1f;
 
     PanZoomController();
     virtual void update(const CameraController::InputState &state) override;

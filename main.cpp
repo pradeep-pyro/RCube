@@ -22,14 +22,22 @@
 #include "rcube/render/checkglerror.h"
 
 rcube::OrbitController ctrl;
+rcube::CameraController::InputState state;
 
 static void onError(int, const char* err_str) {
     std::cout << "GLFW Error: " << err_str << std::endl;
 }
 
+static void scrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
+    state.scroll_x = xoffset;
+    state.scroll_y = yoffset;
+    ctrl.update(state);
+    state = rcube::CameraController::InputState();
+}
+
 static void controllerCallback(GLFWwindow *window) {
     double xpos, ypos;
-    rcube::CameraController::InputState state;
+
     glfwGetCursorPos(window, &xpos, &ypos);
     state.x = int(xpos);
     state.y = int(ypos);
@@ -40,6 +48,7 @@ static void controllerCallback(GLFWwindow *window) {
     state.mouse_middle = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS;
     state.mouse_right = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
     ctrl.update(state);
+    state = rcube::CameraController::InputState();
 }
 
 
@@ -92,6 +101,7 @@ int main(int, char**) {
         throw std::runtime_error("Failed to initialize OpenGL context");
     }
     glfwSetFramebufferSizeCallback(window, onResize);
+    glfwSetScrollCallback(window, scrollCallback);
 
     rcube::Scene scene;
 

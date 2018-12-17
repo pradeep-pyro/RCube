@@ -26,6 +26,11 @@ void PanZoomController::update(const CameraController::InputState &state) {
         last_y_ = state.y;
     }
 
+    // Zoom (actually dolly)
+    if (std::abs(state.scroll_y) > 1e-6) {
+        glm::vec3 forward = glm::normalize(camera_->target - transform_->worldPosition());
+        transform_->translate(forward * float(state.scroll_y) * zoom_speed);
+    }
 }
 
 } // namespace rcube

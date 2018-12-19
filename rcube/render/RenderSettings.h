@@ -27,6 +27,16 @@ enum class Cull {
     Both = GL_FRONT_AND_BACK
 };
 
+enum class DepthFunc {
+    Less = GL_LESS,   /// Passes if the incoming depth value is less than the stored depth value.
+    Equal = GL_EQUAL, /// Passes if the incoming depth value is equal to the stored depth value.
+    LessOrEqual = GL_LEQUAL, ///Passes if the incoming depth value is less than or equal to the stored depth value.
+    Greater = GL_GREATER, /// Passes if the incoming depth value is greater than the stored depth value.
+    NotEqual = GL_NOTEQUAL, ///Passes if the incoming depth value is not equal to the stored depth value.
+    GreaterOrEqual = GL_GEQUAL, /// Passes if the incoming depth value is greater than or equal to the stored depth value.
+    Never = GL_NEVER, /// Never passes
+    Always = GL_ALWAYS, /// Always passes
+};
 
 struct RenderSettings {
     bool culling = false;
@@ -35,6 +45,7 @@ struct RenderSettings {
     bool depth_write = true;
     bool blending = false;
     BlendFunc blendfunc_src, blendfunc_dst;
+    DepthFunc depthfunc = DepthFunc::Less;
 };
 
 #endif // RENDERSETTINGS_H

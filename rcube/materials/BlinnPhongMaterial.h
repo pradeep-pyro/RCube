@@ -34,7 +34,7 @@ public:
     glm::vec3 wireframe_color;    /// Color fo the wireframe lines
     // Textures
     std::shared_ptr<Texture2D> diffuse_texture, specular_texture;
-    std::shared_ptr<TextureCube> environment_map;
+    std::shared_ptr<TextureCubemap> environment_map;
     Combine blend_environment_map;
     bool use_diffuse_texture, use_specular_texture, use_environment_map;
     // Rendering customizations

@@ -20,8 +20,10 @@
 #include "rcube/effects/GrayscaleEffect.h"
 #include "rcube/effects/GammaCorrectionEffect.h"
 #include "rcube/render/checkglerror.h"
+#include "rcube/initgl.h"
 
 rcube::OrbitController ctrl;
+//rcube::PanZoomController ctrl;
 rcube::CameraController::InputState state;
 
 static void onError(int, const char* err_str) {
@@ -71,12 +73,13 @@ EntityHandle setupCamera(rcube::Scene &scene) {
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negy.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/posz.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negz.jpg", 3)};
+    cam.get<rcube::Camera>()->skybox = TextureCubemap::create(2048, 2048);
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
     cam.get<rcube::Camera>()->use_skybox = true;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
-    cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
+    //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 
     ctrl.setEntity(cam);
     return cam;
@@ -97,9 +100,11 @@ int main(int, char**) {
     GLFWwindow* window = glfwCreateWindow(1280, 720, "RCube Demo", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+    /*if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initialize OpenGL context");
     }
+    */
+    rcube::initGL();
     glfwSetFramebufferSizeCallback(window, onResize);
     glfwSetScrollCallback(window, scrollCallback);
 
@@ -112,7 +117,7 @@ int main(int, char**) {
     cube_drawable->mesh = Mesh::create();
     cube_drawable->mesh->setMeshData(box(2, 2, 2, 10, 10, 10));
     auto phong = std::make_shared<BlinnPhongMaterial>();
-    auto diff = Texture2D::create(500, 500, 1);
+    auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGB8);
     auto spec = Texture2D::create(500, 500, 1, TextureInternalFormat::R8);
     diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
     spec->setData(Image::fromFile("/home/pradeep/specular.png", 1));

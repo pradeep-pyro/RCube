@@ -55,47 +55,7 @@ enum class TextureInternalFormat {
     Depth32FStencil8 = GL_DEPTH32F_STENCIL8,
 };
 
-enum class TextureTarget {
-    OneD = GL_TEXTURE_1D,
-    TwoD = GL_TEXTURE_2D,
-    ThreeD = GL_TEXTURE_3D,
-    Rectangle = GL_TEXTURE_RECTANGLE,
-    CubeMap = GL_TEXTURE_CUBE_MAP
-};
-
-
-class Texture {
-public:
-    Texture(const Texture &other) = delete;
-    virtual ~Texture();
-    GLuint id() const;
-    void use(unsigned int unit=0);
-    void done();
-    void setBorderColor(const glm::vec4 &color);
-    void setFilterMode(TextureFilterMode min, TextureFilterMode mag);
-    virtual void generateMipMap();
-    void free();
-    virtual TextureTarget target() const = 0;
-protected:
-    Texture(TextureInternalFormat internal_format);
-    GLuint id_, unit_;
-    TextureInternalFormat internal_format_;
-    bool in_use_;
-};
-
-class Texture1D : public Texture {
-public:
-    Texture1D(TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
-    virtual TextureTarget target() const override;
-    void setWrapMode(TextureWrapMode s);
-    virtual void setData(const float *data, size_t width, TextureFormat format);
-    size_t width() const;
-protected:
-    size_t width_;
-};
-
-
-class Texture2D{
+class Texture2D {
 public:
     Texture2D() = default;
     ~Texture2D();
@@ -116,8 +76,8 @@ public:
     void use(size_t unit=0);
     void done();
     void setBorderColor(const glm::vec4 &color);
-    void setFilterModeMin(TextureFilterMode min);
-    void setFilterModeMag(TextureFilterMode mag);
+    void setFilterModeMin(TextureFilterMode mode);
+    void setFilterModeMag(TextureFilterMode mode);
     void setFilterMode(TextureFilterMode mode);
     void generateMipMap();
     bool valid() const;
@@ -129,28 +89,48 @@ private:
     TextureInternalFormat internal_format_;
 };
 
-class Texture3D : public Texture {
+class TextureCubemap {
 public:
-    Texture3D(TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
-    virtual TextureTarget target() const override;
-    void setWrapMode(TextureWrapMode s, TextureWrapMode t, TextureWrapMode r);
-    virtual void setData(const unsigned char *data, size_t width, size_t height, size_t depth, TextureFormat format);
+    enum Side {
+        PositiveX = 0,
+        NegativeX = 1,
+        PositiveY = 2,
+        NegativeY = 3,
+        PositiveZ = 4,
+        NegativeZ = 5,
+    };
+    TextureCubemap() = default;
+    ~TextureCubemap();
+    static std::shared_ptr<TextureCubemap> create(size_t width, size_t height, size_t levels=1, bool seamless=true,
+                                                  TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
+    void release();
+    void setWrapMode(TextureWrapMode mode);
+    void setWrapModeS(TextureWrapMode wrap_s);
+    void setWrapModeT(TextureWrapMode wrap_t);
+    void setWrapModeR(TextureWrapMode mode);
+    void setWrapMode(TextureWrapMode s, TextureWrapMode t);
+    void setData(int i, const unsigned char *data, size_t width, size_t height, size_t level, TextureFormat format);
+    void setData(int i, const Image &im, size_t level=0);
     size_t width() const;
     size_t height() const;
-    size_t depth() const;
-protected:
-    size_t width_, height_, depth_;
+    size_t levels() const;
+    TextureInternalFormat internalFormat() const;
+    GLuint id() const;
+    void use(size_t unit=0);
+    void done();
+    void setFilterModeMin(TextureFilterMode mode);
+    void setFilterModeMag(TextureFilterMode mode);
+    void setFilterMode(TextureFilterMode mode);
+    void generateMipMap();
+    bool valid() const;
+private:
+    GLuint id_ = 0;
+    size_t unit_ = 0;
+    bool in_use_ = false;
+    size_t width_, height_, levels_;
+    bool seamless_ = true;
+    TextureInternalFormat internal_format_;
 };
 
-class TextureCube : public Texture {
-public:
-    TextureCube(TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
-    virtual TextureTarget target() const override;
-    void setWrapMode(TextureWrapMode s, TextureWrapMode t);
-    virtual void setData(int i, const unsigned char *data, size_t width, size_t height, TextureFormat format);
-    virtual void setData(int i, const Image &im);
-protected:
-    size_t width_, height_;
-};
 
 #endif // TEXTURE_H

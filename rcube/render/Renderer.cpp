@@ -291,7 +291,7 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
     }
 }
 
-void GLRenderer::renderSkyBox(std::shared_ptr<TextureCube> cubemap) {
+void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap) {
     //skybox_.texture = cubemap;
     //skybox_.render();
     glDepthMask(GL_FALSE);

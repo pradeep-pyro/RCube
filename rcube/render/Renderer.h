@@ -42,7 +42,7 @@ public:
 
     void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
 
-    void renderSkyBox(std::shared_ptr<TextureCube> cubemap);
+    void renderSkyBox(std::shared_ptr<TextureCubemap> cubemap);
 
     void renderTextureToScreen(Texture2D *tex);
 

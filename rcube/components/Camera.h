@@ -19,9 +19,7 @@ class RenderSystem;
  */
 class Camera : public Component<Camera> {
 public:
-    Camera() : skybox(std::make_shared<TextureCube>()), use_skybox(false),
-        //framebuffer(std::make_shared<Framebuffer>(1280, 720, TextureInternalFormat::RGBA8, TextureInternalFormat::Depth24Stencil8)),
-        world_to_view(glm::mat4(1)), view_to_projection(glm::mat4(1)), projection_to_viewport(glm::mat4(1)) {
+    Camera() : world_to_view(glm::mat4(1)), view_to_projection(glm::mat4(1)), projection_to_viewport(glm::mat4(1)) {
     }
     bool orthographic = false;          /// Whether the camera uses orthographic projection
     float fov = glm::radians(60.f);     /// Field of view when using perspective projection
@@ -34,7 +32,7 @@ public:
     glm::ivec2 viewport_origin = glm::ivec2(0);        /// Origin of the viewport where the scene is drawn
     glm::ivec2 viewport_size = glm::ivec2(1280, 720);  /// Size of the viewport where the scene is drawn
     glm::vec4 background_color = glm::vec4(1);         /// Background color for the scene when viewed from this camera
-    std::shared_ptr<TextureCube> skybox; /// Skybox texture
+    std::shared_ptr<TextureCubemap> skybox; /// Skybox texture
     bool use_skybox = false;                     /// Whether to draw a skybox
     std::shared_ptr<Framebuffer> framebuffer;
     std::vector<std::shared_ptr<Effect>> postprocess; /// Postprocessing effects applied to the scene in order

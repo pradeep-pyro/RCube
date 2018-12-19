@@ -63,14 +63,6 @@ void Transform::setWorldTransform(const glm::mat4 &matrix) {
     world_transform_ = matrix;
 }
 
-bool Transform::dirty() const {
-    return dirty_;
-}
-
-void Transform::setDirty(bool flag) {
-    dirty_ = flag;
-}
-
 const std::vector<Transform *> Transform::children() const {
     return children_;
 }

@@ -4,8 +4,8 @@
 
 namespace rcube {
 
-void updateHierarchy(Transform *comp, bool force=false) {
-    if (comp->dirty() || force) {
+void TransformSystem::updateHierarchy(Transform *comp, bool force) {
+    if (comp->dirty_ || force) {
         glm::mat4 loc_tr = glm::toMat4(comp->orientation());
         loc_tr = glm::scale(loc_tr, comp->scale());
         loc_tr = glm::translate(loc_tr, comp->position());
@@ -18,7 +18,7 @@ void updateHierarchy(Transform *comp, bool force=false) {
         else {
             comp->setWorldTransform(comp->parent()->worldTransform() * comp->localTransform());
         }
-        comp->setDirty(false);
+        comp->dirty_ = false;
         for (auto child : comp->children()) {
             updateHierarchy(child, true);
         }
@@ -43,6 +43,7 @@ void TransformSystem::update(bool force) {
         // Update hierarchy from root level nodes which do not have a parent
         if (comp->parent() == nullptr) {
             updateHierarchy(comp, force);
+
         }
     }
 }

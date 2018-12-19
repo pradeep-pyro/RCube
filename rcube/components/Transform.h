@@ -13,6 +13,8 @@
 
 namespace rcube {
 
+class TransformSystem;
+
 /**
  * Transform represents the local position, orientation and scale of objects in the world
  *
@@ -109,16 +111,6 @@ public:
     void setWorldTransform(const glm::mat4 &matrix);
 
     /**
-     * Returns whether the transformation are to be updated
-     */
-    bool dirty() const;
-
-    /**
-     * Specifies that the transformation are to be updated
-     */
-    void setDirty(bool flag);
-
-    /**
      * Returns the children of the current Transform
      * @return list of children
      */
@@ -138,12 +130,13 @@ public:
      */
     void rotate(const glm::quat &quaternion);
 private:
+    friend class TransformSystem;
     glm::vec3 position_, scale_;
     glm::quat orientation_;
     glm::mat4 local_transform_, world_transform_;
     Transform *parent_;
     std::vector<Transform *> children_;
-    bool dirty_;
+    bool dirty_ = true;
 };
 
 } // namespace rcube

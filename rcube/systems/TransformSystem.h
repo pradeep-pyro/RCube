@@ -2,6 +2,7 @@
 #define TRANSFORMSYSTEM_H
 
 #include "../ecs/system.h"
+#include "../components/Transform.h"
 
 namespace rcube {
 
@@ -17,6 +18,8 @@ public:
     virtual void initialize() override;
     virtual void cleanup() override;
     virtual void update(bool force=false) override;
+private:
+    void updateHierarchy(Transform *comp, bool force=false);
 };
 
 } // namespace rcube

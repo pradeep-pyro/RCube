@@ -56,30 +56,86 @@ public:
      */
     const glm::quat & orientation() const;
 
+    /**
+     * Returns the scale of the object in local coordinates with respect
+     * to the parent Transform
+     * @return 3D scale of the object
+     */
     const glm::vec3 & scale() const;
 
+    /**
+     * Sets the position of the object in local coordinates with respect
+     * to the parent Transform
+     * @param pos Local position
+     */
     void setPosition(const glm::vec3 &pos);
 
+    /**
+     * Sets the orientation of the object in local coordinates with respect
+     * to the parent Transform
+     * @param ort Orientation (unit quaternion)
+     */
     void setOrientation(const glm::quat &ort);
 
+    /**
+     * Sets the scale of the object in local coordinates with respect
+     * to the parent Transform
+     * @param sc Scale (3D vector)
+     */
     void setScale(const glm::vec3 &sc);
 
+    /**
+     * Returns the local transformation matrix
+     * @return 4x4 transformation matrix combing rotation and translation
+     */
     const glm::mat4 & localTransform();
 
+    /**
+     * Sets the local transformation matrix
+     * @param matrix 4x4 transformation matrix combing rotation and translation
+     */
     void setLocalTransform(const glm::mat4 &matrix);
 
+    /**
+     * Returns the global transformation matrix in world space
+     * @return 4x4 transformation matrix combing rotation and translation
+     */
     const glm::mat4 & worldTransform();
 
+    /**
+     * Sets the global transformation matrix in world space
+     * @param matrix 4x4 transformation matrix combing rotation and translation
+     */
     void setWorldTransform(const glm::mat4 &matrix);
 
+    /**
+     * Returns whether the transformation are to be updated
+     */
     bool dirty() const;
 
+    /**
+     * Specifies that the transformation are to be updated
+     */
     void setDirty(bool flag);
 
+    /**
+     * Returns the children of the current Transform
+     * @return list of children
+     */
     const std::vector<Transform *> children() const;
 
+    /**
+     * Translate the object by adding the given vector to
+     * the current position
+     * @param tr 3D vector
+     */
     void translate(const glm::vec3 &tr);
 
+    /**
+     * Rotate the object by multiplying the given quaternion with
+     * current orientation
+     * @param quaternion Unit quaternion
+     */
     void rotate(const glm::quat &quaternion);
 private:
     glm::vec3 position_, scale_;

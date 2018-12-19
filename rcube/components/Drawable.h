@@ -19,15 +19,9 @@ namespace rcube {
  */
 class Drawable : public Component<Drawable> {
 public:
-    Drawable();
-    Drawable(const Drawable &other) = default;
-    Drawable & operator=(const Drawable &other) = default;
-    Drawable(Drawable &&other) = default;
-    virtual ~Drawable() = default;
-
-    std::shared_ptr<Mesh> mesh;
-    std::shared_ptr<Material> material;
-    bool visible = true;
+    std::shared_ptr<Mesh> mesh;           /// OpenGL mesh
+    std::shared_ptr<Material> material;   /// Material describing the rendering appearance
+    bool visible = true;                  /// Whether visible when rendered
 };
 
 } // namespace rcube

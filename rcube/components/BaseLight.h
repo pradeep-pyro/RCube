@@ -20,7 +20,7 @@ public:
         return light_;
     }
 protected:
-    Light light_;
+    Light light_;  /// Struct that is understood by the renderer
 };
 
 } // namespace rcube

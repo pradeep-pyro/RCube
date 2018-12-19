@@ -62,6 +62,7 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     double s = glfwGetTime();
     EntityHandle cam = scene.createCamera();
     cam.get<rcube::Camera>()->fov = glm::radians(30.f);
+    cam.get<rcube::Camera>()->orthographic = true;
     double e = glfwGetTime();
     cout << "createCamera took : " << e - s << "s" << endl;
     cam.get<rcube::Transform>()->setPosition(glm::vec3(0, 2, 4));
@@ -72,11 +73,11 @@ EntityHandle setupCamera(rcube::Scene &scene) {
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negy.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/posz.jpg", 3),
                             Image::fromFile("/home/pradeep/Downloads/Yokohama/negz.jpg", 3)};
-    cam.get<rcube::Camera>()->skybox = TextureCubemap::create(2048, 2048);
+    cam.get<rcube::Camera>()->skybox = TextureCubemap::create(ims[0].width(), ims[0].height());
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    cam.get<rcube::Camera>()->use_skybox = true;
+    cam.get<rcube::Camera>()->use_skybox = false;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 

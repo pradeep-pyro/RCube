@@ -5,7 +5,7 @@
 #include "../render/Mesh.h"
 
 MeshData superShape(float scale, unsigned int latitude_segments, unsigned int longitude_segments,
-                            float a, float b, float m, float n1, float n2, float n3);
+                    float a, float b, float m, float n1, float n2, float n3);
 
 /**
  *
@@ -27,7 +27,7 @@ MeshData superShape(float scale, unsigned int latitude_segments, unsigned int lo
  * @return
  */
 MeshData superShape(float scale, unsigned int latitude_segments, unsigned int longitude_segments,
-                            float lat_a, float lat_b, float lat_m, float lat_n1, float lat_n2, float lat_n3,
-                            float lon_a, float lon_b, float lon_m, float lon_n1, float lon_n2, float lon_n3);
+                    float lat_a, float lat_b, float lat_m, float lat_n1, float lat_n2, float lat_n3,
+                    float lon_a, float lon_b, float lon_m, float lon_n1, float lon_n2, float lon_n3);
 
 #endif // SUPERFORMULA_H

@@ -1,4 +1,4 @@
-#include "superformula.h"
+#include "supershape.h"
 #include "glm/gtc/constants.hpp"
 
 float superFormula(float angle, float a, float b, float m1, float m2, float n1, float n2, float n3) {
@@ -21,14 +21,14 @@ glm::vec3 superSphericalCoordinates(float lat, float lon, float lat_a, float lat
 }
 
 MeshData superShape(float scale, unsigned int latitude_segments, unsigned int longitude_segments,
-                            float a, float b, float m, float n1, float n2, float n3) {
+                    float a, float b, float m, float n1, float n2, float n3) {
     return superShape(scale, latitude_segments, longitude_segments, a, b, m, n1, n2, n3,
                               a, b, m, n1, n2, n3);
 }
 
 MeshData superShape(float scale, unsigned int latitude_segments, unsigned int longitude_segments,
-                            float lat_a, float lat_b, float lat_m, float lat_n1, float lat_n2, float lat_n3,
-                            float lon_a, float lon_b, float lon_m, float lon_n1, float lon_n2, float lon_n3) {
+                    float lat_a, float lat_b, float lat_m, float lat_n1, float lat_n2, float lat_n3,
+                    float lon_a, float lon_b, float lon_m, float lon_n1, float lon_n2, float lon_n3) {
     MeshData data;
     data.indexed = true;
     data.primitive = MeshPrimitive::Triangles;

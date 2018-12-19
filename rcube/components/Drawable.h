@@ -27,7 +27,7 @@ public:
 
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
-    bool visible;
+    bool visible = true;
 };
 
 } // namespace rcube

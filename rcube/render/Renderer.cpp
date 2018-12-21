@@ -70,13 +70,13 @@ void main() {
 const std::string skybox_frag_src = R"(
 #version 420
 
-out vec4 frag_color;
+out vec4 out_color;
 in vec3 texcoords;
 
 layout(binding = 3) uniform samplerCube skybox;
 
 void main() {
-    frag_color = texture(skybox, texcoords);
+    out_color = texture(skybox, texcoords);
 }
 )";
 
@@ -159,18 +159,17 @@ void GLRenderer::initialize() {
 
     // Full screen quad
     quad_mesh_ = Mesh::create();
-    quad_mesh_->setVertices({glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
-                       glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)});
-    quad_mesh_->setTextureCoords({glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
+    quad_mesh_->data.vertices = {glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
+                                   glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)};
+    quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)};
+    quad_mesh_->uploadToGPU();
     quad_shader_ = ShaderProgram::create(quad_vert_src, quad_frag_src, true);
-    quad_shader_->use();
-    quad_shader_->setUniform("projection", glm::mat4(1));
 
     // Skybox
     skybox_mesh_ = Mesh::create();
-    skybox_mesh_->setVertices(skybox_vertices);
+    skybox_mesh_->data.vertices = skybox_vertices;
+    skybox_mesh_->uploadToGPU();
     skybox_shader_ = ShaderProgram::create(skybox_vert_src, skybox_frag_src, true);
-    skybox_shader_->use();
 
     init_ = true;
 }
@@ -282,11 +281,11 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
 
     mesh->use();
     if (!mesh->indexed()) {
-        material->shader()->drawArrays(static_cast<GLint>(mesh->primitive()),
+        material->shader()->drawArrays(static_cast<GLint>(mesh->data.primitive),
                                                 0, mesh->numVertices());
     }
     else {
-        material->shader()->drawElements(static_cast<GLint>(mesh->primitive()),
+        material->shader()->drawElements(static_cast<GLint>(mesh->data.primitive),
                                                   0, mesh->numPrimitives());
     }
 }

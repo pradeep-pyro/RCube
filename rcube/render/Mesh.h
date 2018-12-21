@@ -18,27 +18,26 @@ enum class MeshAttributes {
 };
 
 struct MeshData {
-    MeshData() : primitive(MeshPrimitive::Triangles), indexed(false) {
-    }
     std::vector<glm::vec3> vertices, normals, colors;
     std::vector<glm::vec2> texcoords;
     std::vector<unsigned int> indices;
-    MeshPrimitive primitive;
-    bool indexed;
+    MeshPrimitive primitive = MeshPrimitive::Triangles;
+    bool indexed = false;
 
     void clear();
 
     void append(MeshData &other);
+
+    bool valid() const;
 };
 
 // Represents a 3D triangle/line Mesh with vertex positions, normals,
 // texcoords, colors using OpenGL buffers
 class Mesh {
 public:
+    MeshData data;
 
-    Mesh();
-
-    ~Mesh();
+    Mesh() = default;
 
     Mesh(const Mesh &other) = delete;
 
@@ -59,41 +58,23 @@ public:
 
     void done() const;
 
-    void enableAttribute(MeshAttributes attr);
-
     bool hasAttribute(MeshAttributes attr) const;
-
-    void disableAttribute(MeshAttributes attr);
-
-    void setVertices(const std::vector<glm::vec3> &data);
-
-    void setNormals(const std::vector<glm::vec3> &data);
-
-    void setTextureCoords(const std::vector<glm::vec2> &data);
-
-    void setColors(const std::vector<glm::vec3> &data);
-
-    void setIndices(const std::vector<unsigned int> &data);
-
-    void setIndices(const std::vector<glm::uvec2> &data);
-
-    void setIndices(const std::vector<glm::uvec3> &data);
 
     bool indexed() const;
 
-    void setIndexed(bool flag);
+    void uploadToGPU(bool clear_cpu_data=false);
 
     size_t numVertices() const;
 
     size_t numPrimitives() const;
 
-    MeshPrimitive primitive() const;
-
-    void setPrimitive(MeshPrimitive prim);
-
-    void setMeshData(const MeshData &data);
-
 private:
+
+    void enableAttribute(MeshAttributes attr);
+
+    void disableAttribute(MeshAttributes attr);
+
+    void setIndexed(bool flag);
 
     void setArrayBuffer(GLuint id, const float *data, unsigned int count);
 
@@ -117,9 +98,12 @@ private:
     size_t num_primitives_ = 0;
 
     // Flags
+    bool has_vertices_ = true;
+    bool has_normals_ = false;
+    bool has_texcoords_ = false;
+    bool has_colors_ = false;
     bool indexed_ = false;
     bool init_ = false;
-    MeshPrimitive primitive_ = MeshPrimitive::Triangles;
 };
 
 #endif // GEOMETRY_H

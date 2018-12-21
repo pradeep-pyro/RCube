@@ -62,7 +62,7 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     double s = glfwGetTime();
     EntityHandle cam = scene.createCamera();
     cam.get<rcube::Camera>()->fov = glm::radians(30.f);
-    cam.get<rcube::Camera>()->orthographic = true;
+    //cam.get<rcube::Camera>()->orthographic = true;
     double e = glfwGetTime();
     cout << "createCamera took : " << e - s << "s" << endl;
     cam.get<rcube::Transform>()->setPosition(glm::vec3(0, 2, 4));
@@ -77,7 +77,7 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    cam.get<rcube::Camera>()->use_skybox = false;
+    cam.get<rcube::Camera>()->use_skybox = true;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 
@@ -115,7 +115,9 @@ int main(int, char**) {
     EntityHandle cube = scene.createDrawable();
     auto cube_drawable = cube.get<rcube::Drawable>();
     cube_drawable->mesh = Mesh::create();
-    cube_drawable->mesh->setMeshData(box(2, 2, 2, 10, 10, 10));
+    //cube_drawable->mesh->disableAttribute(MeshAttributes::Colors);
+    cube_drawable->mesh->data = box(2, 2, 2, 1, 1, 1);
+    cube_drawable->mesh->uploadToGPU();
     auto phong = std::make_shared<BlinnPhongMaterial>();
     auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGB8);
     auto spec = Texture2D::create(500, 500, 1, TextureInternalFormat::R8);

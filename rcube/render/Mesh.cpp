@@ -1,9 +1,10 @@
 #include <stdexcept>
 #include "Mesh.h"
 #include "glm/gtc/type_ptr.hpp"
-
+#include "checkglerror.h"
 
 const std::string ERROR_MESH_UNINITIALIZED = "Cannot use Mesh without initializing";
+const std::string ERROR_MESH_PRIMITIVE_INDICES_MISMATCH = "Mismatch between mesh indices count and primitive";
 
 //-----------------------------------------------------------------------------
 // MeshData
@@ -30,15 +31,13 @@ void MeshData::append(MeshData &other) {
     indices.insert(indices.end(), tmp.begin(), tmp.end());
 }
 
+bool MeshData::valid() const {
+    return vertices.size() == colors.size() == normals.size() == texcoords.size();
+}
+
 //-----------------------------------------------------------------------------
 // Mesh
 //-----------------------------------------------------------------------------
-
-Mesh::Mesh() : num_vertices_(0), num_primitives_(0), indexed_(false), primitive_(MeshPrimitive::Triangles) {
-}
-
-Mesh::~Mesh() {
-}
 
 std::shared_ptr<Mesh> Mesh::create() {
     auto mesh = std::make_shared<Mesh>();
@@ -55,6 +54,7 @@ std::shared_ptr<Mesh> Mesh::create() {
     mesh->disableAttribute(MeshAttributes::TexCoords);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    checkGLError();
     return mesh;
 }
 
@@ -97,21 +97,29 @@ bool Mesh::valid() const {
     return init_;
 }
 
+bool Mesh::indexed() const {
+    return indexed_;
+}
+
 void Mesh::enableAttribute(MeshAttributes attr) {
     GLuint *id;
     int dim = 3;
     if (attr == MeshAttributes::Normals) {
         id = &glbuf_.normals;
+        has_normals_ = true;
     }
     else if (attr == MeshAttributes::Colors) {
         id = &glbuf_.colors;
+        has_colors_ = true;
     }
     else if (attr == MeshAttributes::Vertices) {
         id = &glbuf_.vertices;
+        has_vertices_ = true;
     }
     else {
         id = &glbuf_.texcoords;
         dim = 2;
+        has_texcoords_ = true;
     }
 
     GLuint gl_attr = static_cast<GLuint>(attr);
@@ -121,6 +129,7 @@ void Mesh::enableAttribute(MeshAttributes attr) {
         glBindBuffer(GL_ARRAY_BUFFER, *id);
         glVertexAttribPointer(gl_attr, dim, GL_FLOAT, GL_FALSE, 0, NULL);
     }
+    checkGLError();
     glEnableVertexArrayAttrib(glbuf_.vao, gl_attr);
     done();
 }
@@ -131,13 +140,17 @@ void Mesh::disableAttribute(MeshAttributes attr) {
     glDisableVertexAttribArray(gl_attr);
     if (attr == MeshAttributes::Normals) {
         setDefaultValue(gl_attr, glm::vec3(0, 0, 1));
+        has_normals_ = false;
     }
     else if (attr == MeshAttributes::Colors) {
         setDefaultValue(gl_attr, glm::vec3(1));
+        has_colors_ = false;
     }
     else if (attr == MeshAttributes::TexCoords) {
         setDefaultValue(gl_attr, glm::vec2(0));
+        has_texcoords_ = false;
     }
+    checkGLError();
     done();
 }
 
@@ -152,6 +165,18 @@ void Mesh::done() const {
     glBindVertexArray(0);
 }
 
+void Mesh::setIndexed(bool flag) {
+    indexed_ = flag;
+    if (flag && (glbuf_.indices == 0)) {
+        use();
+        glGenBuffers(1, &glbuf_.indices);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glbuf_.indices);
+        done();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+    checkGLError();
+}
+
 size_t Mesh::numVertices() const {
     return num_vertices_;
 }
@@ -160,79 +185,70 @@ size_t Mesh::numPrimitives() const {
     return num_primitives_;
 }
 
-void Mesh::setVertices(const std::vector<glm::vec3> &data) {
-    enableAttribute(MeshAttributes::Vertices);
-    setArrayBuffer(glbuf_.vertices, glm::value_ptr(data[0]), 3 * data.size());
-    num_vertices_ = data.size();
+bool Mesh::hasAttribute(MeshAttributes attr) const {
+    if (attr == MeshAttributes::Vertices) {
+        return has_vertices_;
+    }
+    if (attr == MeshAttributes::Normals) {
+        return has_normals_;
+    }
+    if (attr == MeshAttributes::Colors) {
+        return has_colors_;
+    }
+    return has_texcoords_;
 }
 
-void Mesh::setNormals(const std::vector<glm::vec3> &data) {
-    enableAttribute(MeshAttributes::Normals);
-    setArrayBuffer(glbuf_.normals, glm::value_ptr(data[0]), 3 * data.size());
-}
+void Mesh::uploadToGPU(bool clear_cpu_data) {
+    setArrayBuffer(glbuf_.vertices, glm::value_ptr(data.vertices[0]), 3 * data.vertices.size());
+    num_vertices_ = 3 * data.vertices.size();
 
-void Mesh::setTextureCoords(const std::vector<glm::vec2> &data) {
-    enableAttribute(MeshAttributes::TexCoords);
-    setArrayBuffer(glbuf_.texcoords, glm::value_ptr(data[0]), 2 * data.size());
-}
+    if (data.normals.size() > 0 && data.normals.size() == data.vertices.size()) {
+        enableAttribute(MeshAttributes::Normals);
+        setArrayBuffer(glbuf_.normals, glm::value_ptr(data.normals[0]), 3 * data.normals.size());
+    }
+    else {
+        disableAttribute(MeshAttributes::Normals);
+    }
 
-void Mesh::setColors(const std::vector<glm::vec3> &data) {
-    enableAttribute(MeshAttributes::Colors);
-    setArrayBuffer(glbuf_.colors, glm::value_ptr(data[0]), 3 * data.size());
-}
+    if (data.texcoords.size() > 0 && data.texcoords.size() == data.vertices.size()) {
+        enableAttribute(MeshAttributes::TexCoords);
+        setArrayBuffer(glbuf_.texcoords, glm::value_ptr(data.texcoords[0]), 2 * data.texcoords.size());
+    }
+    else {
+        disableAttribute(MeshAttributes::TexCoords);
+    }
 
-void Mesh::setIndices(const std::vector<unsigned int> &data) {
-    int dim = 3;
-    if (primitive_ == MeshPrimitive::Points) {
-        dim = 1;
+    if (data.colors.size() > 0 && data.colors.size() == data.vertices.size()) {
+        enableAttribute(MeshAttributes::Colors);
+        setArrayBuffer(glbuf_.colors, glm::value_ptr(data.colors[0]), 3 * data.colors.size());
     }
-    else if (primitive_ == MeshPrimitive::Lines) {
-        dim = 2;
+    else {
+        disableAttribute(MeshAttributes::Colors);
     }
-    assert (data.size() % dim == 0);
-    setIndexed(true);
-    setElementBuffer(data.data(), data.size());
-    num_primitives_ = data.size();
-}
 
-void Mesh::setMeshData(const MeshData &data) {
-    setVertices(data.vertices);
-    if (data.normals.size() > 0) {
-        setNormals(data.normals);
-    }
-    if (data.texcoords.size() > 0) {
-        setTextureCoords(data.texcoords);
-    }
-    if (data.colors.size() > 0) {
-        setColors(data.colors);
-    }
-    if (data.indexed && data.indices.size() > 0) {
+    if (data.indexed) {
+        int dim = 3;
+        if (data.primitive == MeshPrimitive::Points) {
+            dim = 1;
+        }
+        else if (data.primitive == MeshPrimitive::Lines) {
+            dim = 2;
+        }
+        if (data.indices.size() % dim != 0) {
+            throw std::runtime_error(ERROR_MESH_PRIMITIVE_INDICES_MISMATCH);
+        }
         setIndexed(true);
-        setIndices(data.indices);
+        setElementBuffer(data.indices.data(), data.indices.size());
+        num_primitives_ = data.indices.size();
     }
-    setPrimitive(data.primitive);
-}
-
-bool Mesh::indexed() const {
-    return indexed_;
-}
-void Mesh::setIndexed(bool flag) {
-    indexed_ = flag;
-    if (indexed_ && glbuf_.indices == 0) {
-        use();
-        glGenBuffers(1, &glbuf_.indices);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glbuf_.indices);
-        done();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    else {
+        setIndexed(false);
     }
-}
 
-MeshPrimitive Mesh::primitive() const {
-    return primitive_;
-}
-
-void Mesh::setPrimitive(MeshPrimitive prim) {
-    primitive_ = prim;
+    checkGLError();
+    if (clear_cpu_data) {
+        data.clear();
+    }
 }
 
 // Private methods

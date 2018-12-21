@@ -51,16 +51,8 @@ const glm::mat4 & Transform::localTransform() {
     return local_transform_;
 }
 
-void Transform::setLocalTransform(const glm::mat4 &matrix) {
-    local_transform_ = matrix;
-}
-
 const glm::mat4 & Transform::worldTransform() {
     return world_transform_;
-}
-
-void Transform::setWorldTransform(const glm::mat4 &matrix) {
-    world_transform_ = matrix;
 }
 
 const std::vector<Transform *> Transform::children() const {

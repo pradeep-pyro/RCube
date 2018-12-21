@@ -9,14 +9,14 @@ void TransformSystem::updateHierarchy(Transform *comp, bool force) {
         glm::mat4 loc_tr = glm::toMat4(comp->orientation());
         loc_tr = glm::scale(loc_tr, comp->scale());
         loc_tr = glm::translate(loc_tr, comp->position());
-        comp->setLocalTransform(loc_tr);
+        comp->local_transform_ = loc_tr;
 
         // Set world transformation := local transformation if there is no parent
         if (comp->parent() == nullptr) {
-            comp->setWorldTransform(comp->localTransform());
+            comp->world_transform_ = comp->localTransform();
         }
         else {
-            comp->setWorldTransform(comp->parent()->worldTransform() * comp->localTransform());
+            comp->world_transform_ = comp->parent()->worldTransform() * comp->localTransform();
         }
         comp->dirty_ = false;
         for (auto child : comp->children()) {

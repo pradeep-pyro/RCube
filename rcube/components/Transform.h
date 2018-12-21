@@ -93,22 +93,10 @@ public:
     const glm::mat4 & localTransform();
 
     /**
-     * Sets the local transformation matrix
-     * @param matrix 4x4 transformation matrix combing rotation and translation
-     */
-    void setLocalTransform(const glm::mat4 &matrix);
-
-    /**
      * Returns the global transformation matrix in world space
      * @return 4x4 transformation matrix combing rotation and translation
      */
     const glm::mat4 & worldTransform();
-
-    /**
-     * Sets the global transformation matrix in world space
-     * @param matrix 4x4 transformation matrix combing rotation and translation
-     */
-    void setWorldTransform(const glm::mat4 &matrix);
 
     /**
      * Returns the children of the current Transform

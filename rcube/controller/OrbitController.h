@@ -7,11 +7,17 @@
 
 namespace rcube {
 
+/**
+ * OrbitController allows the camera to pan, zoom and orbit around the object
+ * This class simply extends PanZoomController by adding orbiting functionality
+ */
 class OrbitController : public PanZoomController {
 public:
-    float min_horizontal_angle, max_horizontal_angle;
-    float min_vertical_angle, max_vertical_angle;
-    float orbit_speed = 1.0f;
+    float min_horizontal_angle;  /// Minimum horizontal angle (radians) to constrain the camera (default: -inf)
+    float max_horizontal_angle;  /// Maximum horizontal angle (radians) to constrain the camera (default: +inf)
+    float min_vertical_angle;    /// Minimum vertical angle (radians) to constrain the camera (default: -\pi)
+    float max_vertical_angle;    /// Maximum vertical angle (radians) to constrain the camera (default: +\pi)
+    float orbit_speed = 1.0f;    /// Speed of orbiting motion
 
     OrbitController();
     virtual void update(const CameraController::InputState &state) override;

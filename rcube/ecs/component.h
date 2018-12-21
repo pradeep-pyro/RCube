@@ -3,6 +3,9 @@
 
 namespace internal {
 
+/**
+ * Global counter for derived classes (not objects) from Component
+ */
 struct ComponentCounter {
     static int counter;
 };

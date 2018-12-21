@@ -58,8 +58,17 @@ public:
      */
     virtual void setEntity(EntityHandle entity);
 
+    /**
+     * Return a pointer to the camera component being controlled
+     * @return Pointer to Camera
+     */
     Camera * camera() const;
 
+    /**
+     * Updates the camera and its transformation based on the given
+     * input state
+     * @param state IO state
+     */
     virtual void update(const InputState &state) = 0;
 
 protected:

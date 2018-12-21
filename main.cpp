@@ -16,13 +16,15 @@
 #include "rcube/materials/FlatMaterial.h"
 #include "rcube/materials/BlinnPhongMaterial.h"
 #include "rcube/controller/OrbitController.h"
+#include "rcube/controller/ArcballController.h"
 #include "rcube/effects/GrayscaleEffect.h"
 #include "rcube/effects/GammaCorrectionEffect.h"
 #include "rcube/render/checkglerror.h"
 #include "rcube/initgl.h"
 
-rcube::OrbitController ctrl;
+//rcube::OrbitController ctrl;
 //rcube::PanZoomController ctrl;
+rcube::ArcballController ctrl;
 rcube::CameraController::InputState state;
 
 static void onError(int, const char* err_str) {
@@ -77,7 +79,7 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    cam.get<rcube::Camera>()->use_skybox = true;
+    cam.get<rcube::Camera>()->use_skybox = false;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 

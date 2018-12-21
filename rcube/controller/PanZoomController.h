@@ -5,10 +5,13 @@
 
 namespace rcube {
 
+/**
+ * PanZoomController is used to allow the camera to be panned and zoomed
+ */
 class PanZoomController : public CameraController {
 public:
-    float pan_speed = 1.0f;
-    float zoom_speed = 0.1f;
+    float pan_speed = 1.0f;   /// Panning speed
+    float zoom_speed = 0.1f;  /// Zooming speed
 
     PanZoomController();
     virtual void update(const CameraController::InputState &state) override;

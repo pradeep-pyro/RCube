@@ -12,7 +12,8 @@
  */
 class BlurEffect : public Effect {
 public:
-    unsigned int amount;
+    unsigned int amount;  /// Number of times blur (each iteration corresponds to 9x9 guassian blur)
+
     BlurEffect(unsigned int amount=1);
     std::string fragmentShader() override;
     void setUniforms() override;

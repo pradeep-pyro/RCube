@@ -4,6 +4,9 @@
 #include "constants.h"
 #include "../render/Material.h"
 
+/**
+ * FlatMaterial is for representing objects in a flat style without any 3D shading
+ */
 class FlatMaterial: public Material {
 public:
     FlatMaterial();

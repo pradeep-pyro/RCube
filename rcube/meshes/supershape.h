@@ -8,7 +8,7 @@ MeshData superShape(float scale, unsigned int latitude_segments, unsigned int lo
                     float a, float b, float m, float n1, float n2, float n3);
 
 /**
- *
+ * Creates a super shape using the super formula
  * @param scale Scale of the mesh
  * @param latitude_segments Number of segments along the latitude/polar direction
  * @param longitude_segments Number of segments along the longitude/azimuth direction

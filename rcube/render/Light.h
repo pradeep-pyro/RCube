@@ -5,9 +5,9 @@
 #include "glm/gtc/constants.hpp"
 
 /**
- * @brief The LightProps struct stores data for all kinds of lights that can be sent
+ * Light stores data for all kinds of lights that can be sent
  * to the shaders.
- * This is used internally, users can work with the specific light classes instead.
+ * This is used internally; users can work with the specific light classes instead.
  */
 struct Light {
     Light() : position(glm::vec3(0)), pos_w(1.f), radius(1.f), direction(glm::vec3(0, 0, 1)),

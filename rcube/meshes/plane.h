@@ -13,7 +13,7 @@ enum class Orientation {
 };
 
 /**
- * @brief createPlane creates a plane using triangle elements
+ * Creates a plane using triangle elements
  * @param width Width of the plane
  * @param height Height of the plane
  * @param width_segments Number of segments along the plane's width direction

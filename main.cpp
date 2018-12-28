@@ -16,15 +16,15 @@
 #include "rcube/materials/FlatMaterial.h"
 #include "rcube/materials/BlinnPhongMaterial.h"
 #include "rcube/controller/OrbitController.h"
-#include "rcube/controller/ArcballController.h"
 #include "rcube/effects/GrayscaleEffect.h"
 #include "rcube/effects/GammaCorrectionEffect.h"
 #include "rcube/render/checkglerror.h"
 #include "rcube/initgl.h"
+#include "rcube/texgen/checkerboard.h"
 
-//rcube::OrbitController ctrl;
+
+rcube::OrbitController ctrl;
 //rcube::PanZoomController ctrl;
-rcube::ArcballController ctrl;
 rcube::CameraController::InputState state;
 
 static void onError(int, const char* err_str) {
@@ -79,15 +79,16 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    cam.get<rcube::Camera>()->use_skybox = false;
+    cam.get<rcube::Camera>()->use_skybox = true;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
-    //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
+    cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 
     ctrl.setEntity(cam);
     return cam;
 }
 
 int main(int, char**) {
+    rcube::checkerboard(500, 500, 50, 50, glm::vec3(255, 0, 0), glm::vec3(0, 255, 0));
     glfwSetErrorCallback(onError);
     if (!glfwInit()) {
         throw std::runtime_error("Failed to initialize GLFW");
@@ -102,10 +103,7 @@ int main(int, char**) {
     GLFWwindow* window = glfwCreateWindow(1280, 720, "RCube Demo", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-    /*if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        throw std::runtime_error("Failed to initialize OpenGL context");
-    }
-    */
+
     rcube::initGL();
     glfwSetFramebufferSizeCallback(window, onResize);
     glfwSetScrollCallback(window, scrollCallback);
@@ -117,19 +115,21 @@ int main(int, char**) {
     EntityHandle cube = scene.createDrawable();
     auto cube_drawable = cube.get<rcube::Drawable>();
     cube_drawable->mesh = Mesh::create();
-    //cube_drawable->mesh->disableAttribute(MeshAttributes::Colors);
-    cube_drawable->mesh->data = box(2, 2, 2, 1, 1, 1);
+    cube_drawable->mesh->data = box(2, 2, 2, 5, 5, 5);
     cube_drawable->mesh->uploadToGPU();
     auto phong = std::make_shared<BlinnPhongMaterial>();
-    auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGB8);
+    auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGBA8);
     auto spec = Texture2D::create(500, 500, 1, TextureInternalFormat::R8);
-    diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
+    //diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
+    diff->setData(rcube::checkerboard(500, 500, 50, 50, glm::vec3(0), glm::vec3(255)));
     spec->setData(Image::fromFile("/home/pradeep/specular.png", 1));
     phong->diffuse_texture = diff;
     phong->specular_texture = spec;
     phong->shininess = 64.f;
     phong->use_diffuse_texture = true;
     phong->use_specular_texture = true;
+    phong->show_wireframe = false;
+    phong->wireframe_color = glm::vec3(0,1,1);
     cube_drawable->material = phong;
     phong.reset();
     diff.reset();

@@ -10,9 +10,12 @@
 
 class World;
 
-// typedef std::bitset<8> ComponentMask;
-
-
+/**
+ * ComponentMask is a bitset where bits at a particular position (from Component::family()) representing a component
+ * can be set.
+ * This is used to filter entities based on components of interest and also update the ComponentManager
+ * when a component has been added or removed from an entity
+ */
 struct ComponentMask {
     std::bitset<8> bits;
     void set(size_t pos, bool flag=true);
@@ -37,37 +40,20 @@ namespace std
     };
 }
 
-/*
-struct ComponentMask {
-    std::bitset<512> mask;
-    bool match(const ComponentMask &other) {
-        return mask == other.mask;
-    }
-    void set(size_t index, bool flag) {
-        mask[index] = flag;
-    }
-    void set(std::vector<size_t> index, bool flag) {
-        for (auto i : index) {
-            mask[i] = flag;
-        }
-    }
-};
-
-namespace std {
-
-template <>
-struct hash<ComponentMask> {
-    std::size_t operator()(const ComponentMask &k) const {
-      return std::hash<std::bitset<512>>()(k.mask);
-  }
-};
-
-}
-*/
-
+/**
+ * System is the base class for all systems such as TransformSystem, CameraSystem etc.
+ * The goal of a system is to update the components of entities.
+ * For example, a CameraSystem will use data from the Camera component to compute and set
+ * the world-to-view and view-to-projection matrices.
+ */
 class System {
 public:
     virtual ~System() = default;
+    /**
+     * Add a component mask filter so that entities satisfying the filter are
+     * registered to this system
+     * @param filter Component mask filter to get entities of interest
+     */
     void addFilter(const ComponentMask &filter) {
         filters_.push_back(filter);
         registered_entities_[filter].reserve(512);
@@ -75,6 +61,10 @@ public:
     virtual void initialize() = 0;
     virtual void update(bool force) = 0;
     virtual void cleanup() = 0;
+    /**
+     * Register the world
+     * @param world
+     */
     virtual void registerWorld(World *world) {
         world_ = world;
     }

@@ -6,11 +6,19 @@
 #include <vector>
 #include "entity.h"
 
+/**
+ * Base class for all component managers.
+ * Serves as a typesafe alternative to void*
+ * For internal use only
+ */
 class BaseComponentManager {
 public:
     virtual ~BaseComponentManager() = default;
 };
 
+/**
+ * ComponentManager stores the component of type T corresponding to all entities created
+ */
 template <typename T>
 class ComponentManager : public BaseComponentManager {
 public:
@@ -19,6 +27,11 @@ public:
     ComponentManager() {
         component_data_.data.resize(1024);
     }
+    /**
+     * Add a component of type T to the given entity
+     * @param e Entity to add component to
+     * @param component Component to be added
+     */
     void add(Entity e, const T &component) {
         ComponentIndex new_index = ComponentIndex{ component_data_.size };
         component_data_.size += 1;
@@ -26,6 +39,10 @@ public:
         component_data_.data[new_index] = component;
         // return new_index;
     }
+    /**
+     * Remove the component of type T from the given entity
+     * @param e Entity to add component to
+     */
     void remove(Entity e) {
         if (entity_map_.find(e) == entity_map_.end()) {
             return;
@@ -35,11 +52,19 @@ public:
         entity_map_.erase(e);
         component_data_.size -= 1;
     }
+    /**
+     * Clears all components and entities from the manager
+     */
     void clear() {
         entity_map_.clear();
         component_data_.data.clear();
         component_data_.size = 0;
     }
+    /**
+     * Get a pointer to the component of type T in the given entity
+     * @param e Entity
+     * @return Pointer to component of type T
+     */
     T * get(Entity e) {
         if (entity_map_.find(e) == entity_map_.end()) {
             throw std::runtime_error("Entity does not have requested component");

@@ -1,8 +1,8 @@
 #include "plane.h"
 #include "glm/gtx/string_cast.hpp"
 
-MeshData createPlane(float width, float height, unsigned int width_segments,
-                         unsigned int height_segments, Orientation ort) {
+MeshData plane(float width, float height, unsigned int width_segments,
+               unsigned int height_segments, Orientation ort) {
     MeshData mesh_data;
     mesh_data.primitive = MeshPrimitive::Triangles;
     mesh_data.indexed = true;

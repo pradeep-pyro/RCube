@@ -21,6 +21,6 @@ enum class Orientation {
  * @param ort Orientation of the plane: +X, -X, +Y, -Y, +Z, -Z
  * @return MeshData
  */
-MeshData createPlane(float width, float height, unsigned int width_segments, unsigned int height_segments, Orientation ort);
+MeshData plane(float width, float height, unsigned int width_segments, unsigned int height_segments, Orientation ort);
 
 #endif // PLANE_H

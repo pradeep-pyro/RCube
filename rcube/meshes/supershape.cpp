@@ -20,13 +20,7 @@ glm::vec3 superSphericalCoordinates(float lat, float lon, float lat_a, float lat
     return glm::vec3(x, y, z);
 }
 
-MeshData superShape(float scale, unsigned int latitude_segments, unsigned int longitude_segments,
-                    float a, float b, float m, float n1, float n2, float n3) {
-    return superShape(scale, latitude_segments, longitude_segments, a, b, m, n1, n2, n3,
-                              a, b, m, n1, n2, n3);
-}
-
-MeshData superShape(float scale, unsigned int latitude_segments, unsigned int longitude_segments,
+MeshData superShape(unsigned int latitude_segments, unsigned int longitude_segments,
                     float lat_a, float lat_b, float lat_m, float lat_n1, float lat_n2, float lat_n3,
                     float lon_a, float lon_b, float lon_m, float lon_n1, float lon_n2, float lon_n3) {
     MeshData data;
@@ -37,10 +31,10 @@ MeshData superShape(float scale, unsigned int latitude_segments, unsigned int lo
     data.vertices.reserve(latitude_segments * longitude_segments);
     for (int i = 0; i < latitude_segments; ++i) {
         for (int j = 0; j < longitude_segments; ++j) {
-            glm::vec3 pt = scale * superSphericalCoordinates(-glm::half_pi<float>() + i * lat_inc,
-                                                             -glm::pi<float>() + j * lon_inc,
-                                                             lat_a, lat_b, lat_m, lat_n1, lat_n2, lat_n3,
-                                                             lon_a, lon_b, lon_m, lon_n1, lon_n2, lon_n3);
+            glm::vec3 pt = superSphericalCoordinates(-glm::half_pi<float>() + i * lat_inc,
+                                                     -glm::pi<float>() + j * lon_inc,
+                                                     lat_a, lat_b, lat_m, lat_n1, lat_n2, lat_n3,
+                                                     lon_a, lon_b, lon_m, lon_n1, lon_n2, lon_n3);
             data.vertices.push_back(pt);
         }
     }
@@ -73,4 +67,11 @@ MeshData superShape(float scale, unsigned int latitude_segments, unsigned int lo
     }
 
     return data;
+}
+
+
+MeshData superShape(unsigned int latitude_segments, unsigned int longitude_segments,
+                    float a, float b, float m, float n1, float n2, float n3) {
+    return superShape(latitude_segments, longitude_segments, a, b, m, n1, n2, n3,
+                      a, b, m, n1, n2, n3);
 }

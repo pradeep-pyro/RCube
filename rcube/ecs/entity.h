@@ -6,7 +6,7 @@
  * Internally it just stores a unique unsigned int ID.
  */
 struct Entity {
-    unsigned int id;
+    unsigned int id;  /// Unique id of each entity
     bool operator==(const Entity &other) const {
         return id == other.id;
     }

@@ -5,27 +5,27 @@ MeshData box(float width, float height, float depth, unsigned int width_segments
              unsigned int height_segments, unsigned int depth_segments) {
     std::vector<MeshData> data;
     data.resize(6);
-    data[0] = createPlane(depth, height, depth_segments, height_segments, Orientation::PositiveX); // +x
+    data[0] = plane(depth, height, depth_segments, height_segments, Orientation::PositiveX); // +x
     for (auto &v : data[0].vertices) {
         v.x += 0.5f * width;
     }
-    data[1] = createPlane(depth, height, depth_segments, height_segments, Orientation::NegativeX); // -x
+    data[1] = plane(depth, height, depth_segments, height_segments, Orientation::NegativeX); // -x
     for (auto &v : data[1].vertices) {
         v.x -= 0.5f * width;
     }
-    data[2] = createPlane(width, depth, width_segments, depth_segments, Orientation::PositiveY); // +y
+    data[2] = plane(width, depth, width_segments, depth_segments, Orientation::PositiveY); // +y
     for (auto &v : data[2].vertices) {
         v.y += 0.5f * height;
     }
-    data[3] = createPlane(width, depth, width_segments, depth_segments, Orientation::NegativeY); // -y
+    data[3] = plane(width, depth, width_segments, depth_segments, Orientation::NegativeY); // -y
     for (auto &v : data[3].vertices) {
         v.y -= 0.5f * height;
     }
-    data[4] = createPlane(width, height, width_segments, height_segments, Orientation::PositiveZ); // +z
+    data[4] = plane(width, height, width_segments, height_segments, Orientation::PositiveZ); // +z
     for (auto &v : data[4].vertices) {
         v.z += 0.5f * depth;
     }
-    data[5] = createPlane(width, height, width_segments, height_segments, Orientation::NegativeZ); // -z
+    data[5] = plane(width, height, width_segments, height_segments, Orientation::NegativeZ); // -z
     for (auto &v : data[5].vertices) {
         v.z -= 0.5f * depth;
     }

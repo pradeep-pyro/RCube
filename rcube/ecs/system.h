@@ -45,6 +45,10 @@ namespace std
  * The goal of a system is to update the components of entities.
  * For example, a CameraSystem will use data from the Camera component to compute and set
  * the world-to-view and view-to-projection matrices.
+ *
+ * To implement a new system, derive from this class and implement initialize(), update() and cleanup()
+ * To process entities that have certain combination of components, use the addFilter() method to
+ * automatically register the corresponding entities.
  */
 class System {
 public:
@@ -68,18 +72,20 @@ public:
     virtual void registerWorld(World *world) {
         world_ = world;
     }
-    /*virtual void registerEntity(const Entity &e) {
-        registered_entities_.push_back(e);
-    }
-    virtual void unregisterEntity(const Entity &e) {
-        registered_entities_.erase(
-                std::remove_if(registered_entities_.begin(), registered_entities_.end(),
-                    [&](const Entity &ent) { return ent.id == e.id; }),
-            registered_entities_.end());
-    }*/
+    /**
+     * Register an entity so that it will be processed by this system
+     * @param e Entity
+     * @param sign Signature to classify this entity
+     */
     virtual void registerEntity(const Entity &e, ComponentMask sign) {
         registered_entities_[sign].push_back(e);
     }
+    /**
+     * Unregister given entity from this system by removing it from the registered
+     * entities
+     * @param e Entity
+     * @param sign Signature to classify this entity
+     */
     virtual void unregisterEntity(const Entity &e, ComponentMask sign) {
         std::vector<Entity> &entity_list = registered_entities_[sign];
         entity_list.erase(std::remove_if(entity_list.begin(), entity_list.end(),
@@ -88,17 +94,17 @@ public:
         }),
         entity_list.end());
     }
-    /*ComponentMask signature() const {
-        return signature_;
-    }*/
+    /**
+     * List of filters that are used to handle entities with varying combinations of
+     * components
+     * @return List of filters
+     */
     const std::vector<ComponentMask> & filters() const {
         return filters_;
     }
 
 protected:
-    // std::vector<Entity> registered_entities_;
     std::unordered_map<ComponentMask, std::vector<Entity>> registered_entities_;
-    // ComponentMask signature_;
     std::vector<ComponentMask> filters_;
     World *world_;
 };

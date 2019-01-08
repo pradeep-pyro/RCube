@@ -109,7 +109,6 @@ int main(int, char**) {
     glfwSetScrollCallback(window, scrollCallback);
 
     rcube::Scene scene;
-
     EntityHandle cam = setupCamera(scene);
 
     EntityHandle cube = scene.createDrawable();
@@ -128,7 +127,7 @@ int main(int, char**) {
     phong->shininess = 64.f;
     phong->use_diffuse_texture = true;
     phong->use_specular_texture = true;
-    phong->show_wireframe = false;
+    phong->show_wireframe = true;
     phong->wireframe_color = glm::vec3(0,1,1);
     cube_drawable->material = phong;
     phong.reset();

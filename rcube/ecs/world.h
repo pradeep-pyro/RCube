@@ -9,7 +9,7 @@
 struct EntityHandle;
 
 /**
- * World is the primary interface to the user and allows the user to create entities,
+ * World is the primary interface and allows the user to create entities,
  * add/remove components to entities, and add/remove systems to process components.
  *
  * World acts glue between various component managers and systems and abstracts away the internal

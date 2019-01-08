@@ -34,7 +34,6 @@ public:
     glm::vec4 background_color = glm::vec4(1);         /// Background color for the scene when viewed from this camera
     std::shared_ptr<TextureCubemap> skybox;            /// Skybox texture
     bool use_skybox = false;                           /// Whether to draw a skybox
-    std::shared_ptr<Framebuffer> framebuffer;          /// Framebuffer to store the rendering from camera's viewpoint
     std::vector<std::shared_ptr<Effect>> postprocess;  /// Postprocessing effects applied to the scene in order
     /**
      * Resize the viewport
@@ -46,14 +45,6 @@ public:
         viewport_size.y = height;
     }
 private:
-    void initFBO() {
-        if (framebuffer != nullptr) {
-            return;
-        }
-        framebuffer = Framebuffer::create(1280, 720);
-        framebuffer->addColorAttachment(TextureInternalFormat::RGBA8);
-        framebuffer->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
-    }
     friend class CameraSystem; // This will update the camera matrices
     friend class RenderSystem; // This will make use of the matrices
     glm::mat4 world_to_view;          /// World to camera transformation

@@ -40,6 +40,7 @@ FlatMaterial::FlatMaterial() {
     render_settings.depth_write = true;
     render_settings.depth_test = true;
     render_settings.culling = false;
+    initialize();
 }
 std::string FlatMaterial::vertexShader() {
     return vert_src;

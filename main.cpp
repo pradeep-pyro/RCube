@@ -119,8 +119,8 @@ int main(int, char**) {
     auto phong = std::make_shared<BlinnPhongMaterial>();
     auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGBA8);
     auto spec = Texture2D::create(500, 500, 1, TextureInternalFormat::R8);
-    //diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
-    diff->setData(rcube::checkerboard(500, 500, 50, 50, glm::vec3(0), glm::vec3(255)));
+    diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
+    //diff->setData(rcube::checkerboard(500, 500, 50, 50, glm::vec3(0), glm::vec3(255)));
     spec->setData(Image::fromFile("/home/pradeep/specular.png", 1));
     phong->diffuse_texture = diff;
     phong->specular_texture = spec;
@@ -130,7 +130,7 @@ int main(int, char**) {
     phong->show_wireframe = true;
     phong->wireframe_color = glm::vec3(0,1,1);
     cube_drawable->material = phong;
-    phong.reset();
+    phong.reset(); // don't extend phong's life
     diff.reset();
     spec.reset();
 

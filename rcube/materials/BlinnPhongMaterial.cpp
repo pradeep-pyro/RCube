@@ -262,6 +262,7 @@ BlinnPhongMaterial::BlinnPhongMaterial(glm::vec3 diffuse_color, glm::vec3 specul
     render_settings.depth_write = true;
     render_settings.blending = false;
     render_settings.culling = false;
+    initialize();
 }
 std::string BlinnPhongMaterial::vertexShader() {
     return vert_str;

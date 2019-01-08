@@ -9,7 +9,7 @@
 
 namespace rcube {
 
-RenderSystem::RenderSystem() {
+RenderSystem::RenderSystem(glm::ivec2 resolution) : resolution_(resolution){
     ComponentMask light_filter;
     light_filter.set(BaseLight::family());
     light_filter.set(Transform::family());
@@ -28,25 +28,10 @@ RenderSystem::RenderSystem() {
 
 void RenderSystem::initialize() {
     checkGLError();
+    framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
+    framebuffer_->addColorAttachment(TextureInternalFormat::RGBA8);
+    framebuffer_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
     renderer.initialize();
-    checkGLError();
-
-    // Compile shaders
-    const auto &renderable_entities = registered_entities_[filters_[2]];
-    for (const auto &e : renderable_entities) {
-        Drawable *dr = world_->getComponent<Drawable>(e);
-        dr->material->initialize();
-    }
-    checkGLError();
-
-    const auto &camera_entities = registered_entities_[filters_[1]];
-    for (const auto &e : camera_entities) {
-        Camera *cam = world_->getComponent<Camera>(e);
-        cam->initFBO();
-        for (auto eff : cam->postprocess) {
-            eff->initialize();
-        }
-    }
     checkGLError();
 }
 
@@ -89,16 +74,14 @@ void RenderSystem::update(bool /* force */) {
         checkGLError();
 
         // Set and clear draw area
-        cam->initFBO(); // no-op if already initialized
-        cam->framebuffer->use();
-        renderer.resize(0, 0, cam->framebuffer->width(), cam->framebuffer->height());
+        // Store framebuffer in render system, not camera
+        framebuffer_->use();
+        renderer.resize(0, 0, framebuffer_->width(), framebuffer_->height());
         renderer.setClearColor(cam->background_color);
         renderer.clear(true, true, true);
-        checkGLError();
 
         // set camera & lights
         renderer.setLightsCamera(lights, cam->world_to_view, cam->view_to_projection, cam->projection_to_viewport);
-        checkGLError();
 
         // Draw all opaque
         for (const auto &render_entity : renderable_entities) {
@@ -116,22 +99,21 @@ void RenderSystem::update(bool /* force */) {
             renderer.renderSkyBox(cam->skybox);
         }
 
-        cam->framebuffer->done();
+        framebuffer_->done();
 
         // Postprocess
         if (cam->postprocess.size() > 0) {
             for (int i = 0; i < cam->postprocess.size(); ++i) {
                 Effect *curr_effect = cam->postprocess[i].get();
-                Framebuffer *prev_fbo = (i == 0) ? cam->framebuffer.get() : cam->postprocess[i - 1]->result.get();
+                Framebuffer *prev_fbo = (i == 0) ? framebuffer_.get() : cam->postprocess[i - 1]->result.get();
                 renderer.renderEffect(curr_effect, prev_fbo->colorAttachment(0));
-                //renderer.renderTextureToScreen(curr_effect->result->colorAttachment(0));
             }
             renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
             renderer.renderTextureToScreen(cam->postprocess.back()->result->colorAttachment(0));
         }
         else {
             renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
-            renderer.renderTextureToScreen(cam->framebuffer->colorAttachment(0));
+            renderer.renderTextureToScreen(framebuffer_->colorAttachment(0));
         }
     }
 }

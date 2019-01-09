@@ -9,9 +9,8 @@
 #include "rcube/Scene.h"
 #include "rcube/meshes/plane.h"
 #include "rcube/meshes/box.h"
+#include "rcube/meshes/sphere.h"
 #include "rcube/meshes/grid.h"
-#include "rcube/meshes/cylinder.h"
-#include "rcube/meshes/circle.h"
 #include "rcube/meshes/supershape.h"
 #include "rcube/materials/FlatMaterial.h"
 #include "rcube/materials/BlinnPhongMaterial.h"
@@ -114,7 +113,7 @@ int main(int, char**) {
     EntityHandle cube = scene.createDrawable();
     auto cube_drawable = cube.get<rcube::Drawable>();
     cube_drawable->mesh = Mesh::create();
-    cube_drawable->mesh->data = box(2, 2, 2, 5, 5, 5);
+    cube_drawable->mesh->data = rcube::icoSphere(1.f, 1);
     cube_drawable->mesh->uploadToGPU();
     auto phong = std::make_shared<BlinnPhongMaterial>();
     auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGBA8);
@@ -125,8 +124,8 @@ int main(int, char**) {
     phong->diffuse_texture = diff;
     phong->specular_texture = spec;
     phong->shininess = 64.f;
-    phong->use_diffuse_texture = true;
-    phong->use_specular_texture = true;
+    //phong->use_diffuse_texture = true;
+    //phong->use_specular_texture = true;
     phong->show_wireframe = true;
     phong->wireframe_color = glm::vec3(0,1,1);
     cube_drawable->material = phong;

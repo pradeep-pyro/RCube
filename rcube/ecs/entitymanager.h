@@ -14,12 +14,11 @@ public:
      * Create a new entity with a unique ID
      * @return A new entity
      */
-    Entity createEntity()  {
+    Entity createEntity() {
         return Entity{ last_id_++ };
     }
 private:
     unsigned int last_id_;  /// Keep track of last assigned id to entity
 };
-
 
 #endif // ENTITYMANAGER_H

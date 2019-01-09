@@ -78,7 +78,7 @@ EntityHandle setupCamera(rcube::Scene &scene) {
     for (int i = 0; i < 6; ++i) {
         cam.get<rcube::Camera>()->skybox->setData(i, ims[i]);
     }
-    cam.get<rcube::Camera>()->use_skybox = true;
+    //cam.get<rcube::Camera>()->use_skybox = true;
     //cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GrayscaleEffect>());
     cam.get<rcube::Camera>()->postprocess.push_back(std::make_shared<GammaCorrectionEffect>());
 
@@ -113,21 +113,23 @@ int main(int, char**) {
     EntityHandle cube = scene.createDrawable();
     auto cube_drawable = cube.get<rcube::Drawable>();
     cube_drawable->mesh = Mesh::create();
-    cube_drawable->mesh->data = rcube::icoSphere(1.f, 1);
+    cube_drawable->mesh->data = rcube::cubeSphere(1.f, 10);
     cube_drawable->mesh->uploadToGPU();
     auto phong = std::make_shared<BlinnPhongMaterial>();
     auto diff = Texture2D::create(500, 500, 1, TextureInternalFormat::RGBA8);
     auto spec = Texture2D::create(500, 500, 1, TextureInternalFormat::R8);
-    diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
-    //diff->setData(rcube::checkerboard(500, 500, 50, 50, glm::vec3(0), glm::vec3(255)));
-    spec->setData(Image::fromFile("/home/pradeep/specular.png", 1));
+    //diff->setData(Image::fromFile("/home/pradeep/diffuse.png", 3));
+    diff->setData(rcube::checkerboard(500, 500, 50, 50, glm::vec3(0), glm::vec3(255)));
+    //spec->setData(Image::fromFile("/home/pradeep/specular.png", 1));
+    phong->diffuse_color = glm::vec3(0, 1, 0);
     phong->diffuse_texture = diff;
     phong->specular_texture = spec;
-    phong->shininess = 64.f;
-    //phong->use_diffuse_texture = true;
+    phong->shininess = 128.f;
+    phong->use_diffuse_texture = true;
     //phong->use_specular_texture = true;
     phong->show_wireframe = true;
-    phong->wireframe_color = glm::vec3(0,1,1);
+    phong->wireframe_color = glm::vec3(1,0,1);
+    phong->wireframe_thickness = 0.5f;
     cube_drawable->material = phong;
     phong.reset(); // don't extend phong's life
     diff.reset();

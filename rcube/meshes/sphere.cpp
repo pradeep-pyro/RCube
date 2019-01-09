@@ -35,9 +35,9 @@ MeshData icoSphere(float radius, unsigned int subdivisions) {
                                        9, 8, 1};
 
     // Subdivision
-    for (int sub = 0; sub < subdivisions; ++sub) {
+    for (unsigned int sub = 0; sub < subdivisions; ++sub) {
         size_t orig_len = faces.size();
-        for (int idx = 0; idx < orig_len; idx += 3) {
+        for (size_t idx = 0; idx < orig_len; idx += 3) {
             unsigned int i = faces[idx];
             unsigned int j = faces[idx + 1];
             unsigned int k = faces[idx + 2];
@@ -58,7 +58,7 @@ MeshData icoSphere(float radius, unsigned int subdivisions) {
         }
     }
 
-    // Make each vertex to lie on the sphere
+    // Make each vertex to lie on the sphere and find its normal
     std::vector<glm::vec3> normals;
     normals.reserve(verts.size());
     for (auto &v : verts) {
@@ -78,14 +78,13 @@ MeshData icoSphere(float radius, unsigned int subdivisions) {
 
 MeshData cubeSphere(float radius, unsigned int n_segments) {
     MeshData data = box(1, 1, 1, n_segments, n_segments, n_segments);
-    for (auto &v : data.vertices) {
-        v = glm::normalize(v) * radius;
+    assert(data.vertices.size() == data.normals.size());
+    for (size_t i = 0; i < data.vertices.size(); ++i) {
+        glm::vec3 norm_v = glm::normalize(data.vertices[i]);
+        data.vertices[i] = norm_v * radius;
+        data.normals[i] = norm_v;
     }
     return data;
-}
-
-MeshData latlonSphere(float radius, int lat_segments, int lon_segments) {
-
 }
 
 } // namespace rcube

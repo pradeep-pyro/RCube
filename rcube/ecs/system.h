@@ -95,6 +95,22 @@ public:
         entity_list.end());
     }
     /**
+     * Unregister given entity from this system by removing it from the registered
+     * entities
+     * @param e Entity
+     * @param sign Signature to classify this entity
+     */
+    virtual void unregisterEntity(const Entity &e) {
+        for (auto kv : registered_entities_) {
+            std::vector<Entity> &entity_list = kv.second;
+            entity_list.erase(std::remove_if(entity_list.begin(), entity_list.end(),
+            [&](const Entity &ent) {
+                return ent.id() == e.id();
+            }),
+            entity_list.end());
+        }
+    }
+    /**
      * List of filters that are used to handle entities with varying combinations of
      * components
      * @return List of filters

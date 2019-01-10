@@ -31,6 +31,9 @@ void World::removeEntity(EntityHandle ent) {
     for (auto &mgr_ : component_mgrs_) {
         mgr_.second->remove(ent.entity);
     }
+    for (auto &sys_ : systems_) {
+        sys_->unregisterEntity(ent.entity);
+    }
     entity_mgr_.removeEntity(ent.entity);
 }
 

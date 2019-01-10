@@ -1,12 +1,17 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <iterator>
 #include <memory>
 #include "entitymanager.h"
 #include "componentmanager.h"
+#include <iterator>
 #include "system.h"
 
 struct EntityHandle;
+
+template <typename Container>
+class EntityHandleIterator;
 
 /**
  * World is the primary interface and allows the user to create entities,
@@ -75,6 +80,30 @@ public:
      * Creates an entity and returns an EntityHandle
      */
     EntityHandle createEntity();
+
+    /**
+     * Removes an entity that resides inside the given EntityHandle
+     */
+    void removeEntity(EntityHandle ent);
+
+    /**
+     * Check whether given entity is in this world
+     * @param ent Entity
+     * @return Whether exists in this world
+     */
+    bool hasEntity(EntityHandle ent) const;
+
+    /**
+     * Iterate through all existing entities using a range for loop
+     * @return Proxy iterator for entities that will work with a range for loop
+     */
+    EntityHandleIterator<std::unordered_set<Entity>> entities();
+
+    /**
+     * Number of entities in the world
+     * @return Count of entities
+     */
+    size_t numEntities() const;
 
     /**
      * Update the world (usually called in the game loop)
@@ -154,6 +183,37 @@ struct EntityHandle {
     T * get() {
         return world->getComponent<T>(entity);
     }
+
+    /**
+     * Check whether this handle is valid
+     * @return Whether valid
+     */
+    bool valid() const {
+        return world != nullptr && world->hasEntity(*this);
+    }
+};
+
+/**
+ * EntityHandleIterator is a convenience class to wrap iterator like functionality
+ * around Entities. Its main use is to return EntityHandles instead of raw Entitys.
+ */
+template <typename Container>
+class EntityHandleIterator {
+public:
+    EntityHandleIterator(World *world, Container &cnt) {
+        world_ = world;
+        curr_ = cnt.begin();
+        end_ = cnt.end();
+    }
+    EntityHandle next() {
+        return EntityHandle{*(curr_++), world_};
+    }
+    bool hasNext() {
+        return curr_ != end_;
+    }
+private:
+    World *world_;
+    typename Container::iterator curr_, end_;
 };
 
 

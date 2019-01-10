@@ -1,3 +1,4 @@
+#include <iostream>
 #include "world.h"
 
 void World::initialize() {
@@ -16,6 +17,25 @@ void World::cleanup() {
 
 EntityHandle World::createEntity() {
     return EntityHandle { entity_mgr_.createEntity(), this };
+}
+
+bool World::hasEntity(EntityHandle ent) const {
+    return entity_mgr_.hasEntity(ent.entity);
+}
+
+void World::removeEntity(EntityHandle ent) {
+    if (ent.world != this) {
+        std::cerr << "Given EntityHandle was not generated from this World" << std::endl;
+        return;
+    }
+    for (auto &mgr_ : component_mgrs_) {
+        mgr_.second->remove(ent.entity);
+    }
+    entity_mgr_.removeEntity(ent.entity);
+}
+
+EntityHandleIterator<std::unordered_set<Entity>> World::entities() {
+    return EntityHandleIterator<decltype(entity_mgr_.entities)>(this, entity_mgr_.entities);
 }
 
 void World::update() {

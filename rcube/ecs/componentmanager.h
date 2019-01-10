@@ -3,17 +3,19 @@
 
 #include <map>
 #include <array>
+#include <iostream>
 #include <vector>
 #include "entity.h"
 
 /**
  * Base class for all component managers.
- * Serves as a typesafe alternative to void*
- * For internal use only
+ * For internal use only.
  */
 class BaseComponentManager {
 public:
     virtual ~BaseComponentManager() = default;
+    virtual bool has(Entity e) const = 0;
+    virtual void remove(Entity e) = 0;
 };
 
 /**
@@ -43,7 +45,7 @@ public:
      * Remove the component of type T from the given entity
      * @param e Entity to add component to
      */
-    void remove(Entity e) {
+    void remove(Entity e) override {
         if (entity_map_.find(e) == entity_map_.end()) {
             return;
         }
@@ -51,6 +53,15 @@ public:
         component_data_.data[to_remove] = component_data_.data[component_data_.size - 1];
         entity_map_.erase(e);
         component_data_.size -= 1;
+    }
+
+    /**
+     * Whether the given entity has a component of this type
+     * @param e Entity
+     * @return Whether entity has this component
+     */
+    bool has(Entity e) const override {
+        return entity_map_.find(e) != entity_map_.end();
     }
     /**
      * Clears all components and entities from the manager
@@ -67,7 +78,9 @@ public:
      */
     T * get(Entity e) {
         if (entity_map_.find(e) == entity_map_.end()) {
-            throw std::runtime_error("Entity does not have requested component");
+            // throw std::runtime_error("Entity does not have requested component");
+            std::cerr << "Entity does not have requested component" << std::endl;
+            return nullptr;
         }
         return &(component_data_.data[entity_map_[e]]);
     }

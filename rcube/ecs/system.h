@@ -90,7 +90,7 @@ public:
         std::vector<Entity> &entity_list = registered_entities_[sign];
         entity_list.erase(std::remove_if(entity_list.begin(), entity_list.end(),
         [&](const Entity &ent) {
-            return ent.id == e.id;
+            return ent.id() == e.id();
         }),
         entity_list.end());
     }

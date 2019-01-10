@@ -6,14 +6,19 @@
  * Internally it just stores a unique unsigned int ID.
  */
 struct Entity {
-    unsigned int id;  /// Unique id of each entity
+    Entity(unsigned int id) : id_(id) {}
+    unsigned int id() const {
+        return id_;
+    }
     bool operator==(const Entity &other) const {
-        return id == other.id;
+        return id_ == other.id_;
     }
 
     bool operator<(const Entity &other) const {
-        return id < other.id;
+        return id_ < other.id_;
     }
+private:
+    unsigned int id_;  /// Unique id of each entity
 };
 
 #endif // ENTITY_H

@@ -7,7 +7,7 @@ namespace internal {
  * Global counter for derived classes (not objects) from Component
  */
 struct ComponentCounter {
-    static int counter;
+    static unsigned int counter;
 };
 
 }
@@ -24,8 +24,8 @@ public:
      * Returns a unique identifier per component type i.e., subclass of Component
      * @return integer id
      */
-    static inline int family() {
-        static int family = internal::ComponentCounter::counter++;
+    static inline unsigned int family() {
+        static unsigned int family = internal::ComponentCounter::counter++;
         return family;
     }
 };

@@ -30,9 +30,7 @@ void World::removeEntity(EntityHandle ent) {
     }
     for (auto &mgr_ : component_mgrs_) {
         mgr_.second->remove(ent.entity);
-    }
-    for (auto &sys_ : systems_) {
-        sys_->unregisterEntity(ent.entity);
+        updateEntityToSystem(ent.entity, mgr_.first, false);
     }
     entity_mgr_.removeEntity(ent.entity);
 }
@@ -50,4 +48,24 @@ void World::update() {
 void World::addSystem(std::unique_ptr<System> sys) {
     sys->registerWorld(this);
     systems_.push_back(std::move(sys));
+}
+
+void World::updateEntityToSystem(Entity ent, int component_family, bool flag) {
+    ComponentMask old_entity_mask = entity_masks_[ent];
+    entity_masks_[ent].set(component_family, flag);
+
+    ComponentMask new_entity_mask = entity_masks_[ent];
+
+    for (auto &sys : systems_) {
+        for (ComponentMask sys_mask : sys->filters()) {
+            bool new_match = new_entity_mask.match(sys_mask);
+            bool old_match = old_entity_mask.match(sys_mask);
+            if (new_match && !old_match) {
+                sys->registerEntity(ent, sys_mask);
+            }
+            else if (!new_match && old_match) {
+                sys->unregisterEntity(ent, sys_mask);
+            }
+        }
+    }
 }

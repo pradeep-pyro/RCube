@@ -27,7 +27,7 @@ struct ComponentMask {
 
 bool operator==(const ComponentMask &lhs, const ComponentMask &rhs);
 
-// custom specialization of std::hash can be injected in namespace std
+// custom specialization of std::hash for ComponentMask
 namespace std
 {
     template<> struct hash<ComponentMask> {
@@ -47,8 +47,8 @@ namespace std
  * the world-to-view and view-to-projection matrices.
  *
  * To implement a new system, derive from this class and implement initialize(), update() and cleanup()
- * To process entities that have certain combination of components, use the addFilter() method to
- * automatically register the corresponding entities.
+ * To automatically obtain the list of entities that have certain combination of components, use the addFilter()
+ * method to register them (multiple filters can exist in a single System)
  */
 class System {
 public:
@@ -81,34 +81,17 @@ public:
         registered_entities_[sign].push_back(e);
     }
     /**
-     * Unregister given entity from this system by removing it from the registered
-     * entities
+     * Unregister given entity from this system's registered entities with given signature
      * @param e Entity
      * @param sign Signature to classify this entity
      */
     virtual void unregisterEntity(const Entity &e, ComponentMask sign) {
         std::vector<Entity> &entity_list = registered_entities_[sign];
         entity_list.erase(std::remove_if(entity_list.begin(), entity_list.end(),
-        [&](const Entity &ent) {
-            return ent.id() == e.id();
-        }),
-        entity_list.end());
-    }
-    /**
-     * Unregister given entity from this system by removing it from the registered
-     * entities
-     * @param e Entity
-     * @param sign Signature to classify this entity
-     */
-    virtual void unregisterEntity(const Entity &e) {
-        for (auto kv : registered_entities_) {
-            std::vector<Entity> &entity_list = kv.second;
-            entity_list.erase(std::remove_if(entity_list.begin(), entity_list.end(),
-            [&](const Entity &ent) {
-                return ent.id() == e.id();
-            }),
-            entity_list.end());
-        }
+                                         [&](const Entity &ent) {
+                                             return ent.id() == e.id();
+                                         }),
+                          entity_list.end());
     }
     /**
      * List of filters that are used to handle entities with varying combinations of

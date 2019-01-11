@@ -1,11 +1,9 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <iterator>
 #include <memory>
 #include "entitymanager.h"
 #include "componentmanager.h"
-#include <iterator>
 #include "system.h"
 
 struct EntityHandle;
@@ -45,7 +43,7 @@ public:
     void addComponent(Entity entity, const ComponentType &comp) {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         manager->add(entity, comp);
-        updateEntityToSystem<ComponentType>(entity, true);
+        updateEntityToSystem(entity, ComponentType::family(), true);
     }
 
     /**
@@ -57,7 +55,7 @@ public:
     void removeComponent(Entity entity) {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         manager->remove(entity);
-        updateEntityToSystem<ComponentType>(entity, false);
+        updateEntityToSystem(entity, ComponentType::family(), false);
     }
 
     /**
@@ -111,31 +109,8 @@ public:
     void update();
 
 protected:
+    void updateEntityToSystem(Entity ent, int component_family, bool flag);
 
-    void registerEntityToSystem(Entity e);
-    void unregisterEntityToSystem(Entity e);
-
-    template <typename ComponentType>
-    void updateEntityToSystem(Entity ent, bool flag) {
-        ComponentMask old_entity_mask = entity_masks_[ent];
-        entity_masks_[ent].set(ComponentType::family(), flag);
-        ComponentMask new_entity_mask = entity_masks_[ent];
-
-        for (auto &sys : systems_) {
-            int i = 0;
-            for (ComponentMask sys_mask : sys->filters()) {
-                bool new_match = new_entity_mask.match(sys_mask);
-                bool old_match = old_entity_mask.match(sys_mask);
-                if (new_match && !old_match) {
-                    sys->registerEntity(ent, sys_mask);
-                }
-                else if (!new_match && old_match) {
-                    sys->unregisterEntity(ent, sys_mask);
-                }
-                i++;
-            }
-        }
-    }
     template <typename ComponentType>
     ComponentManager<ComponentType> * getComponentManager() {
         auto it = component_mgrs_.find(ComponentType::family());

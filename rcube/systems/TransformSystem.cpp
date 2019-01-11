@@ -43,7 +43,6 @@ void TransformSystem::update(bool force) {
         // Update hierarchy from root level nodes which do not have a parent
         if (comp->parent() == nullptr) {
             updateHierarchy(comp, force);
-
         }
     }
 }

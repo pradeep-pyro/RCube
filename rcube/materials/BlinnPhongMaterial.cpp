@@ -1,6 +1,8 @@
 #include "BlinnPhongMaterial.h"
 #include "stb_image.h"
 
+namespace rcube {
+
 const std::string vert_str = \
                              R"(
 #version 420
@@ -305,3 +307,5 @@ void BlinnPhongMaterial::setUniforms() {
 int BlinnPhongMaterial::renderPriority() const {
     return RenderPriority::Opaque;
 }
+
+} // namespace rcube

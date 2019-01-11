@@ -1,8 +1,10 @@
-#ifndef FLATCOLOR_H
-#define FLATCOLOR_H
+#ifndef FLATMATERIAL_H
+#define FLATMATERIAL_H
 
 #include "constants.h"
 #include "../render/Material.h"
+
+namespace rcube {
 
 /**
  * FlatMaterial is for representing objects in a flat style without any 3D shading
@@ -17,4 +19,6 @@ public:
     int renderPriority() const override;
 };
 
-#endif // FLATCOLOR_H
+} // namespace rcube
+
+#endif // FLATMATERIAL_H

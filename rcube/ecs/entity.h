@@ -1,6 +1,8 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+namespace rcube {
+
 /**
  * Entity is some object in the virtual world
  * Internally it just stores a unique unsigned int ID.
@@ -20,5 +22,7 @@ struct Entity {
 private:
     unsigned int id_;  /// Unique id of each entity
 };
+
+} // namespace rcube
 
 #endif // ENTITY_H

@@ -6,6 +6,8 @@
 #include "Texture.h"
 #include "RenderSettings.h"
 
+namespace rcube {
+
 class Material {
 public:
     Material();
@@ -28,5 +30,7 @@ protected:
     std::shared_ptr<ShaderProgram> shader_;
     bool init_;
 };
+
+} // namespace rcube
 
 #endif // MATERIAL_H

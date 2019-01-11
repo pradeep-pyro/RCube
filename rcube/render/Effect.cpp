@@ -1,5 +1,7 @@
 #include "Effect.h"
 
+namespace rcube {
+
 const std::string vs_src = R"(
 #version 420
 layout (location = 0) in vec3 vertex;
@@ -40,3 +42,5 @@ void Effect::use() {
 void Effect::done() {
     // Nothing to do by default
 }
+
+} // namespace rcube

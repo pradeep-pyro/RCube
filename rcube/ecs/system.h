@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <functional>
 
-class World;
+namespace rcube {
 
 /**
  * ComponentMask is a bitset where bits at a particular position (from Component::family()) representing a component
@@ -27,18 +27,22 @@ struct ComponentMask {
 
 bool operator==(const ComponentMask &lhs, const ComponentMask &rhs);
 
+} // namespace rcube
+
 // custom specialization of std::hash for ComponentMask
-namespace std
-{
-    template<> struct hash<ComponentMask> {
-        typedef ComponentMask argument_type;
+namespace std {
+    template<> struct hash<rcube::ComponentMask> {
+        typedef rcube::ComponentMask argument_type;
         typedef std::size_t result_type;
-        result_type operator()(argument_type const& cm) const noexcept
-        {
+        result_type operator()(argument_type const& cm) const noexcept {
             return std::hash<std::bitset<8>>{}(cm.bits);
         }
     };
 }
+
+namespace rcube {
+
+class World;
 
 /**
  * System is the base class for all systems such as TransformSystem, CameraSystem etc.
@@ -107,5 +111,7 @@ protected:
     std::vector<ComponentMask> filters_;
     World *world_;
 };
+
+} // namespace rcube
 
 #endif // SYSTEM_H

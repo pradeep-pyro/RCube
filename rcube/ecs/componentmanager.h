@@ -7,6 +7,8 @@
 #include <vector>
 #include "entity.h"
 
+namespace rcube {
+
 /**
  * Base class for all component managers.
  * For internal use only.
@@ -95,6 +97,6 @@ private:
     ComponentData component_data_;
 };
 
-
+} // namespace rcube
 
 #endif // COMPONENTMANAGER_H

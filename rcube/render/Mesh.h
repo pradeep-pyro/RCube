@@ -6,6 +6,8 @@
 #include "glad/glad.h"
 #include <memory>
 
+namespace rcube {
+
 enum class MeshPrimitive {
     Points = GL_POINTS, Lines = GL_LINES, Triangles = GL_TRIANGLES
 };
@@ -105,5 +107,7 @@ private:
     bool indexed_ = false;
     bool init_ = false;
 };
+
+} // namespace rcube
 
 #endif // GEOMETRY_H

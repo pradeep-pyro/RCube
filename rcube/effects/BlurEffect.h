@@ -4,6 +4,8 @@
 #include <memory>
 #include "../render/Effect.h"
 
+namespace rcube {
+
 /**
  * BlurEffect is a postprocessing effect that blurs the contents of the screen
  * using a 9-tap Gaussian filter
@@ -22,5 +24,7 @@ public:
 private:
     std::shared_ptr<Framebuffer> tmp;
 };
+
+} // namespace rcube
 
 #endif // BLUREFFECT_H

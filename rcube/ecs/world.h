@@ -6,6 +6,8 @@
 #include "componentmanager.h"
 #include "system.h"
 
+namespace rcube {
+
 struct EntityHandle;
 
 template <typename Container>
@@ -191,5 +193,6 @@ private:
     typename Container::iterator curr_, end_;
 };
 
+} // namespace rcube
 
 #endif // WORLD_H

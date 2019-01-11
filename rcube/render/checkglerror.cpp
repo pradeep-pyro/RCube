@@ -3,6 +3,8 @@
 #include "glad/glad.h"
 #include <iostream>
 
+namespace rcube {
+
 void _checkGLError(const char *file, int line) {
     GLenum err = glGetError();
 
@@ -28,3 +30,5 @@ void _checkGLError(const char *file, int line) {
         err = glGetError();
     }
 }
+
+} // namespace rcube

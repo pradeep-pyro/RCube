@@ -6,42 +6,16 @@
 #include <vector>
 #include <unordered_set>
 
-/**
- * EntityManager creates new entities while ensuring that each one has a unique ID
- */
-#ifdef TEST123
-class EntityManager {
-public:
-    EntityManager() : last_id_(0) {
-        entities_.reserve(1024);
-    }
-    /**
-     * Create a new entity with a unique ID
-     * @return A new entity
-     */
-    Entity createEntity() {
-        auto ent = Entity(last_id_++);
-        entities_.push_back(ent);
-        return ent;
-    }
-
-    bool hasEntity(const Entity &ent) {
-        return std::find(entities_.begin(), entities_.end(), ent) != entities_.end();
-    }
-private:
-    unsigned int last_id_;  /// Keep track of last assigned id to entity
-    std::vector<Entity> entities_;
-};
-#endif
-
 namespace std {
 template<>
-struct hash<Entity> {
-    size_t operator()(const Entity &ent) const {
+struct hash<rcube::Entity> {
+    size_t operator()(const rcube::Entity &ent) const {
         return hash<unsigned int>()(ent.id());
     }
 };
 }
+
+namespace rcube {
 
 /**
  * EntityManager manages the lifetime of entities.
@@ -106,5 +80,6 @@ public:
     std::vector<Entity> deleted_entities; /// List of deleted entities
 };
 
+} // namespace rcube
 
 #endif // ENTITYMANAGER_H

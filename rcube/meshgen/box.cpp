@@ -1,6 +1,8 @@
 #include "box.h"
 #include "plane.h"
 
+namespace rcube {
+
 MeshData box(float width, float height, float depth, unsigned int width_segments,
              unsigned int height_segments, unsigned int depth_segments) {
     std::vector<MeshData> data;
@@ -59,3 +61,5 @@ MeshData box(float width, float height, float depth, unsigned int width_segments
     }
     return box_data;
 }
+
+} // namespace rcube

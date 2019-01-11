@@ -4,6 +4,8 @@
 #include <iostream>
 using namespace std;
 
+namespace rcube {
+
 const std::string ERROR_FRAMEBUFFER_UNINITIALIZED = "Cannot use Framebuffer without initializing";
 
 Framebuffer::Framebuffer() {
@@ -161,3 +163,5 @@ Image Framebuffer::getImage(int attachment_index) const {
     free(pixel_data);
     return im;
 }
+
+} // namespace rcube

@@ -1,5 +1,7 @@
 #include "BlurEffect.h"
 
+namespace rcube {
+
 BlurEffect::BlurEffect(unsigned int amount)
     : amount(amount) {
     tmp = Framebuffer::create(1280, 720);
@@ -66,3 +68,4 @@ void BlurEffect::done() {
     }
 }
 
+} // namespace rcube

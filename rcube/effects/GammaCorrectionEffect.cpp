@@ -1,5 +1,7 @@
 #include "GammaCorrectionEffect.h"
 
+namespace rcube {
+
 std::string GammaCorrectionEffect::fragmentShader() {
     return R"(
 #version 420
@@ -18,3 +20,5 @@ void main() {
 void GammaCorrectionEffect::setUniforms() {
     // Nothing to do
 }
+
+} // namespace rcube

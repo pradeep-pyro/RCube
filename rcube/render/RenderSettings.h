@@ -3,6 +3,8 @@
 
 #include "glad/glad.h"
 
+namespace rcube {
+
 enum RenderPriority {
     Opaque = 0,
     Background = 10,
@@ -47,5 +49,7 @@ struct RenderSettings {
     BlendFunc blendfunc_src, blendfunc_dst;
     DepthFunc depthfunc = DepthFunc::Less;
 };
+
+} // namespace rcube
 
 #endif // RENDERSETTINGS_H

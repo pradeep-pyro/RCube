@@ -1,6 +1,8 @@
 #include "FlatMaterial.h"
 #include <string>
 
+namespace rcube {
+
 const std::string vert_src = R"(
 #version 420
 
@@ -56,3 +58,5 @@ void FlatMaterial::setUniforms() {}
 int FlatMaterial::renderPriority() const {
     return RenderPriority::Opaque;
 }
+
+} // namespace rcube

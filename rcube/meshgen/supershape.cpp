@@ -1,6 +1,8 @@
 #include "supershape.h"
 #include "glm/gtc/constants.hpp"
 
+namespace rcube {
+
 float superFormula(float angle, float a, float b, float m1, float m2, float n1, float n2, float n3) {
     using std::pow;
     using std::cos;
@@ -75,3 +77,5 @@ MeshData superShape(unsigned int latitude_segments, unsigned int longitude_segme
     return superShape(latitude_segments, longitude_segments, a, b, m, n1, n2, n3,
                       a, b, m, n1, n2, n3);
 }
+
+} // namespace rcube

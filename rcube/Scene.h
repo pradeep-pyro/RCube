@@ -1,5 +1,5 @@
-#ifndef DEFAULTWORLD_H
-#define DEFAULTWORLD_H
+#ifndef SCENE_H
+#define SCENE_H
 
 #include "ecs/world.h"
 
@@ -23,4 +23,4 @@ public:
 
 } // namespace rcube
 
-#endif // DEFAULTWORLD_H
+#endif // SCENE_H

@@ -1,6 +1,6 @@
 #include "system.h"
-#include <iostream>
-using namespace std;
+
+namespace rcube {
 
 void ComponentMask::set(size_t pos, bool flag) {
     bits.set(pos, flag);
@@ -25,3 +25,5 @@ std::string ComponentMask::to_string() const {
 bool operator==(const ComponentMask &lhs, const ComponentMask &rhs) {
     return lhs.bits == rhs.bits;
 }
+
+} // namespace rcube

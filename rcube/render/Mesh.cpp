@@ -3,6 +3,8 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "checkglerror.h"
 
+namespace rcube {
+
 const std::string ERROR_MESH_UNINITIALIZED = "Cannot use Mesh without initializing";
 const std::string ERROR_MESH_PRIMITIVE_INDICES_MISMATCH = "Mismatch between mesh indices count and primitive";
 
@@ -269,3 +271,5 @@ void Mesh::setDefaultValue(GLuint id, const glm::vec3 &val) {
 void Mesh::setDefaultValue(GLuint id, const glm::vec2 &val) {
     glVertexAttrib2f(id, val[0], val[1]);
 }
+
+} // namespace rcube

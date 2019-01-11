@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 
+namespace rcube {
+
 std::string getStringFromFile(const std::string &filename) {
     std::ifstream f(filename);
     if (!f.is_open()) {
@@ -302,3 +304,5 @@ void ShaderProgram::addShaderFromFile(GLuint type, const std::string &filename, 
     std::string src = getStringFromFile(filename);
     addShader(type, src, debug);
 }
+
+} // namespace rcube

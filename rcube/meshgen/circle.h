@@ -4,6 +4,8 @@
 #include "../render/Mesh.h"
 #include "glm/gtc/constants.hpp"
 
+namespace rcube {
+
 /**
  * Creates mesh data representing a solid 2D disk
  * @param radius Radius of the disk
@@ -13,5 +15,7 @@
  * @return A disk shaped mesh
  */
 MeshData circle(float radius=1, int radial_segments=10, float theta_start=0, float theta_end=glm::two_pi<float>());
+
+} // namespace rcube
 
 #endif // CIRCLE_H

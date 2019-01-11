@@ -4,6 +4,8 @@
 #include "checkglerror.h"
 #include "../materials/FlatMaterial.h"
 
+namespace rcube {
+
 const std::vector<glm::vec3> skybox_vertices = {
     glm::vec3(-1.0f,  1.0f, -1.0f),
     glm::vec3(-1.0f, -1.0f, -1.0f),
@@ -323,3 +325,5 @@ void GLRenderer::renderTextureToScreen(Texture2D *tex) {
     //clear();
     quad_shader_->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
+
+} // namespace rcube

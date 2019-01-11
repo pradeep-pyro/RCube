@@ -3,6 +3,8 @@
 
 #include "../render/Mesh.h"
 
+namespace rcube {
+
 /**
  * Creates mesh data representing a box.
  * Note that the texture coordinates parametrize each face of the box, resulting in a single texture
@@ -17,5 +19,7 @@
  */
 MeshData box(float width, float height, float depth, unsigned int width_segments,
              unsigned int height_segments, unsigned int depth_segments);
+
+} // namespace rcube
 
 #endif // BOX_H

@@ -8,8 +8,8 @@
 #include <algorithm>
 #include "../ext/stb_image/stb_image.h"
 #include "../ext/stb_image/stb_image_write.h"
-#include <iostream>
-using namespace std;
+
+namespace rcube {
 
 class Image {
 public:
@@ -73,5 +73,7 @@ private:
     int width_, height_, channels_;
     std::vector<unsigned char> pixels_;
 };
+
+} // namespace rcube
 
 #endif // IMAGE_H

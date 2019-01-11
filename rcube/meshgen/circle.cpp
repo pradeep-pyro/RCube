@@ -1,5 +1,7 @@
 #include "circle.h"
 
+namespace rcube {
+
 MeshData circle(float radius, int radial_segments, float theta_start, float theta_end) {
     MeshData data;
     data.indexed = true;
@@ -35,3 +37,5 @@ MeshData circle(float radius, int radial_segments, float theta_start, float thet
 
     return data;
 }
+
+} // namespace rcube

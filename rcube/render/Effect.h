@@ -6,6 +6,8 @@
 #include "Mesh.h"
 #include "Framebuffer.h"
 
+namespace rcube {
+
 /**
  * Effect is the base class for all image based post processing shaders
  * To implement a new effect, derive from Effect and implement the fragmentShader()
@@ -47,5 +49,7 @@ protected:
     std::shared_ptr<ShaderProgram> shader_;
     bool init_;
 };
+
+} // namespace rcube
 
 #endif // EFFECT_H

@@ -3,6 +3,8 @@
 #include "glm/gtx/string_cast.hpp"
 #include "circle.h"
 
+namespace rcube {
+
 MeshData cylinder(float radius_bottom, float radius_top, float height, int radial_segments, int height_segments,
                   float theta_start, float theta_end, bool top_cap, bool bottom_cap) {
     MeshData data;
@@ -63,3 +65,5 @@ MeshData cylinder(float radius_bottom, float radius_top, float height, int radia
 
     return data;
 }
+
+} // namespace rcube

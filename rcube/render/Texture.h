@@ -7,6 +7,8 @@
 #include <memory>
 #include "Image.h"
 
+namespace rcube {
+
 enum class TextureWrapMode {
     Repeat = GL_REPEAT,
     MirroredRepeat = GL_MIRRORED_REPEAT,
@@ -132,5 +134,6 @@ private:
     TextureInternalFormat internal_format_;
 };
 
+} // namespace rcube
 
 #endif // TEXTURE_H

@@ -1,5 +1,7 @@
 #include "Material.h"
 
+namespace rcube {
+
 Material::Material() : shader_(std::make_shared<ShaderProgram>()), init_(false) {
 }
 
@@ -33,3 +35,5 @@ void Material::use() {
 void Material::done() {
     shader_->done();
 }
+
+} // namespace rcube

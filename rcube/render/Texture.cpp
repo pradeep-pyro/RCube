@@ -3,6 +3,8 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "checkglerror.h"
 
+namespace rcube {
+
 const std::string ERROR_IMAGE_TEXTURE_MISMATCH = "Image dimensions are different from allocated texture dimensions";
 const std::string ERROR_IMAGE_CHANNELS_MISMATCH = "Unexpected number of channels, expected 1, 3, or 4";
 const std::string ERROR_TEXTURE_UNINITIALIZED = "Cannot use texture without initializing";
@@ -390,3 +392,5 @@ void TextureCubemap::generateMipMap() {
 bool TextureCubemap::valid() const {
     return id_ > 0;
 }
+
+} // namespace rcube

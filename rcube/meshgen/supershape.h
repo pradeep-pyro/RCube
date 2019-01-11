@@ -1,8 +1,10 @@
-#ifndef SUPERFORMULA_H
-#define SUPERFORMULA_H
+#ifndef SUPERSHAPE_H
+#define SUPERSHAPE_H
 
 #include <memory>
 #include "../render/Mesh.h"
+
+namespace rcube {
 
 /**
  * Creates a super shape
@@ -20,5 +22,6 @@
 MeshData superShape(unsigned int latitude_segments, unsigned int longitude_segments,
                     float a, float b, float m, float n1, float n2, float n3);
 
+} // namespace rcube
 
-#endif // SUPERFORMULA_H
+#endif // SUPERSHAPE_H

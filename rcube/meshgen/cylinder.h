@@ -4,6 +4,8 @@
 #include "../render/Mesh.h"
 #include "glm/gtc/constants.hpp"
 
+namespace rcube {
+
 /**
  * Creates a mesh representing a cylinder
  * @param radius_bottom Radius at the bottom of the cylinder
@@ -19,5 +21,7 @@
  */
 MeshData cylinder(float radius_bottom=1, float radius_top=1, float height=1, int radial_segments=10, int height_segments=10,
                   float theta_start=0, float theta_end=glm::two_pi<float>(), bool top_cap=true, bool bottom_cap=true);
+
+} // namespace rcube
 
 #endif // CYLINDER_H

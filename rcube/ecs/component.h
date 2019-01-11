@@ -1,6 +1,8 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
+namespace rcube {
+
 namespace internal {
 
 /**
@@ -10,7 +12,7 @@ struct ComponentCounter {
     static unsigned int counter;
 };
 
-}
+} // namespace internal
 
 /**
  * Base class for all components.
@@ -29,5 +31,7 @@ public:
         return family;
     }
 };
+
+} // namespace rcube
 
 #endif // COMPONENT_H

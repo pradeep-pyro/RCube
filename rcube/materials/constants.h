@@ -4,6 +4,8 @@
 #include "glad/glad.h"
 #include <stdexcept>
 
+namespace rcube {
+
 /**
  *
  */
@@ -32,5 +34,7 @@ constexpr double refractiveIndex(Medium m) {
         return 2.417;
     }
 }
+
+} // namespace rcube
 
 #endif // CONSTANTS_H

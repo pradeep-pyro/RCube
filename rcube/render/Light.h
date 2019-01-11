@@ -4,6 +4,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/constants.hpp"
 
+namespace rcube {
+
 /**
  * Light stores data for all kinds of lights that can be sent
  * to the shaders.
@@ -22,5 +24,6 @@ struct Light {
     glm::vec3 ambient;
 };
 
+} // namespace rcube
 
 #endif // LIGHT_H

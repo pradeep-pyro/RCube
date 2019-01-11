@@ -1,7 +1,9 @@
-#ifndef GAMMACORRECTION_H
-#define GAMMACORRECTION_H
+#ifndef GAMMACORRECTIONEFFECT_H
+#define GAMMACORRECTIONEFFECT_H
 
 #include "../render/Effect.h"
+
+namespace rcube {
 
 /**
  * GammaCorrectionEffect is a postprocessing effect that converts the contents of the screen
@@ -16,4 +18,6 @@ public:
     void setUniforms() override;
 };
 
-#endif // GAMMACORRECTION_H
+} // namespace rcube
+
+#endif // GAMMACORRECTIONEFFECT_H

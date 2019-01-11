@@ -1,6 +1,8 @@
 #include <iostream>
 #include "world.h"
 
+namespace rcube {
+
 void World::initialize() {
     for (const auto &sys : systems_) {
         sys->initialize();
@@ -69,3 +71,5 @@ void World::updateEntityToSystem(Entity ent, int component_family, bool flag) {
         }
     }
 }
+
+} // namespace rcube

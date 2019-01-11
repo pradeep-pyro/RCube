@@ -6,6 +6,8 @@
 #include "glm/glm.hpp"
 #include "../render/Mesh.h"
 
+namespace rcube {
+
 enum class Orientation {
     PositiveX, NegativeX,
     PositiveY, NegativeY,
@@ -22,5 +24,7 @@ enum class Orientation {
  * @return MeshData
  */
 MeshData plane(float width, float height, unsigned int width_segments, unsigned int height_segments, Orientation ort);
+
+} // namespace rcube
 
 #endif // PLANE_H

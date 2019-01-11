@@ -5,6 +5,8 @@
 #include "Texture.h"
 #include <vector>
 
+namespace rcube {
+
 /**
  * Framebuffer represents a collection of color, depth and stencil buffers that can be
  * used for off-screen rendering.
@@ -142,5 +144,7 @@ private:
     std::shared_ptr<Texture2D> depth_stencil_;
     bool has_depth_stencil_ = false;
 };
+
+} // namespace rcube
 
 #endif // FRAMEBUFFER_H

@@ -3,6 +3,8 @@
 
 #include "../render/Effect.h"
 
+namespace rcube {
+
 /**
  * GrayscaleEffect is a postprocessing effect that converts the contents of the screen
  * from RGB to grayscale while leaving the alpha channel untouched.
@@ -15,5 +17,7 @@ public:
     std::string fragmentShader() override;
     void setUniforms() override;
 };
+
+} // namespace rcube
 
 #endif // GRAYSCALEEFFECT_H

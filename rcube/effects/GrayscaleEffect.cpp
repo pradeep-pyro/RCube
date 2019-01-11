@@ -1,5 +1,7 @@
 #include "GrayscaleEffect.h"
 
+namespace rcube {
+
 GrayscaleEffect::GrayscaleEffect() {
     initialize();
 }
@@ -21,3 +23,5 @@ void main() {
 
 void GrayscaleEffect::setUniforms() {
 }
+
+} // namespace rcube

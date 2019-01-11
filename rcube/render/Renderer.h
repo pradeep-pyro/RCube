@@ -12,6 +12,8 @@
 #include "Image.h"
 #include "RenderSettings.h"
 
+namespace rcube {
+
 class GLRenderer {
 public:
     GLRenderer();
@@ -93,6 +95,6 @@ private:
     std::shared_ptr<ShaderProgram> quad_shader_;
 };
 
+} // namespace rcube
 
 #endif // RENDERER_H
-

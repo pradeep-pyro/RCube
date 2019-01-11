@@ -1,5 +1,7 @@
 #include "grid.h"
 
+namespace rcube {
+
 MeshData grid(float width, float height, int width_segments, int height_segments,
               glm::vec3 color_centerline_x, glm::vec3 color_centerline_z, glm::vec3 color_grid) {
     MeshData mesh;
@@ -26,3 +28,5 @@ MeshData grid(float width, float height, int width_segments, int height_segments
     }
     return mesh;
 }
+
+} // namespace rcube

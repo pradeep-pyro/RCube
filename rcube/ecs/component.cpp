@@ -1,7 +1,9 @@
 #include "component.h"
 
+namespace rcube {
 namespace internal {
 
-int ComponentCounter::counter = 0;
+unsigned int ComponentCounter::counter = 0;
 
-}
+} // namespace internal
+} // namespace rcube

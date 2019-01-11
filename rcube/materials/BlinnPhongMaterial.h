@@ -1,11 +1,13 @@
-#ifndef RCUBE_STANDARD_H
-#define RCUBE_STANDARD_H
+#ifndef BLINNPHONGMATERIAL_H
+#define BLINNPHONGMATERIAL_H
 
 #include <string>
 #include "glm/glm.hpp"
 #include "../render/Material.h"
 #include "../render/Texture.h"
 #include "constants.h"
+
+namespace rcube {
 
 /**
  * BlinnPhongMaterial is for displaying shiny surfaces with specular highlights.
@@ -44,4 +46,6 @@ public:
     bool show_backface;                 /// Whether to shade the backfacing triangles
 };
 
-#endif // RCUBE_STANDARD_H
+} // namespace rcube
+
+#endif // BLINNPHONGMATERIAL_H

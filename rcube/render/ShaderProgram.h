@@ -9,6 +9,8 @@
 #include "glm/gtc/matrix_integer.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+namespace rcube {
+
 class ShaderProgram {
 public:
     ShaderProgram();
@@ -56,5 +58,7 @@ private:
     std::vector<GLint> shaders_;
     bool warn_;
 };
+
+} // namespace rcube
 
 #endif // SHADERPROGRAM_H

@@ -4,6 +4,8 @@
 #include "glm/glm.hpp"
 #include "../render/Mesh.h"
 
+namespace rcube {
+
 /**
  * Create a planar grid (suitable as a ground plane in mesh viewers)
  * @param width Width of the grid
@@ -18,5 +20,7 @@
 MeshData grid(float width, float height, int width_segments, int height_segments,
               glm::vec3 color_centerline_x, glm::vec3 color_centerline_z,
               glm::vec3 color_grid);
+
+} // namespace rcube
 
 #endif // GRID_H

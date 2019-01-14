@@ -40,9 +40,11 @@ public:
      * Adds a component of type ComponentType to the entity
      * An easier approach is to get an EntityHandle from create entity and
      * call entity_handle.add<ComponentType>();
+     *
+     * Note: ComponentType must be default constructible
      */
     template <typename ComponentType>
-    void addComponent(Entity entity, const ComponentType &comp) {
+    void addComponent(Entity entity, ComponentType comp=ComponentType()) {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         manager->add(entity, comp);
         updateEntityToSystem(entity, ComponentType::family(), true);
@@ -141,7 +143,7 @@ struct EntityHandle {
      * @param comp Component to add
      */
     template <typename T>
-    void add(const T &comp) {
+    void add(T comp = T()) {
         world->addComponent(entity, comp);
     }
     /**

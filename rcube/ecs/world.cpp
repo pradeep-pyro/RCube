@@ -41,6 +41,10 @@ EntityHandleIterator<std::unordered_set<Entity>> World::entities() {
     return EntityHandleIterator<decltype(entity_mgr_.entities)>(this, entity_mgr_.entities);
 }
 
+size_t World::numEntities() const {
+    return entity_mgr_.count();
+}
+
 void World::update() {
     for (const auto &sys : systems_) {
         sys->update(false);

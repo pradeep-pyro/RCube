@@ -8,6 +8,7 @@ namespace rcube {
  * Internally it just stores a unique unsigned int ID.
  */
 struct Entity {
+    Entity() = default;
     Entity(unsigned int id) : id_(id) {}
     unsigned int id() const {
         return id_;

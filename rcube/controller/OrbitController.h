@@ -20,10 +20,12 @@ public:
     float orbit_speed = 1.0f;    /// Speed of orbiting motion
 
     OrbitController();
-    virtual void update(const CameraController::InputState &state) override;
+    void startOrbiting(int x, int y);
+    void stopOrbiting(int x, int y);
+    void orbit(int x, int y);
 private:
-    bool panning_, orbiting_;
-    int last_x_, last_y_;
+    bool orbiting_;
+    int last_ox_, last_oy_;
 };
 
 } // namespace rcube

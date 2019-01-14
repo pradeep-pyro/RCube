@@ -12,32 +12,10 @@ namespace rcube {
  * By default, the base class does not provide any functionality except holding the camera
  * entity which is to be controlled, and movement and rotation speeds.
  *
- * The class can be extended by overriding the update() method.
+ * The class can be extended by adding methods to modify the stored camera or its transform.
  */
 class CameraController {
 public:
-
-    struct InputState {
-        InputState() {
-            clear();
-        }
-        int x, y;
-        bool mouse_left, mouse_middle, mouse_right;
-        bool alt, ctrl, shift;
-        double scroll_x, scroll_y;
-        void clear() {
-            x = 0;
-            y = 0;
-            mouse_middle = false;
-            mouse_right = false;
-            alt = false;
-            ctrl = false;
-            shift = false;
-            scroll_x = 0.0;
-            scroll_y = 0.0;
-        }
-    };
-
     /**
      * Constructor
      */
@@ -63,13 +41,6 @@ public:
      * @return Pointer to Camera
      */
     Camera * camera() const;
-
-    /**
-     * Updates the camera and its transformation based on the given
-     * input state
-     * @param state IO state
-     */
-    virtual void update(const InputState &state) = 0;
 
 protected:
     Camera *camera_;

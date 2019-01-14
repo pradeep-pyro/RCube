@@ -14,10 +14,14 @@ public:
     float zoom_speed = 0.1f;  /// Zooming speed
 
     PanZoomController();
-    virtual void update(const CameraController::InputState &state) override;
+    void startPanning(int x, int y);
+    void stopPanning(int x, int y);
+    virtual void pan(int x, int y);
+    virtual void zoom(float amount);
 private:
-    bool panning_;
-    int last_x_, last_y_;
+    bool panning_ = false;
+    int last_px_ = 0;
+    int last_py_ = 0;
 };
 
 } // namespace rcube

@@ -31,32 +31,34 @@ OrbitController::OrbitController() : min_horizontal_angle(-std::numeric_limits<f
     min_vertical_angle(0.1f), max_vertical_angle(glm::pi<float>() - 0.1f), orbiting_(false) {
 }
 
-void OrbitController::update(const CameraController::InputState &state) {
-    PanZoomController::update(state);
-    if (orbiting_ != state.mouse_right) {
-        orbiting_ = state.mouse_right;
-        if (orbiting_) {
-            last_x_ = state.x;
-            last_y_ = state.y;
-        }
-    }
+void OrbitController::startOrbiting(int x, int y) {
+    orbiting_ = true;
+    last_ox_ = x;
+    last_oy_ = y;
+}
 
-    if (orbiting_ && last_x_ != state.x && last_y_ != state.y) {
+void OrbitController::stopOrbiting(int x, int y) {
+    orbiting_ = false;
+    last_ox_ = x;
+    last_oy_ = y;
+}
+
+void OrbitController::orbit(int x, int y) {
+    if (orbiting_ && (last_ox_ != x) && (last_oy_ != y)) {
         glm::vec3 pos = transform_->position();
         float r, ha, va;
         cartesianToSpherical(pos, r, ha, va);
-        float dx = static_cast<float>(last_x_ - state.x) / static_cast<float>(width_);
-        float dy = static_cast<float>(last_y_ - state.y) / static_cast<float>(height_);
+        float dx = static_cast<float>(last_ox_ - x) / static_cast<float>(width_);
+        float dy = static_cast<float>(last_oy_ - y) / static_cast<float>(height_);
         dx *= orbit_speed;
         dy *= orbit_speed;
         va = glm::clamp(va + dy, min_vertical_angle, max_vertical_angle);
         ha = glm::clamp(ha + dx, min_horizontal_angle, max_horizontal_angle);
         pos = sphericalToCartesian(r, ha, va);
         transform_->setPosition(pos);
-        last_x_ = state.x;
-        last_y_ = state.y;
+        last_ox_ = x;
+        last_oy_ = y;
     }
-
 }
 
 } // namespace rcube

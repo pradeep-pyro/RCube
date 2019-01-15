@@ -37,10 +37,12 @@ public:
     // Textures
     std::shared_ptr<Texture2D> diffuse_texture;       /// Diffuse texture
     std::shared_ptr<Texture2D> specular_texture;      /// Specular texture
+    std::shared_ptr<Texture2D> normal_texture;        /// Normal map/texture
     std::shared_ptr<TextureCubemap> environment_map;  /// Environment map texture
     Combine blend_environment_map;                    /// How to combine environment map texture with the rest
     bool use_diffuse_texture = false;   /// Whether to use diffuse texture
     bool use_specular_texture = false;  /// Whether to use specular texture
+    bool use_normal_texture = false;    /// Whether to use normal texture
     bool use_environment_map = false;   /// Whether to use environment map texture
     // Rendering customizations
     bool show_backface;                 /// Whether to shade the backfacing triangles

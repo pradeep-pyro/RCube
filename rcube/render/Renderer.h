@@ -87,8 +87,8 @@ private:
     bool init_;
 
     // Cache
-    glm::mat4 world_to_view_;
     int num_lights_;
+    glm::vec3 eye_pos_ = glm::vec3(0);
 
     // Quad
     std::shared_ptr<Mesh> quad_mesh_;

@@ -108,7 +108,7 @@ void main() {
 
 GLRenderer::GLRenderer()
     : top_(0), left_(0), width_(1280), height_(720),
-      clear_color_(glm::vec4(1.f)), init_(false),  world_to_view_(glm::mat4(1)), num_lights_(0) {
+      clear_color_(glm::vec4(1.f)), init_(false), num_lights_(0) {
 }
 
 void GLRenderer::cleanup() {
@@ -200,19 +200,16 @@ void GLRenderer::setLightsCamera(const std::vector<Light> &lights, const glm::ma
     glBufferSubData(GL_UNIFORM_BUFFER, 2*float4x4_size, float4x4_size, glm::value_ptr(projection_to_viewport));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
-
-    // Store view matrix to multiply with model matrix later
-    world_to_view_ = world_to_view;
-
+    eye_pos_ = glm::vec3(glm::inverse(world_to_view)[3]);
     // Copy lights
     std::vector<float> light_data;
     assert (lights.size() < 99);
     light_data.reserve(lights.size() * 12);
     for (const Light &l : lights) {
         glm::vec3 pos_xyz = l.position;
-        pos_xyz = glm::vec3(world_to_view * glm::vec4(pos_xyz, 1.f));
+        //pos_xyz = glm::vec3(world_to_view * glm::vec4(pos_xyz, 1.f));
         glm::vec3 dir = glm::vec3(l.direction);
-        dir = glm::vec3(world_to_view * glm::vec4(dir, 0.f));
+        //dir = glm::vec3(world_to_view * glm::vec4(dir, 0.f));
         light_data.push_back(pos_xyz.x);
         light_data.push_back(pos_xyz.y);
         light_data.push_back(pos_xyz.z);
@@ -266,8 +263,7 @@ void GLRenderer::updateSettings(const RenderSettings &settings) {
 }
 
 void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world) {
-    glm::mat4 model_view = world_to_view_ * model_to_world;
-    glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_view)));
+    glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
 
     assert (material != nullptr);
 
@@ -277,7 +273,8 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
     // Use shader and set uniforms
     material->use();
     std::shared_ptr<ShaderProgram> sh = material->shader();
-    sh->setUniform("modelview_matrix", model_view);
+    sh->setUniform("model_matrix", model_to_world);
+    sh->setUniform("eye_pos", eye_pos_);
     sh->setUniform("normal_matrix",normal_matrix);
     sh->setUniform("num_lights", static_cast<int>(num_lights_));
 
@@ -293,8 +290,6 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
 }
 
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap) {
-    //skybox_.texture = cubemap;
-    //skybox_.render();
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     cubemap->use(3);
@@ -322,7 +317,6 @@ void GLRenderer::renderTextureToScreen(Texture2D *tex) {
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     quad_shader_->use();
-    //clear();
     quad_shader_->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 

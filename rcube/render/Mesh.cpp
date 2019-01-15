@@ -54,6 +54,7 @@ std::shared_ptr<Mesh> Mesh::create() {
     mesh->disableAttribute(MeshAttributes::Colors);
     mesh->disableAttribute(MeshAttributes::Normals);
     mesh->disableAttribute(MeshAttributes::TexCoords);
+    mesh->disableAttribute(MeshAttributes::Tangents);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     checkGLError();
@@ -88,6 +89,10 @@ void Mesh::release() {
         glDeleteBuffers(1, &glbuf_.colors);
         glbuf_.colors = 0;
     }
+    if (glbuf_.tangents != 0) {
+        glDeleteBuffers(1, &glbuf_.tangents);
+        glbuf_.colors = 0;
+    }
     init_ = false;
 }
 
@@ -118,7 +123,11 @@ void Mesh::enableAttribute(MeshAttributes attr) {
         id = &glbuf_.vertices;
         has_vertices_ = true;
     }
-    else {
+    else if (attr == MeshAttributes::Tangents) {
+        id = &glbuf_.tangents;
+        has_tangents_ = true;
+    }
+    else if (attr == MeshAttributes::TexCoords) {
         id = &glbuf_.texcoords;
         dim = 2;
         has_texcoords_ = true;
@@ -151,6 +160,10 @@ void Mesh::disableAttribute(MeshAttributes attr) {
     else if (attr == MeshAttributes::TexCoords) {
         setDefaultValue(gl_attr, glm::vec2(0));
         has_texcoords_ = false;
+    }
+    else if (attr == MeshAttributes::Tangents) {
+        setDefaultValue(gl_attr, glm::vec2(0));
+        has_tangents_ = false;
     }
     checkGLError();
     done();
@@ -197,7 +210,12 @@ bool Mesh::hasAttribute(MeshAttributes attr) const {
     if (attr == MeshAttributes::Colors) {
         return has_colors_;
     }
-    return has_texcoords_;
+    if (attr == MeshAttributes::TexCoords) {
+        return has_texcoords_;
+    }
+    if (attr == MeshAttributes::Tangents) {
+        return has_tangents_;
+    }
 }
 
 void Mesh::uploadToGPU(bool clear_cpu_data) {
@@ -226,6 +244,14 @@ void Mesh::uploadToGPU(bool clear_cpu_data) {
     }
     else {
         disableAttribute(MeshAttributes::Colors);
+    }
+
+    if (data.tangents.size() > 0 && data.tangents.size() == data.vertices.size()) {
+        enableAttribute(MeshAttributes::Tangents);
+        setArrayBuffer(glbuf_.tangents, glm::value_ptr(data.tangents[0]), 3 * data.tangents.size());
+    }
+    else {
+        disableAttribute(MeshAttributes::Tangents);
     }
 
     if (data.indexed) {

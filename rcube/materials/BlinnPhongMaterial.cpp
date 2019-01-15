@@ -17,7 +17,7 @@ layout (std140, binding=0) uniform Matrices {
     mat4 viewport_matrix;
 };
 
-uniform mat4 modelview_matrix;
+uniform mat4 model_matrix;
 uniform mat3 normal_matrix;
 
 out vec3 v_vertex;
@@ -26,9 +26,9 @@ out vec3 v_color;
 out vec2 v_texture;
 
 void main() {
-    vec4 cam_vertex = modelview_matrix * vec4(vertex, 1.0);
-    gl_Position = projection_matrix * cam_vertex;
-    v_vertex = cam_vertex.xyz;
+    vec4 world_vertex = model_matrix * vec4(vertex, 1.0);
+    gl_Position = projection_matrix * view_matrix * world_vertex;
+    v_vertex = world_vertex.xyz;
     v_normal = normalize(normal_matrix * normal);
     v_color = color;
     v_texture = texcoord;
@@ -127,6 +127,7 @@ out vec4 out_color;
 
 // Scene uniforms
 uniform int num_lights;
+uniform vec3 eye_pos;
 
 layout (std140, binding=0) uniform Matrices {
     mat4 view_matrix;
@@ -160,11 +161,12 @@ uniform Material material;
 
 layout (binding = 0) uniform sampler2D diffuse_tex;
 layout (binding = 1) uniform sampler2D specular_tex;
+layout (binding = 2) uniform sampler2D normal_tex;
 layout (binding = 3) uniform samplerCube env_map;
 
 uniform bool show_wireframe;
 uniform bool show_backface;
-uniform bool use_diffuse_texture, use_specular_texture, use_environment_map;
+uniform bool use_diffuse_texture, use_specular_texture, use_normal_texture, use_environment_map;
 uniform int blend_environment_map;
 
 struct Line {
@@ -186,18 +188,15 @@ bool close(float a, float b) {
 
 void main() {
     vec3 result = vec3(0.0);
-
-    vec3 material_diffuse;
-    if (use_diffuse_texture) {
-        material_diffuse = vec3(texture(diffuse_tex, g_texture)) * g_color;
-    }
-    else {
-        material_diffuse = material.diffuse * g_color;
-    }
+    // Diffuse component
+    vec3 material_diffuse = use_diffuse_texture ? texture(diffuse_tex, g_texture).rgb * g_color : material.diffuse * g_color;
+    // Specular component
     float specular_tex_val = use_specular_texture ? texture(specular_tex, g_texture).r : 1.0;
-
-    vec3 N = normalize(g_normal);        // Surface normal
-    vec3 V = normalize(vec3(-g_vertex)); // Surface to eye
+    // Surface normal
+    vec3 N = use_normal_texture ? texture(normal_tex, g_texture).rgb * 2.0 - 1.0 : g_normal;
+    N = normalize(N);
+    // Surface to eye
+    vec3 V = normalize(vec3(eye_pos - g_vertex)); // Surface to eye
 
     for (int i = 0; i < min(num_lights, MAX_LIGHTS); ++i)
     {
@@ -236,9 +235,9 @@ void main() {
     }
     // Environment map
     if (use_environment_map) {
-        vec3 I = normalize(g_vertex);
+        vec3 I = normalize(g_vertex - eye_pos);
         vec3 R = reflect(I, normalize(g_normal));
-        R = vec3(inverse(view_matrix) * vec4(R, 0.0));
+        //R = vec3(inverse(view_matrix) * vec4(R, 0.0));
         vec3 em = texture(env_map, R).rgb;
         if (blend_environment_map == 0) {
             result *= em;
@@ -251,7 +250,7 @@ void main() {
         }
     }
 
-    out_color = vec4(result, 1);
+    out_color = vec4(result, 1.0);
 }
 )";
 
@@ -283,6 +282,9 @@ void BlinnPhongMaterial::use() {
     if (specular_texture != nullptr && use_specular_texture) {
         specular_texture->use(1);
     }
+    if (normal_texture != nullptr && use_normal_texture) {
+        normal_texture->use(2);
+    }
     if (environment_map != nullptr && use_environment_map) {
         environment_map->use(3);
     }
@@ -299,6 +301,7 @@ void BlinnPhongMaterial::setUniforms() {
 
     shader_->setUniform("use_diffuse_texture", use_diffuse_texture);
     shader_->setUniform("use_specular_texture", use_specular_texture);
+    shader_->setUniform("use_normal_texture", use_normal_texture);
 
     shader_->setUniform("use_environment_map", use_environment_map);
     shader_->setUniform("blend_environment_map", static_cast<int>(blend_environment_map));

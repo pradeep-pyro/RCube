@@ -15,13 +15,13 @@ layout (std140, binding=0) uniform Matrices {
     mat4 viewport_matrix;
 };
 
-uniform mat4 modelview_matrix;
+uniform mat4 model_matrix;
 
 out vec3 frag_color;
 
 void main() {
-    vec4 cam_vertex = modelview_matrix * vec4(vertex, 1.0);
-    gl_Position = projection_matrix * cam_vertex;
+    vec4 world_vertex = model_matrix * vec4(vertex, 1.0);
+    gl_Position = projection_matrix * view_matrix * world_vertex;
     frag_color = color;
 }
 )";

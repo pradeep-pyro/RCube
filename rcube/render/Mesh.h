@@ -17,10 +17,11 @@ enum class MeshAttributes {
     Normals = 1,
     TexCoords = 2,
     Colors = 3,
+    Tangents = 4
 };
 
 struct MeshData {
-    std::vector<glm::vec3> vertices, normals, colors;
+    std::vector<glm::vec3> vertices, normals, colors, tangents;
     std::vector<glm::vec2> texcoords;
     std::vector<unsigned int> indices;
     MeshPrimitive primitive = MeshPrimitive::Triangles;
@@ -89,9 +90,9 @@ private:
     // Opengl Buffer IDs
     struct GLBufferIDs {
         GLBufferIDs() : vao(0), vertices(0), normals(0), indices(0),
-            texcoords(0), colors(0) {
+            texcoords(0), colors(0), tangents(0) {
         }
-        GLuint vao, vertices, normals, indices, texcoords, colors;
+        GLuint vao, vertices, normals, indices, texcoords, colors, tangents;
     };
     GLBufferIDs glbuf_;
 
@@ -104,6 +105,7 @@ private:
     bool has_normals_ = false;
     bool has_texcoords_ = false;
     bool has_colors_ = false;
+    bool has_tangents_ =false;
     bool indexed_ = false;
     bool init_ = false;
 };

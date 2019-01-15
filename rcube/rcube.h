@@ -17,12 +17,6 @@ typedef void (*procAddress)(const char *);
  */
 void initGL(procAddress p=nullptr);
 
-/**
- * Create a World ready for 3D applications by adding the available systems.
- * @return World
- */
-World&& makeWorld();
-
 } // namespace rcube
 
 #endif // RCUBE_H

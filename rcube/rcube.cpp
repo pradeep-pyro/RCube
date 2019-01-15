@@ -14,12 +14,4 @@ void initGL(procAddress p) {
     }
 }
 
-World&& makeWorld() {
-    World world;
-    world.addSystem(std::make_unique<TransformSystem>());
-    world.addSystem(std::make_unique<CameraSystem>());
-    world.addSystem(std::make_unique<RenderSystem>());
-    return std::move(world);
-}
-
 } // namespace rcube

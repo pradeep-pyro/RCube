@@ -10,6 +10,7 @@ layout (location = 0) in vec3 vertex;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texcoord;
 layout (location = 3) in vec3 color;
+layout (location = 4) in vec3 tangent;
 
 layout (std140, binding=0) uniform Matrices {
     mat4 view_matrix;
@@ -24,6 +25,7 @@ out vec3 v_vertex;
 out vec3 v_normal;
 out vec3 v_color;
 out vec2 v_texture;
+out mat3 v_tbn;
 
 void main() {
     vec4 world_vertex = model_matrix * vec4(vertex, 1.0);
@@ -32,6 +34,9 @@ void main() {
     v_normal = normalize(normal_matrix * normal);
     v_color = color;
     v_texture = texcoord;
+    vec3 T = normalize(vec3(model_matrix * vec4(tangent, 0.0)));
+    vec3 B = cross(v_normal, T);
+    v_tbn = mat3(T, B, v_normal);
 }
 )";
 
@@ -56,6 +61,8 @@ in vec2 v_texture[];
 out vec2 g_texture;
 in vec3 v_color[];
 out vec3 g_color;
+in mat3 v_tbn[];
+out mat3 g_tbn;
 
 noperspective out vec3 dist;
 
@@ -84,6 +91,7 @@ void main() {
     g_normal = v_normal[0];
     g_texture = v_texture[0];
     g_color = v_color[0];
+    g_tbn = v_tbn[0];
     gl_Position = gl_in[0].gl_Position;
     EmitVertex();
 
@@ -93,6 +101,7 @@ void main() {
     g_normal = v_normal[1];
     g_texture = v_texture[1];
     g_color = v_color[1];
+    g_tbn = v_tbn[1];
     gl_Position = gl_in[1].gl_Position;
     EmitVertex();
 
@@ -102,6 +111,7 @@ void main() {
     g_normal = v_normal[2];
     g_texture = v_texture[2];
     g_color = v_color[2];
+    g_tbn = v_tbn[2];
     gl_Position = gl_in[2].gl_Position;
     EmitVertex();
     EndPrimitive();
@@ -134,6 +144,7 @@ layout (std140, binding=0) uniform Matrices {
     mat4 projection_matrix;
     mat4 viewport_matrix;
 };
+in mat3 g_tbn;
 
 // --------------------------------
 // Light uniforms
@@ -193,7 +204,7 @@ void main() {
     // Specular component
     float specular_tex_val = use_specular_texture ? texture(specular_tex, g_texture).r : 1.0;
     // Surface normal
-    vec3 N = use_normal_texture ? texture(normal_tex, g_texture).rgb * 2.0 - 1.0 : g_normal;
+    vec3 N = use_normal_texture ? g_tbn * (texture(normal_tex, g_texture).rgb * 2.0 - 1.0) : g_normal;
     N = normalize(N);
     // Surface to eye
     vec3 V = normalize(vec3(eye_pos - g_vertex)); // Surface to eye

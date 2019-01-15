@@ -162,7 +162,7 @@ void Mesh::disableAttribute(MeshAttributes attr) {
         has_texcoords_ = false;
     }
     else if (attr == MeshAttributes::Tangents) {
-        setDefaultValue(gl_attr, glm::vec2(0));
+        setDefaultValue(gl_attr, glm::vec3(1, 0, 0));
         has_tangents_ = false;
     }
     checkGLError();

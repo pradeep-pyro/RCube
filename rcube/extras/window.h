@@ -24,7 +24,7 @@ public:
     virtual void onMouseRelease(int key, int mods);
     virtual void onMouseMove(double xpos, double ypos);
     glm::dvec2 getMousePosition() const;
-    void requestTerminate();
+    void shouldClose(bool flag);
 protected:
     virtual void initialize();
     virtual void draw();

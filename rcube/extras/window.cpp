@@ -1,5 +1,5 @@
 #include "window.h"
-#include "rcube.h"
+#include "../rcube.h"
 #include <iostream>
 
 namespace rcube {
@@ -102,15 +102,13 @@ glm::dvec2 Window::getMousePosition() const {
 }
 
 void Window::execute() {
-    initialize();
+    initialize(); // User should override this method
     while (!glfwWindowShouldClose(window_)) {
-        draw();
+        draw(); // User should override this method
         glfwPollEvents();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window_, &display_w, &display_h);
         glfwSwapBuffers(window_);
     }
-    beforeTerminate();
+    beforeTerminate(); // User should override this method
     glfwDestroyWindow(window_);
     glfwTerminate();
 }
@@ -142,8 +140,8 @@ void Window::setFullscreen(bool flag) {
     }
 }
 
-void Window::requestTerminate() {
-    glfwSetWindowShouldClose(window_, true);
+void Window::shouldClose(bool flag) {
+    glfwSetWindowShouldClose(window_, flag);
 }
 
 glm::ivec2 Window::size() const {

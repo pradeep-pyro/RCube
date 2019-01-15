@@ -189,8 +189,8 @@ void GLRenderer::resize(int top, int left, int width, int height) {
     quad_shader_->use();
 }
 
-void GLRenderer::setLightsCamera(const std::vector<Light> &lights, const glm::mat4 &world_to_view,
-                                 const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport) {
+void GLRenderer::setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
+                           const glm::mat4 &projection_to_viewport) {
     initialize();
     // Copy projection and viewport matrices to UBO
     int float4x4_size = sizeof(glm::mat4);
@@ -201,6 +201,10 @@ void GLRenderer::setLightsCamera(const std::vector<Light> &lights, const glm::ma
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
     eye_pos_ = glm::vec3(glm::inverse(world_to_view)[3]);
+}
+
+void GLRenderer::setLights(const std::vector<Light> &lights) {
+    initialize();
     // Copy lights
     std::vector<float> light_data;
     assert (lights.size() < 99);

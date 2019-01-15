@@ -39,8 +39,10 @@ public:
 
     void updateSettings(const RenderSettings &settings);
 
-    void setLightsCamera(const std::vector<Light> &lights, const glm::mat4 &world_to_view,
-                         const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
+    void setLights(const std::vector<Light> &lights);
+
+    void setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
+                   const glm::mat4 &projection_to_viewport);
 
     void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
 

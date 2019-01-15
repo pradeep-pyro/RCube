@@ -58,6 +58,7 @@ void RenderSystem::update(bool /* force */) {
     const auto &camera_entities = registered_entities_[filters_[1]];
     const auto &renderable_entities = registered_entities_[filters_[2]];
 
+    // Set lights
     std::vector<Light> lights;
     lights.reserve(light_entities.size());
     for (const auto &e : light_entities) {
@@ -67,6 +68,7 @@ void RenderSystem::update(bool /* force */) {
         light.position = transform_comp->worldPosition();
         lights.push_back(light);
     }
+    renderer.setLights(lights);
 
     // Render all drawable entities
     for (const auto &camera_entity : camera_entities) {
@@ -81,7 +83,7 @@ void RenderSystem::update(bool /* force */) {
         renderer.clear(true, true, true);
 
         // set camera & lights
-        renderer.setLightsCamera(lights, cam->world_to_view, cam->view_to_projection, cam->projection_to_viewport);
+        renderer.setCamera(cam->world_to_view, cam->view_to_projection, cam->projection_to_viewport);
 
         // Draw all opaque
         for (const auto &render_entity : renderable_entities) {

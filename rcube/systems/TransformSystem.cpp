@@ -4,6 +4,10 @@
 
 namespace rcube {
 
+unsigned int TransformSystem::priority() const {
+    return 100;
+}
+
 void TransformSystem::updateHierarchy(Transform *comp, bool force) {
     if (comp->dirty_ || force) {
         glm::mat4 loc_tr = glm::toMat4(comp->orientation());

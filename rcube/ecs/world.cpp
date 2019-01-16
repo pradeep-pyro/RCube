@@ -54,6 +54,10 @@ void World::update() {
 void World::addSystem(std::unique_ptr<System> sys) {
     sys->registerWorld(this);
     systems_.push_back(std::move(sys));
+    std::sort(systems_.begin(), systems_.end(),
+              [](const std::unique_ptr<System> &sys1, const std::unique_ptr<System> &sys2) {
+                  return sys1->priority() < sys2->priority();
+              });
 }
 
 void World::updateEntityToSystem(Entity ent, int component_family, bool flag) {

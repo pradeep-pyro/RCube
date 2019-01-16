@@ -106,6 +106,8 @@ public:
         return filters_;
     }
 
+    virtual unsigned int priority() const = 0;
+
 protected:
     std::unordered_map<ComponentMask, std::vector<Entity>> registered_entities_;
     std::vector<ComponentMask> filters_;

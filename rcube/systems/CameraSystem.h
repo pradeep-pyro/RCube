@@ -11,6 +11,7 @@ public:
     virtual void initialize() override {}
     virtual void cleanup() override {}
     virtual void update(bool force) override;
+    virtual unsigned int priority() const override;
 };
 
 } // namespace rcube

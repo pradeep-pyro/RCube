@@ -12,6 +12,10 @@ CameraSystem::CameraSystem() {
     addFilter(camera_filter);
 }
 
+unsigned int CameraSystem::priority() const {
+    return 200;
+}
+
 void CameraSystem::update(bool /* force */ ) {
     for (const Entity &e : registered_entities_[filters_[0]]) {
         Camera *cam = world_->getComponent<Camera>(e);

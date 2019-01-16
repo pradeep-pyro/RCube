@@ -17,6 +17,7 @@ public:
     virtual void initialize() override;
     virtual void cleanup() override;
     virtual void update(bool force=false) override;
+    virtual unsigned int priority() const override;
 private:
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
     std::shared_ptr<Framebuffer> framebuffer_;

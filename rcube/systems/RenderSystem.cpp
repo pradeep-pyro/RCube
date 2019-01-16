@@ -26,6 +26,10 @@ RenderSystem::RenderSystem(glm::ivec2 resolution) : resolution_(resolution){
     addFilter(renderable_filter);
 }
 
+unsigned int RenderSystem::priority() const {
+    return 300;
+}
+
 void RenderSystem::initialize() {
     checkGLError();
     framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
@@ -73,10 +77,12 @@ void RenderSystem::update(bool /* force */) {
     // Render all drawable entities
     for (const auto &camera_entity : camera_entities) {
         Camera *cam = world_->getComponent<Camera>(camera_entity);
+        if (!cam->rendering) {
+            continue;
+        }
         checkGLError();
 
         // Set and clear draw area
-        // Store framebuffer in render system, not camera
         framebuffer_->use();
         renderer.resize(0, 0, framebuffer_->width(), framebuffer_->height());
         renderer.setClearColor(cam->background_color);

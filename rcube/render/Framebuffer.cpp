@@ -69,22 +69,22 @@ bool Framebuffer::isComplete() const {
     return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
-void Framebuffer::addColorAttachment(TextureInternalFormat internal_format) {
+void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size_t samples) {
     use();
-    auto tex = Texture2D::create(width_, height_, 1, internal_format);
+    auto tex = Texture2D::create(width_, height_, 1, internal_format, samples);
     colors_.push_back(tex);
     unsigned int index = static_cast<unsigned int>(colors_.size());
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D,
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(),
                            colors_[colors_.size() - 1]->id(), 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
     glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
     done();
 }
 
-void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format) {
+void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size_t samples) {
     use();
-    depth_stencil_ = Texture2D::create(width_, height_, 1, internal_format);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+    depth_stencil_ = Texture2D::create(width_, height_, 1, internal_format, samples);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_stencil_->target(),
                            depth_stencil_->id(), 0);
     has_depth_stencil_ = true;
     done();
@@ -106,12 +106,22 @@ Texture2D * Framebuffer::colorAttachment(size_t i) {
     return colors_[i].get();
 }
 
-void Framebuffer::blit(Framebuffer &target_fbo) {
+void Framebuffer::blit(Framebuffer &target_fbo, bool color, bool depth, bool stencil) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_fbo.id());
-    glDrawBuffer(GL_BACK);
+    //glDrawBuffer(GL_BACK);
+    GLbitfield bits = 0;
+    if (color) {
+        bits |= GL_COLOR_BUFFER_BIT;
+    }
+    if (depth && target_fbo.hasDepthStencilAttachment()) {
+        bits |= GL_DEPTH_BUFFER_BIT;
+    }
+    if (stencil && target_fbo.hasDepthStencilAttachment()) {
+        bits |= GL_STENCIL_BUFFER_BIT;
+    }
     glBlitFramebuffer(0, 0, width_, height_, 0, 0, target_fbo.width(), target_fbo.height(),
-                      GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+                      bits, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -127,10 +137,10 @@ void Framebuffer::blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color,
     if (stencil) {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBlitNamedFramebuffer(id_, 0, 0, 0, width_, height_,
-                           dst0.x, dst0.y, dst1.x, dst1.y,
-                           bits, GL_NEAREST);
-    checkGLError();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, width_, height_, dst0.x, dst0.y, dst1.x, dst1.y,
+                      bits, GL_NEAREST);
 }
 
 void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0,

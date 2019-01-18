@@ -51,13 +51,13 @@ public:
      * Add another color attachment
      * @param format Format of the color buffer in the GPU
      */
-    void addColorAttachment(TextureInternalFormat format);
+    void addColorAttachment(TextureInternalFormat format, size_t samples=0);
 
     /**
      * Add/replace the depth attachment
      * @param format Format of the depth buffer in the GPU
      */
-    void addDepthAttachment(TextureInternalFormat format);
+    void addDepthAttachment(TextureInternalFormat format, size_t samples=0);
 
     /**
      * Returns the ith color attachment
@@ -107,7 +107,8 @@ public:
      * Only works if both framebuffers match in dimensions
      * @param target_fbo
      */
-    void blit(Framebuffer &target_fbo);
+    void blit(Framebuffer &target_fbo, bool color=true, bool depth=true,
+              bool stencil=true);
 
     /**
      * Blits (copies) data from the current framebuffer to the default framebuffer

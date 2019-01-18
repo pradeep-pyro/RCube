@@ -62,7 +62,8 @@ public:
     Texture2D() = default;
     ~Texture2D();
     static std::shared_ptr<Texture2D> create(size_t width, size_t height, size_t levels,
-                                             TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
+                                             TextureInternalFormat internal_format=TextureInternalFormat::RGBA8,
+                                             size_t samples=0);
     void release();
     void setWrapMode(TextureWrapMode mode);
     void setWrapModeS(TextureWrapMode wrap_s);
@@ -73,10 +74,12 @@ public:
     size_t width() const;
     size_t height() const;
     size_t levels() const;
+    GLenum target() const;
     TextureInternalFormat internalFormat() const;
     GLuint id() const;
     void use(size_t unit=0);
     void done();
+    size_t numSamples() const;
     void setBorderColor(const glm::vec4 &color);
     void setFilterModeMin(TextureFilterMode mode);
     void setFilterModeMag(TextureFilterMode mode);
@@ -88,6 +91,8 @@ private:
     size_t unit_ = 0;
     bool in_use_ = false;
     size_t width_, height_, levels_;
+    size_t num_samples_ = 0;
+    GLenum target_;
     TextureInternalFormat internal_format_;
 };
 

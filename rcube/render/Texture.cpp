@@ -96,16 +96,24 @@ GLenum getMatchingTypeForInternalFormat(TextureInternalFormat ifmt) {
 // --------------------------------------
 
 std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t levels,
-                                             TextureInternalFormat internal_format) {
+                                             TextureInternalFormat internal_format,
+                                             size_t num_samples) {
     auto tex = std::make_shared<Texture2D>();
     tex->width_ = width;
     tex->height_ = height;
     tex->levels_ = levels;
     tex->internal_format_ = internal_format;
+    tex->num_samples_ = num_samples;
+    tex->target_ = num_samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
     glGenTextures(1, &tex->id_);
     checkGLError();
     tex->use();
-    glTexStorage2D(GL_TEXTURE_2D, levels, (GLenum)internal_format, width, height);
+    if (num_samples == 0) {
+        glTexStorage2D(tex->target_, levels, (GLenum)internal_format, width, height);
+    }
+    else {
+        glTexStorage2DMultisample(tex->target_, num_samples, (GLenum)internal_format, width, height, true);
+    }
     checkGLError();
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
@@ -130,65 +138,89 @@ void Texture2D::release() {
 }
 
 void Texture2D::setBorderColor(const glm::vec4 &color) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
+    glTexParameterfv(target_, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
     done();
 }
 
 void Texture2D::setFilterMode(TextureFilterMode mode) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
     done();
 }
 
 void Texture2D::setFilterModeMin(TextureFilterMode mode) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
     done();
 }
 
 void Texture2D::setFilterModeMag(TextureFilterMode mode) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, (GLint)mode);
     done();
 }
 
 void Texture2D::generateMipMap() {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glGenerateMipmap(GL_TEXTURE_2D);
+    glGenerateMipmap(target_);
     done();
 }
 
 void Texture2D::setWrapMode(TextureWrapMode mode) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)mode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_WRAP_S, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_WRAP_T, (GLint)mode);
     done();
 }
 
 void Texture2D::setWrapModeS(TextureWrapMode mode) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_WRAP_S, (GLint)mode);
     done();
 }
 
 void Texture2D::setWrapModeT(TextureWrapMode mode) {
+    if (num_samples_ > 0) {
+        return;
+    }
     use();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)mode);
+    glTexParameteri(target_, GL_TEXTURE_WRAP_T, (GLint)mode);
     done();
 }
 
 void Texture2D::setData(const unsigned char* data, TextureFormat format, size_t level) {
     use();
-    glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width_, height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(target_, level, 0, 0, width_, height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
     generateMipMap();
     done();
 }
 
 void Texture2D::setData(const float* data, TextureFormat format, size_t level) {
     use();
-    glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, width_, height_, (GLenum)format, GL_FLOAT, data);
+    glTexSubImage2D(target_, level, 0, 0, width_, height_, (GLenum)format, GL_FLOAT, data);
     generateMipMap();
     done();
 }
@@ -225,6 +257,14 @@ size_t Texture2D::levels() const {
     return levels_;
 }
 
+size_t Texture2D::numSamples() const {
+    return num_samples_;
+}
+
+GLenum Texture2D::target() const {
+    return target_;
+}
+
 TextureInternalFormat Texture2D::internalFormat() const {
     return internal_format_;
 }
@@ -239,13 +279,13 @@ void Texture2D::use(size_t unit) {
     }
     unit_ = unit;
     glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, id_);
+    glBindTexture(target_, id_);
 }
 
 void Texture2D::done() {
     if (in_use_) {
         glActiveTexture(GL_TEXTURE0 + unit_);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(target_, 0);
         in_use_ = false;
     }
 }

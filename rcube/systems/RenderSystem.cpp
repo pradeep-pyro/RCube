@@ -9,7 +9,8 @@
 
 namespace rcube {
 
-RenderSystem::RenderSystem(glm::ivec2 resolution) : resolution_(resolution){
+RenderSystem::RenderSystem(glm::ivec2 resolution, unsigned int msaa)
+    : resolution_(resolution), msaa_(msaa) {
     ComponentMask light_filter;
     light_filter.set(BaseLight::family());
     light_filter.set(Transform::family());
@@ -32,9 +33,14 @@ unsigned int RenderSystem::priority() const {
 
 void RenderSystem::initialize() {
     checkGLError();
+    framebufferms_ = Framebuffer::create(resolution_[0], resolution_[1]);
+    framebufferms_->addColorAttachment(TextureInternalFormat::RGBA8, msaa_);
+    framebufferms_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8, msaa_);
+    assert(framebufferms_->isComplete());
     framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
     framebuffer_->addColorAttachment(TextureInternalFormat::RGBA8);
     framebuffer_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    assert(framebuffer_->isComplete());
     renderer.initialize();
     checkGLError();
 }
@@ -74,17 +80,18 @@ void RenderSystem::update(bool /* force */) {
     }
     renderer.setLights(lights);
 
+    auto render_fbo = msaa_ > 0 ? framebufferms_ : framebuffer_;
+
     // Render all drawable entities
     for (const auto &camera_entity : camera_entities) {
         Camera *cam = world_->getComponent<Camera>(camera_entity);
         if (!cam->rendering) {
             continue;
         }
-        checkGLError();
 
         // Set and clear draw area
-        framebuffer_->use();
-        renderer.resize(0, 0, framebuffer_->width(), framebuffer_->height());
+        render_fbo->use();
+        renderer.resize(0, 0, render_fbo->width(), render_fbo->height());
         renderer.setClearColor(cam->background_color);
         renderer.clear(true, true, true);
 
@@ -100,14 +107,16 @@ void RenderSystem::update(bool /* force */) {
                 renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
             }
         }
-        checkGLError();
 
         // Draw skybox if in use
         if (cam->use_skybox) {
             renderer.renderSkyBox(cam->skybox);
         }
 
-        framebuffer_->done();
+        // Blit multisample framebuffer content to regular framebuffer
+        if (msaa_ > 0) {
+            framebufferms_->blit(*framebuffer_);
+        }
 
         // Postprocess
         if (cam->postprocess.size() > 0) {

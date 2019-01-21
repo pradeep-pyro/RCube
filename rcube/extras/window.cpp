@@ -73,26 +73,25 @@ void Window::initialize() {
 void Window::draw() {
 }
 
-void Window::onResize(int width, int height) {
-    std::cout << "(w, h) : " << width << ", " << height << std::endl;
+void Window::onResize(int, int) {
 }
 
-void Window::onKeyPress(int key, int mods) {
+void Window::onKeyPress(int, int) {
 }
 
-void Window::onKeyRelease(int key, int mods) {
+void Window::onKeyRelease(int, int) {
 }
 
-void Window::onKeyRepeat(int key, int mods) {
+void Window::onKeyRepeat(int, int) {
 }
 
-void Window::onMousePress(int button, int mods) {
+void Window::onMousePress(int, int) {
 }
 
-void Window::onMouseRelease(int button, int mods) {
+void Window::onMouseRelease(int, int) {
 }
 
-void Window::onMouseMove(double xpos, double ypos) {
+void Window::onMouseMove(double, double) {
 }
 
 glm::dvec2 Window::getMousePosition() const {

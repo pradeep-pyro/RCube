@@ -245,6 +245,13 @@ void Texture2D::setData(const Image &im) {
     setData(im.pixels().data(), format);
 }
 
+void Texture2D::setData(const Image &im, TextureFormat fmt) {
+    if (im.width() != width_ || im.height() != height_) {
+        throw std::invalid_argument(ERROR_IMAGE_TEXTURE_MISMATCH);
+    }
+    setData(im.pixels().data(), fmt);
+}
+
 size_t Texture2D::width() const {
     return width_;
 }

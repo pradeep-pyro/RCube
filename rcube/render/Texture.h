@@ -45,7 +45,9 @@ enum class TextureInternalFormat {
     RGB16 = GL_RGB16,
     RGB16F = GL_RGB16F,
     RGB32F = GL_RGB32F,
+    sRGB8 = GL_SRGB8,
     RGBA8 = GL_RGBA8,
+    sRGBA8 = GL_SRGB8_ALPHA8,
     RGBA16 = GL_RGBA16,
     RGBA16F = GL_RGBA16F,
     RGBA32F = GL_RGBA32F,
@@ -71,6 +73,7 @@ public:
     void setData(const float *data, TextureFormat format, size_t level=0);
     void setData(const unsigned char *data, TextureFormat format, size_t level=0);
     void setData(const Image &im);
+    void setData(const Image &im, TextureFormat fmt);
     size_t width() const;
     size_t height() const;
     size_t levels() const;

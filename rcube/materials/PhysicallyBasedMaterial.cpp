@@ -172,10 +172,10 @@ layout (binding = 0) uniform sampler2D diffuse_tex;
 layout (binding = 1) uniform sampler2D roughness_tex;
 layout (binding = 2) uniform sampler2D metalness_tex;
 layout (binding = 3) uniform sampler2D normal_tex;
-layout (binding = 4) uniform samplerCube env_map;
+layout (binding = 4) uniform samplerCube irradiance_map;
 
 uniform bool show_wireframe;
-uniform bool use_albedo_texture, use_roughness_texture, use_metalness_texture, use_normal_texture;
+uniform bool use_albedo_texture, use_roughness_texture, use_metalness_texture, use_normal_texture, use_irradiance_map;
 
 struct Line {
     vec3 color;
@@ -217,10 +217,10 @@ float GSchlickGgx(float NdotV, float roughness) {
     float r = 1.0 + roughness;
     float k = (r * r) / 8.0;
 
-    float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+    float numerator = NdotV;
+    float denominator = NdotV * (1.0 - k) + k;
 
-    return nom / max(denom, 0.001);
+    return numerator / max(denominator, 0.001);
 }
 
 float GSmith(float NdotV, float LdotN, float roughness) {
@@ -231,6 +231,10 @@ float GSmith(float NdotV, float LdotN, float roughness) {
 
 vec3 FSchlick(float cos_grazing_angle, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cos_grazing_angle, 0.0, 1.0), 5.0);
+}
+
+vec3 diffuseLambertian(vec3 albedo) {
+    return albedo / PI;
 }
 
 void main() {
@@ -249,6 +253,7 @@ void main() {
     N = normalize(N);
     // Surface to eye
     vec3 V = normalize(vec3(eye_pos - g_vertex));
+    float NdotV = max(dot(N, V), 0);
     // Specular color
     vec3 specular_color = vec3(0.04);
     specular_color = mix(specular_color, albedo, material.metalness);
@@ -273,7 +278,6 @@ void main() {
         // Useful values to precompute
         vec3 H = normalize(L + V);  // Halfway vector
         float LdotN = max(dot(L, N), 0);
-        float NdotV = max(dot(N, V), 0);
         float HdotV = max(dot(H, V), 0);
         float HdotN = max(dot(H, N), 0);
 
@@ -286,11 +290,20 @@ void main() {
         // Lambertian BRDF
         vec3 diffuse_contrib = vec3(1.0) - F;
         diffuse_contrib *= 1.0 - metalness; // Metallic materials have ~0 diffuse contribution
-        diffuse_contrib *= albedo / PI;
+        diffuse_contrib *= diffuseLambertian(albedo);
         result += (diffuse_contrib + specular_contrib) * radiance * LdotN;
     }
-    vec3 ambient = vec3(0.03) * albedo * 0.01;
-    result += ambient;
+    // Indirect image-based lighting
+    if (use_irradiance_map) {
+        vec3 irradiance = texture(irradiance_map, N).rgb;
+        vec3 kS = FSchlick(NdotV, specular_color);
+        vec3 kD = 1.0 - kS;
+        kD *= 1.0 - metalness;
+        vec3 diffuse = irradiance * albedo;
+        vec3 ambient = (kD * diffuse) * 1.0;
+        //vec3 ambient = vec3(0.03) * albedo * 1.0;
+        result += ambient;
+    }
 
     // Wireframe
     if (show_wireframe) {
@@ -338,8 +351,8 @@ void PhysicallyBasedMaterial::use() {
     if (normal_texture != nullptr && use_normal_texture) {
         normal_texture->use(3);
     }
-    if (environment_map != nullptr && use_environment_map) {
-        environment_map->use(4);
+    if (irradiance_map != nullptr && use_irradiance_map) {
+        irradiance_map->use(4);
     }
 }
 
@@ -356,7 +369,7 @@ void PhysicallyBasedMaterial::setUniforms() {
     shader_->setUniform("use_metalness_texture", use_metalness_texture);
     shader_->setUniform("use_normal_texture", use_normal_texture);
 
-    shader_->setUniform("use_environment_map", use_environment_map);
+    shader_->setUniform("use_irradiance_map", use_irradiance_map);
 }
 
 int PhysicallyBasedMaterial::renderPriority() const {

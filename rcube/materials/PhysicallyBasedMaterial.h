@@ -35,16 +35,15 @@ public:
     glm::vec3 wireframe_color;    /// Color of the wireframe lines
     // Textures
     std::shared_ptr<Texture2D> albedo_texture;       /// Diffuse texture
-    std::shared_ptr<Texture2D> roughness_texture;     /// Roughness texture
-    std::shared_ptr<Texture2D> metalness_texture;     /// Roughness texture
-    std::shared_ptr<Texture2D> normal_texture;        /// Normal map/texture
-    std::shared_ptr<TextureCubemap> environment_map;  /// Environment map texture
-    Combine blend_environment_map;                    /// How to combine environment map texture with the rest
-    bool use_albedo_texture = false;    /// Whether to use diffuse texture
+    std::shared_ptr<Texture2D> roughness_texture;    /// Roughness texture
+    std::shared_ptr<Texture2D> metalness_texture;    /// Metalness texture
+    std::shared_ptr<Texture2D> normal_texture;       /// Normal map
+    std::shared_ptr<TextureCubemap> irradiance_map;  /// Irradiance map where each pixel is the integrated radiance
+    bool use_albedo_texture = false;     /// Whether to use diffuse texture
     bool use_roughness_texture = false;  /// Whether to use roughness texture
-    bool use_metalness_texture = false;   /// Whether to use metalness texture
+    bool use_metalness_texture = false;  /// Whether to use metalness texture
     bool use_normal_texture = false;     /// Whether to use normal texture
-    bool use_environment_map = false;    /// Whether to use environment map texture
+    bool use_irradiance_map = false;     /// Whether to use irradiance map texture
 };
 
 } // namespace rcube

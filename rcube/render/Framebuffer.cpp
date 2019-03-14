@@ -156,9 +156,10 @@ void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0
     if (stencil) {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBlitNamedFramebuffer(id_, 0, src0.x, src0.y, src1.x, src1.y,
-                           dst0.x, dst0.y, dst1.x, dst1.y,
-                           bits, GL_NEAREST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(src0.x, src0.y, src1.x, src1.y, dst0.x, dst0.y, dst1.x, dst1.y,
+                      bits, GL_NEAREST);
 }
 
 Image Framebuffer::getImage(int attachment_index) const {

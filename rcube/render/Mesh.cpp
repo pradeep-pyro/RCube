@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include "Mesh.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "glad/glad.h"
 #include "checkglerror.h"
 
 namespace rcube {
@@ -141,7 +142,9 @@ void Mesh::enableAttribute(MeshAttributes attr) {
         glVertexAttribPointer(gl_attr, dim, GL_FLOAT, GL_FALSE, 0, NULL);
     }
     checkGLError();
-    glEnableVertexArrayAttrib(glbuf_.vao, gl_attr);
+    glBindVertexArray(glbuf_.vao);
+    glEnableVertexAttribArray(gl_attr);
+    //glEnableVertexArrayAttrib(glbuf_.vao, gl_attr);
     done();
 }
 

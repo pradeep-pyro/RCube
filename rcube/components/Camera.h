@@ -6,11 +6,16 @@
 #include "../render/Texture.h"
 #include "../render/Effect.h"
 #include <vector>
+#include <array>
 
 namespace rcube {
 
 class CameraSystem;
 class RenderSystem;
+
+struct Frustum {
+    std::array<glm::vec3, 8> points;
+};
 
 /**
  * Camera is the component to display the world on the screen.
@@ -35,15 +40,13 @@ public:
     std::shared_ptr<TextureCubemap> skybox;            /// Skybox texture
     bool use_skybox = false;                           /// Whether to draw a skybox
     std::vector<std::shared_ptr<Effect>> postprocess;  /// Postprocessing effects applied to the scene in order
+
     /**
-     * Resize the viewport
-     * @param width
-     * @param height
+     * Computes and returns the frustum representing the camera's view
+     * @return View frustum
      */
-    void resize(int width, int height) {
-        viewport_size.x = width;
-        viewport_size.y = height;
-    }
+    Frustum frustum();
+
 private:
     friend class CameraSystem; // This will update the camera matrices
     friend class RenderSystem; // This will make use of the matrices

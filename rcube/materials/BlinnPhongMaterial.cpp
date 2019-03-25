@@ -1,5 +1,5 @@
 #include "BlinnPhongMaterial.h"
-#include "stb_image.h"
+#include "../ext/stb_image/stb_image.h"
 
 namespace rcube {
 

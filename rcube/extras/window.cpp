@@ -120,23 +120,22 @@ bool Window::fullscreen() const {
 }
 
 void Window::setFullscreen(bool flag) {
-    if (fullscreen_ && flag) {
+    if (fullscreen_ == flag) {
         return;
     }
 
-    if (fullscreen_) {
+    if (flag) {
         glfwGetWindowPos(window_, &wndpos_.x, &wndpos_.y);
         glfwGetWindowSize(window_, &wndsz_.x, &wndsz_.y);
         GLFWmonitor* primary = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(primary);
-        //glfwSetWindowMonitor(window_, primary, 0, 0, mode->width, mode->height, 0);
-        fullscreen_ = true;
+        glfwSetWindowMonitor(window_, primary, 0, 0, mode->width, mode->height, 0);
     }
     else {
         // restore last window size and position
-        //glfwSetWindowMonitor(window_, nullptr, wndpos_.x, wndpos_.y, wndsz_.x, wndsz_.y, 0);
-        fullscreen_ = false;
+        glfwSetWindowMonitor(window_, nullptr, wndpos_.x, wndpos_.y, wndsz_.x, wndsz_.y, 0);
     }
+    fullscreen_ = flag;
 }
 
 void Window::shouldClose(bool flag) {

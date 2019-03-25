@@ -32,7 +32,8 @@ protected:
 
     GLFWwindow* window_;
     bool fullscreen_ = false;
-    glm::ivec2 wndpos_, wndsz_;
+    glm::ivec2 wndpos_ = glm::ivec2(0, 0);
+    glm::ivec2 wndsz_ = glm::ivec2(1280, 720);
 };
 
 } // namespace rcube

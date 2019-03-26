@@ -133,6 +133,8 @@ public:
     void setFilterMode(TextureFilterMode mode);
     void generateMipMap();
     bool valid() const;
+    GLenum target() const;
+    GLenum target(Side side) const;
 private:
     GLuint id_ = 0;
     size_t unit_ = 0;

@@ -9,88 +9,6 @@ const std::string ERROR_IMAGE_TEXTURE_MISMATCH = "Image dimensions are different
 const std::string ERROR_IMAGE_CHANNELS_MISMATCH = "Unexpected number of channels, expected 1, 3, or 4";
 const std::string ERROR_TEXTURE_UNINITIALIZED = "Cannot use texture without initializing";
 
-TextureFormat getMatchingFormatForInternalFormat(TextureInternalFormat ifmt) {
-    switch (ifmt) {
-    case TextureInternalFormat::Depth16:
-    case TextureInternalFormat::Depth24:
-    case TextureInternalFormat::Depth32:
-    case TextureInternalFormat::Depth32F:
-        return TextureFormat::Depth;
-
-    case TextureInternalFormat::Depth24Stencil8:
-    case TextureInternalFormat::Depth32FStencil8:
-        return TextureFormat::DepthStencil;
-
-    case TextureInternalFormat::R8:
-    case TextureInternalFormat::R16:
-    case TextureInternalFormat::R16F:
-    case TextureInternalFormat::R32F:
-        return TextureFormat::Red;
-
-    case TextureInternalFormat::RG8:
-    case TextureInternalFormat::RG16:
-    case TextureInternalFormat::RG16F:
-    case TextureInternalFormat::RG32F:
-        return TextureFormat::RG;
-
-    case TextureInternalFormat::RGB8:
-    case TextureInternalFormat::RGB16:
-    case TextureInternalFormat::RGB16F:
-    case TextureInternalFormat::RGB32F:
-        return TextureFormat::BGR;
-
-    case TextureInternalFormat::RGBA8:
-    case TextureInternalFormat::RGBA16:
-    case TextureInternalFormat::RGBA16F:
-    case TextureInternalFormat::RGBA32F:
-        return TextureFormat::BGRA;
-    }
-}
-
-GLenum getMatchingTypeForInternalFormat(TextureInternalFormat ifmt) {
-    switch (ifmt) {
-    case TextureInternalFormat::Depth16:
-    case TextureInternalFormat::Depth24:
-    case TextureInternalFormat::Depth32:
-        return GL_UNSIGNED_BYTE;
-    case TextureInternalFormat::Depth32F:
-        return GL_FLOAT;
-
-    case TextureInternalFormat::Depth24Stencil8:
-        return GL_UNSIGNED_INT_24_8;
-    case TextureInternalFormat::Depth32FStencil8:
-        return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
-
-    case TextureInternalFormat::R8:
-    case TextureInternalFormat::R16:
-        return GL_UNSIGNED_BYTE;
-    case TextureInternalFormat::R16F:
-    case TextureInternalFormat::R32F:
-        return GL_FLOAT;
-
-    case TextureInternalFormat::RG8:
-    case TextureInternalFormat::RG16:
-        return GL_UNSIGNED_BYTE;
-    case TextureInternalFormat::RG16F:
-    case TextureInternalFormat::RG32F:
-        return GL_FLOAT;
-
-    case TextureInternalFormat::RGB8:
-    case TextureInternalFormat::RGB16:
-        return GL_UNSIGNED_BYTE;
-    case TextureInternalFormat::RGB16F:
-    case TextureInternalFormat::RGB32F:
-        return GL_FLOAT;
-
-    case TextureInternalFormat::RGBA8:
-    case TextureInternalFormat::RGBA16:
-        return GL_UNSIGNED_BYTE;
-    case TextureInternalFormat::RGBA16F:
-    case TextureInternalFormat::RGBA32F:
-        return GL_FLOAT;
-    }
-}
-
 // --------------------------------------
 // Texture2D
 // --------------------------------------
@@ -438,6 +356,14 @@ void TextureCubemap::generateMipMap() {
 
 bool TextureCubemap::valid() const {
     return id_ > 0;
+}
+
+GLenum TextureCubemap::target() const {
+    return GL_TEXTURE_CUBE_MAP;
+}
+
+GLenum TextureCubemap::target(Side side) const {
+    return GL_TEXTURE_CUBE_MAP_POSITIVE_X + side;
 }
 
 } // namespace rcube

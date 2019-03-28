@@ -356,7 +356,7 @@ void PhysicallyBasedMaterial::use() {
 }
 
 void PhysicallyBasedMaterial::setUniforms() {
-    shader_->setUniform("material.diffuse", albedo);
+    shader_->setUniform("material.albedo", albedo);
     shader_->setUniform("material.roughness", roughness);
     shader_->setUniform("material.metalness", metalness);
     shader_->setUniform("show_wireframe", show_wireframe);

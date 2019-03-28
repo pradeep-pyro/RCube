@@ -32,7 +32,6 @@ unsigned int RenderSystem::priority() const {
 }
 
 void RenderSystem::initialize() {
-    checkGLError();
     framebufferms_ = Framebuffer::create(resolution_[0], resolution_[1]);
     framebufferms_->addColorAttachment(TextureInternalFormat::RGBA8, msaa_);
     framebufferms_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8, msaa_);
@@ -41,6 +40,9 @@ void RenderSystem::initialize() {
     framebuffer_->addColorAttachment(TextureInternalFormat::RGBA8);
     framebuffer_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
     assert(framebuffer_->isComplete());
+    effect_framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
+    effect_framebuffer_->addColorAttachment(TextureInternalFormat::RGBA8);
+    assert(effect_framebuffer_->isComplete());
     renderer.initialize();
     checkGLError();
 }
@@ -119,19 +121,18 @@ void RenderSystem::update(bool /* force */) {
         }
 
         // Postprocess
+        Framebuffer *curr_fbo = framebuffer_.get();
         if (cam->postprocess.size() > 0) {
-            for (int i = 0; i < cam->postprocess.size(); ++i) {
+            for (size_t i = 0; i < cam->postprocess.size(); ++i) {
                 Effect *curr_effect = cam->postprocess[i].get();
-                Framebuffer *prev_fbo = (i == 0) ? framebuffer_.get() : cam->postprocess[i - 1]->result.get();
+                Framebuffer *prev_fbo = (i % 2 == 0) ? framebuffer_.get() : effect_framebuffer_.get();
+                curr_fbo = (i % 2 == 1) ? framebuffer_.get() : effect_framebuffer_.get();
+                curr_fbo->use();
                 renderer.renderEffect(curr_effect, prev_fbo->colorAttachment(0));
             }
-            renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
-            renderer.renderTextureToScreen(cam->postprocess.back()->result->colorAttachment(0));
         }
-        else {
-            renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
-            renderer.renderTextureToScreen(framebuffer_->colorAttachment(0));
-        }
+        renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);
+        renderer.renderTextureToScreen(curr_fbo->colorAttachment(0));
     }
 }
 

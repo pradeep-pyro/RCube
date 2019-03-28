@@ -15,8 +15,6 @@ void main() {
 )";
 
 Effect::Effect() : shader_(std::make_shared<ShaderProgram>()), init_(false) {
-    result = Framebuffer::create(1280, 720);
-    result->addColorAttachment(TextureInternalFormat::RGBA8);
 }
 
 void Effect::initialize() {
@@ -24,7 +22,7 @@ void Effect::initialize() {
         return;
     }
     std::string frag_src = fragmentShader();
-    shader_ = ShaderProgram::create(vs_src, frag_src ,true);
+    shader_ = ShaderProgram::create(vs_src, frag_src, true);
     init_ = true;
 }
 
@@ -35,7 +33,6 @@ std::shared_ptr<ShaderProgram> Effect::shader() const {
 void Effect::use() {
     initialize();
     shader_->use();
-    result->use();
     setUniforms();
 }
 

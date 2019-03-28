@@ -20,8 +20,10 @@ public:
     virtual unsigned int priority() const override;
 private:
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
+
     std::shared_ptr<Framebuffer> framebufferms_;
     std::shared_ptr<Framebuffer> framebuffer_;
+    std::shared_ptr<Framebuffer> effect_framebuffer_;
     unsigned int msaa_;
 };
 

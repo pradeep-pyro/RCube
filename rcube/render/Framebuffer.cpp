@@ -7,6 +7,7 @@ using namespace std;
 namespace rcube {
 
 const std::string ERROR_FRAMEBUFFER_UNINITIALIZED = "Cannot use Framebuffer without initializing";
+const std::string ERROR_FRAMEBUFFER_NOT_COMPLETE = "Cannot use Framebuffer that is incomplete";
 
 Framebuffer::Framebuffer() {
     has_depth_stencil_ = false;
@@ -58,6 +59,9 @@ void Framebuffer::use() {
     if (!initialized()) {
         throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
     }
+    if (!isComplete()) {
+        throw std::runtime_error(ERROR_FRAMEBUFFER_NOT_COMPLETE);
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, id_);
 }
 
@@ -73,7 +77,7 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size
     use();
     auto tex = Texture2D::create(width_, height_, 1, internal_format, samples);
     colors_.push_back(tex);
-    unsigned int index = static_cast<unsigned int>(colors_.size());
+    unsigned int index = static_cast<unsigned int>(colors_.size() - 1);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(),
                            colors_[colors_.size() - 1]->id(), 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
@@ -83,6 +87,13 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size
 
 void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size_t samples) {
     use();
+    assert (texture->internalFormat() == TextureInternalFormat::Depth16 ||
+            texture->internalFormat() == TextureInternalFormat::Depth24 ||
+            texture->internalFormat() == TextureInternalFormat::Depth32 ||
+            texture->internalFormat() == TextureInternalFormat::Depth32F ||
+            texture->internalFormat() == TextureInternalFormat::Depth24Stencil8 ||
+            texture->internalFormat() == TextureInternalFormat::Depth32FStencil8);
+
     depth_stencil_ = Texture2D::create(width_, height_, 1, internal_format, samples);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_stencil_->target(),
                            depth_stencil_->id(), 0);
@@ -163,6 +174,7 @@ void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0
 }
 
 Image Framebuffer::getImage(int attachment_index) const {
+    assert(attachment_index < color_.size());
     Image im;
     unsigned char *pixel_data = (unsigned char*)malloc(3*width_*height_);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);

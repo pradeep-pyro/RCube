@@ -241,7 +241,6 @@ void main() {
     vec3 result = vec3(0.0);
     // Albedo
     vec3 albedo = use_albedo_texture ? texture(diffuse_tex, g_texture).rgb * g_color : material.albedo * g_color;
-    //albedo = pow(albedo, vec3(2.2));
     // Roughness
     float roughness = use_roughness_texture ? texture(roughness_tex, g_texture).r : material.roughness;
     roughness = clamp(roughness, 0.04, 1.0);

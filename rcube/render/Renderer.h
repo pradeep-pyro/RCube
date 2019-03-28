@@ -10,7 +10,6 @@
 #include "Effect.h"
 #include "Light.h"
 #include "Image.h"
-#include "RenderSettings.h"
 
 namespace rcube {
 
@@ -36,8 +35,6 @@ public:
      * @param height height if the viewport
      */
     void resize(int top, int left, int width, int height);
-
-    void updateSettings(const RenderSettings &settings);
 
     void setLights(const std::vector<Light> &lights);
 
@@ -73,6 +70,8 @@ public:
 
 private:
 
+    void updateSettings(const RenderSettings &settings);
+
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
 
@@ -90,7 +89,7 @@ private:
 
     // Cache
     int num_lights_;
-    glm::vec3 eye_pos_ = glm::vec3(0);
+    glm::vec3 eye_pos_ = glm::vec3(0, 0, 1);
 
     // Quad
     std::shared_ptr<Mesh> quad_mesh_;

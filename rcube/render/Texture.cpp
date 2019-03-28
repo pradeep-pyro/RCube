@@ -366,4 +366,8 @@ GLenum TextureCubemap::target(Side side) const {
     return GL_TEXTURE_CUBE_MAP_POSITIVE_X + side;
 }
 
+GLuint TextureCubemap::id() const {
+    return id_;
+}
+
 } // namespace rcube

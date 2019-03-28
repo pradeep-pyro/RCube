@@ -149,6 +149,7 @@ void Mesh::enableAttribute(MeshAttributes attr) {
 }
 
 void Mesh::disableAttribute(MeshAttributes attr) {
+    checkGLError();
     use();
     GLuint gl_attr = static_cast<GLuint>(attr);
     glDisableVertexAttribArray(gl_attr);
@@ -230,6 +231,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data) {
         setArrayBuffer(glbuf_.normals, glm::value_ptr(data.normals[0]), 3 * data.normals.size());
     }
     else {
+        checkGLError();
         disableAttribute(MeshAttributes::Normals);
     }
 
@@ -238,6 +240,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data) {
         setArrayBuffer(glbuf_.texcoords, glm::value_ptr(data.texcoords[0]), 2 * data.texcoords.size());
     }
     else {
+        checkGLError();
         disableAttribute(MeshAttributes::TexCoords);
     }
 
@@ -246,6 +249,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data) {
         setArrayBuffer(glbuf_.colors, glm::value_ptr(data.colors[0]), 3 * data.colors.size());
     }
     else {
+        checkGLError();
         disableAttribute(MeshAttributes::Colors);
     }
 
@@ -254,6 +258,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data) {
         setArrayBuffer(glbuf_.tangents, glm::value_ptr(data.tangents[0]), 3 * data.tangents.size());
     }
     else {
+        checkGLError();
         disableAttribute(MeshAttributes::Tangents);
     }
 

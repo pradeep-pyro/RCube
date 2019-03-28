@@ -162,7 +162,7 @@ void GLRenderer::initialize() {
     // Full screen quad
     quad_mesh_ = Mesh::create();
     quad_mesh_->data.vertices = {glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
-                                   glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)};
+                                 glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)};
     quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)};
     quad_mesh_->uploadToGPU();
     quad_shader_ = ShaderProgram::create(quad_vert_src, quad_frag_src, true);
@@ -281,15 +281,14 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
     sh->setUniform("eye_pos", eye_pos_);
     sh->setUniform("normal_matrix",normal_matrix);
     sh->setUniform("num_lights", static_cast<int>(num_lights_));
-
     mesh->use();
     if (!mesh->indexed()) {
         material->shader()->drawArrays(static_cast<GLint>(mesh->data.primitive),
-                                                0, mesh->numVertices());
+                                       0, mesh->numVertices());
     }
     else {
         material->shader()->drawElements(static_cast<GLint>(mesh->data.primitive),
-                                                  0, mesh->numPrimitives());
+                                         0, mesh->numPrimitives());
     }
 }
 

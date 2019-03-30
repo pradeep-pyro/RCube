@@ -14,15 +14,11 @@ namespace rcube {
  */
 class BlurEffect : public Effect {
 public:
-    unsigned int amount;  /// Number of times blur (each iteration corresponds to 9x9 guassian blur)
-
-    BlurEffect(unsigned int amount=1);
+    BlurEffect(bool horizontal=true);
     std::string fragmentShader() override;
     void setUniforms() override;
-    void use() override;
-    void done() override;
 private:
-    std::shared_ptr<Framebuffer> tmp;
+    bool horizontal_ = true;
 };
 
 } // namespace rcube

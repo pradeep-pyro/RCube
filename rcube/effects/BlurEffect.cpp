@@ -2,14 +2,13 @@
 
 namespace rcube {
 
-BlurEffect::BlurEffect(unsigned int amount)
-    : amount(amount) {
-    tmp = Framebuffer::create(1280, 720);
-    tmp->addColorAttachment(TextureInternalFormat::RGBA8);
+BlurEffect::BlurEffect(bool horizontal)
+    : horizontal_(horizontal) {
     initialize();
 }
 
 void BlurEffect::setUniforms() {
+    shader_->setUniform("horizontal", horizontal_);
 }
 
 std::string BlurEffect::fragmentShader() {
@@ -40,32 +39,6 @@ void main() {
     out_color = vec4(result, 1.0);
 }
     )";
-}
-
-void BlurEffect::use() {
-    shader_->use();
-    for (unsigned int i = 0; i < amount * 2; ++i) {
-        if (i % 2 == 0) {
-            tmp->use();
-            shader_->setUniform("horizontal", true);
-            if (i > 0) {
-                result->colorAttachment(0)->use();
-            }
-        }
-        else {
-            result->use();
-            shader_->setUniform("horizontal", false);
-            if (i > 0) {
-                tmp->colorAttachment(0)->use();
-            }
-        }
-    }
-}
-
-void BlurEffect::done() {
-    if (amount % 2 == 1) {
-        tmp->blit(*result);
-    }
 }
 
 } // namespace rcube

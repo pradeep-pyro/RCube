@@ -21,7 +21,7 @@ void Effect::initialize() {
     if (init_) {
         return;
     }
-    std::string frag_src = fragmentShader();
+    const std::string &frag_src = fragmentShader();
     shader_ = ShaderProgram::create(vs_src, frag_src, true);
     init_ = true;
 }

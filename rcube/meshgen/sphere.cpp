@@ -1,5 +1,6 @@
 #include "sphere.h"
 #include "box.h"
+#include "glm/gtc/constants.hpp"
 
 namespace rcube {
 

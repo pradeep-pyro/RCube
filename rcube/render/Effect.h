@@ -43,8 +43,13 @@ public:
      * Cleanup OpenGL state related to this effect.
      */
     virtual void done();
+    /**
+    * Choose the textures to use from the input framebuffer
+    * By default, chooses color attachment 0 and binds it to texture unit 0
+    */
+    virtual void chooseTextures();
 
-    std::shared_ptr<Framebuffer> result;  /// Framebuffer to store result obtained after applying this effect
+    Framebuffer *input;
 protected:
     std::shared_ptr<ShaderProgram> shader_;
     bool init_;

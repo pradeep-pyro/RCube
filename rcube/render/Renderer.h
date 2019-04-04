@@ -47,7 +47,7 @@ public:
 
     void renderTextureToScreen(Texture2D *tex);
 
-    void renderEffect(Effect *effect, Texture2D *input);
+    void renderEffect(Effect *effect, Framebuffer *input);
 
     /**
      * @brief clearColor Returns the color that is used to clear the screen i.e.,

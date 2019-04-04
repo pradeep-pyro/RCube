@@ -58,7 +58,6 @@ void RenderSystem::cleanup() {
         Camera *cam = world_->getComponent<Camera>(e);
         for (auto item : cam->postprocess) {
             item->shader()->release();
-            item->result->release();
         }
     }
 
@@ -128,7 +127,7 @@ void RenderSystem::update(bool /* force */) {
                 Framebuffer *prev_fbo = (i % 2 == 0) ? framebuffer_.get() : effect_framebuffer_.get();
                 curr_fbo = (i % 2 == 1) ? framebuffer_.get() : effect_framebuffer_.get();
                 curr_fbo->use();
-                renderer.renderEffect(curr_effect, prev_fbo->colorAttachment(0));
+                renderer.renderEffect(curr_effect, prev_fbo);
             }
         }
         renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x, cam->viewport_size.y);

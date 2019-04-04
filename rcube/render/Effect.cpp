@@ -32,12 +32,17 @@ std::shared_ptr<ShaderProgram> Effect::shader() const {
 
 void Effect::use() {
     initialize();
+    chooseTextures();
     shader_->use();
     setUniforms();
 }
 
 void Effect::done() {
-    // Nothing to do by default
+    shader_->done();
+}
+
+void Effect::chooseTextures() {
+    input->colorAttachment(0)->use(0);
 }
 
 } // namespace rcube

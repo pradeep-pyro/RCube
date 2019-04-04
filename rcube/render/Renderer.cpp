@@ -302,8 +302,8 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap) {
     glDepthFunc(GL_LESS);
 }
 
-void GLRenderer::renderEffect(Effect *effect, Texture2D *input) {
-    input->use(0);
+void GLRenderer::renderEffect(Effect *effect, Framebuffer *input) {
+    effect->input = input;
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     quad_mesh_->use();

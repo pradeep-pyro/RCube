@@ -22,22 +22,25 @@ glm::vec3 superSphericalCoordinates(float lat, float lon, float lat_a, float lat
     float x = r1 * std::cos(lon) * r2 * std::cos(lat);
     float y = r1 * std::sin(lon) * r2 * std::cos(lat);
     float z = r2 * std::sin(lat);
-    return glm::vec3(x, y, z);
+    return glm::vec3(x, z, y);
 }
 
-MeshData superShape(float radius, unsigned int latitude_segments, unsigned int longitude_segments,
+MeshData superShape(float radius, unsigned int rows, unsigned int cols,
                     float a, float b, float m1, float m2, float n1, float n2, float n3) {
     MeshData data;
     data.indexed = true;
     data.primitive = MeshPrimitive::Triangles;
-    float lat_inc = glm::pi<float>() / (latitude_segments);
-    float lon_inc = glm::two_pi<float>() / (longitude_segments - 1);
-    data.vertices.reserve(latitude_segments * longitude_segments - 1);
+    float lat_inc = glm::pi<float>() / (rows - 1);
+    float lon_inc = glm::two_pi<float>() / cols;
+    data.vertices.reserve(rows * cols + 2);
     float max_dist = -100.f;
-    for (int i = 0; i < latitude_segments; ++i) {
-        float lat = -glm::half_pi<float>() + i * lat_inc;
-        for (int j = 0; j < longitude_segments; ++j) {
-            float lon = -glm::pi<float>() + j * lon_inc;
+
+    const float pi = glm::pi<float>();
+    const float half_pi = glm::half_pi<float>();
+    for (unsigned int i = 0; i < rows - 2; ++i) {
+        float lat = -half_pi + (i + 1) * lat_inc;
+        for (unsigned int j = 0; j < cols; ++j) {
+            float lon = -pi + j * lon_inc;
             glm::vec3 pt = superSphericalCoordinates(lat, lon,
                                                      a, b, m1, n1, n2, n3,
                                                      a, b, m2, n1, n2, n3);
@@ -48,21 +51,41 @@ MeshData superShape(float radius, unsigned int latitude_segments, unsigned int l
             data.vertices.push_back(pt);
         }
     }
+    data.vertices.push_back(glm::vec3(0, 1, 0));
+    data.vertices.push_back(glm::vec3(0, -1, 0));
+
     for (auto &v : data.vertices) {
         v /= max_dist;
         v *= radius;
     }
 
-    // Split each grid square into 2 triangles and store indices in F
-    for (unsigned int i = 0; i < latitude_segments - 1; ++i) {
-        for (unsigned int j = 0; j < longitude_segments - 1; ++j) {
-            data.indices.push_back(i*longitude_segments + j);
-            data.indices.push_back(i*longitude_segments + j + 1);
-            data.indices.push_back((i + 1) * longitude_segments + j + 1);
-            data.indices.push_back(i * longitude_segments + j);
-            data.indices.push_back((i + 1) * longitude_segments + j + 1);
-            data.indices.push_back((i + 1) * longitude_segments + j);
+    data.indices.reserve(rows * cols + 2);
+
+
+    for (unsigned int i = 0; i < rows - 3; ++i) {
+        unsigned int r1 = i * cols;
+        unsigned int r2 = (i + 1) * cols;
+        for (unsigned int j = 0; j < cols; ++j) {
+            data.indices.push_back(r1 + j);
+            data.indices.push_back(r2 + j);
+            data.indices.push_back(r2 + (j + 1) % cols);
+            data.indices.push_back(r1 + j);
+            data.indices.push_back(r2 + (j + 1) % cols);
+            data.indices.push_back(r1 + (j + 1) % cols);
         }
+    }
+
+    unsigned int npole_idx = data.vertices.size() - 2;
+    unsigned int spole_idx = data.vertices.size() - 1;
+    for (unsigned int j = 0; j < cols; ++j) {
+        // bottom cap
+        data.indices.push_back(spole_idx);
+        data.indices.push_back(1 * cols + (j + 1) % cols);
+        data.indices.push_back(1 * cols + j);
+        // top cap
+        data.indices.push_back(npole_idx);
+        data.indices.push_back((rows - 3) * cols + (j + 1) % cols);
+        data.indices.push_back((rows - 3) * cols + j);
     }
 
     data.normals.resize(data.vertices.size(), glm::vec3(0));

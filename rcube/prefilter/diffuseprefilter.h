@@ -10,6 +10,8 @@ namespace rcube {
 
 class IrradianceShader : public Material {
 public:
+    int num_samples = 512;
+
     virtual ~IrradianceShader() override = default ;
     virtual std::string vertexShader() override;
     virtual std::string fragmentShader() override;
@@ -22,6 +24,8 @@ public:
 
 class DiffusePrefilter {
 public:
+    int num_samples = 512;
+
     DiffusePrefilter(unsigned int resolution=32);
     ~DiffusePrefilter();
     std::shared_ptr<TextureCubemap> prefilter(std::shared_ptr<TextureCubemap> env_map);

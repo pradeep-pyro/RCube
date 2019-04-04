@@ -1,9 +1,8 @@
 #include "Framebuffer.h"
 #include <stdexcept>
-#include "checkglerror.h"
 #include <iostream>
-using namespace std;
-
+using std::cout;
+using std::endl;
 namespace rcube {
 
 const std::string ERROR_FRAMEBUFFER_UNINITIALIZED = "Cannot use Framebuffer without initializing";
@@ -32,7 +31,6 @@ std::shared_ptr<Framebuffer> Framebuffer::create(size_t width, size_t height) {
     fbo->width_ = width;
     fbo->height_ = height;
     fbo->has_depth_stencil_ = false;
-    checkGLError();
     return fbo;
 }
 
@@ -75,7 +73,14 @@ bool Framebuffer::isComplete() const {
 
 void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size_t samples) {
     use();
-    auto tex = Texture2D::create(width_, height_, 1, internal_format, samples);
+    std::shared_ptr<Texture2D> tex;
+    if (samples == 0) {
+        tex = Texture2D::create(width_, height_, 1, internal_format);
+    }
+    else {
+    cout << "Creating MS with wxh:" << width_ << "x" << height_ << endl;
+        tex = Texture2D::createMS(width_, height_, samples, internal_format);
+    }
     colors_.push_back(tex);
     unsigned int index = static_cast<unsigned int>(colors_.size() - 1);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(),
@@ -87,14 +92,19 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size
 
 void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size_t samples) {
     use();
-    assert (texture->internalFormat() == TextureInternalFormat::Depth16 ||
-            texture->internalFormat() == TextureInternalFormat::Depth24 ||
-            texture->internalFormat() == TextureInternalFormat::Depth32 ||
-            texture->internalFormat() == TextureInternalFormat::Depth32F ||
-            texture->internalFormat() == TextureInternalFormat::Depth24Stencil8 ||
-            texture->internalFormat() == TextureInternalFormat::Depth32FStencil8);
+    assert (internal_format == TextureInternalFormat::Depth16 ||
+            internal_format == TextureInternalFormat::Depth24 ||
+            internal_format == TextureInternalFormat::Depth32 ||
+            internal_format == TextureInternalFormat::Depth32F ||
+            internal_format == TextureInternalFormat::Depth24Stencil8 ||
+            internal_format == TextureInternalFormat::Depth32FStencil8);
 
-    depth_stencil_ = Texture2D::create(width_, height_, 1, internal_format, samples);
+    if (samples == 0) {
+        depth_stencil_ = Texture2D::create(width_, height_, 1, internal_format);
+    }
+    else {
+        depth_stencil_ = Texture2D::createMS(width_, height_, samples, internal_format);
+    }
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_stencil_->target(),
                            depth_stencil_->id(), 0);
     has_depth_stencil_ = true;
@@ -174,7 +184,7 @@ void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0
 }
 
 Image Framebuffer::getImage(int attachment_index) const {
-    assert(attachment_index < color_.size());
+    assert(attachment_index < colors_.size());
     Image im;
     unsigned char *pixel_data = (unsigned char*)malloc(3*width_*height_);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);

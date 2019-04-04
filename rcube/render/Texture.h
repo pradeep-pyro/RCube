@@ -32,7 +32,7 @@ enum class TextureFormat {
     DepthStencil = GL_DEPTH_STENCIL,
 };
 
-enum class TextureInternalFormat {
+enum class TextureInternalFormat : GLenum {
     R8 = GL_R8,
     R16 = GL_R16,
     R16F = GL_R16F,
@@ -64,8 +64,9 @@ public:
     Texture2D() = default;
     ~Texture2D();
     static std::shared_ptr<Texture2D> create(size_t width, size_t height, size_t levels,
-                                             TextureInternalFormat internal_format=TextureInternalFormat::RGBA8,
-                                             size_t samples=0);
+                                             TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
+    static std::shared_ptr<Texture2D> createMS(size_t width, size_t height, size_t num_samples,
+                                               TextureInternalFormat internal_format=TextureInternalFormat::RGBA8);
     void release();
     void setWrapMode(TextureWrapMode mode);
     void setWrapModeS(TextureWrapMode wrap_s);

@@ -1,7 +1,6 @@
 #include "Texture.h"
 #include <vector>
 #include "glm/gtc/type_ptr.hpp"
-#include "checkglerror.h"
 
 namespace rcube {
 
@@ -14,29 +13,38 @@ const std::string ERROR_TEXTURE_UNINITIALIZED = "Cannot use texture without init
 // --------------------------------------
 
 std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t levels,
-                                             TextureInternalFormat internal_format,
-                                             size_t num_samples) {
+                                             TextureInternalFormat internal_format) {
     auto tex = std::make_shared<Texture2D>();
     tex->width_ = width;
     tex->height_ = height;
     tex->levels_ = levels;
     tex->internal_format_ = internal_format;
-    tex->num_samples_ = num_samples;
-    tex->target_ = num_samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE;
+    tex->num_samples_ = 0;
+    tex->target_ = GL_TEXTURE_2D;
     glGenTextures(1, &tex->id_);
-    checkGLError();
     tex->use();
-    if (num_samples == 0) {
-        glTexStorage2D(tex->target_, levels, (GLenum)internal_format, width, height);
-    }
-    else {
-        glTexStorage2DMultisample(tex->target_, num_samples, (GLenum)internal_format, width, height, true);
-    }
-    checkGLError();
+    glTexStorage2D(tex->target_, levels, (GLenum)internal_format, width, height);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
     tex->done();
-    checkGLError();
+    return tex;
+}
+
+std::shared_ptr<Texture2D> Texture2D::createMS(size_t width, size_t height, size_t num_samples,
+                                               TextureInternalFormat internal_format) {
+    auto tex = std::make_shared<Texture2D>();
+    tex->width_ = width;
+    tex->height_ = height;
+    tex->levels_ = 1;
+    tex->internal_format_ = internal_format;
+    tex->num_samples_ = num_samples;
+    tex->target_ = GL_TEXTURE_2D_MULTISAMPLE;
+    glGenTextures(1, &tex->id_);
+    tex->use();
+    glTexStorage2DMultisample(tex->target_, tex->num_samples_, (GLenum)internal_format, width, height, GL_TRUE);
+        tex->setWrapMode(TextureWrapMode::ClampToEdge);
+    tex->setFilterMode(TextureFilterMode::Linear);
+    tex->done();
     return tex;
 }
 
@@ -231,10 +239,8 @@ std::shared_ptr<TextureCubemap> TextureCubemap::create(size_t width, size_t heig
     tex->internal_format_ = internal_format;
     tex->seamless_ = seamless;
     glGenTextures(1, &tex->id_);
-    checkGLError();
     tex->use();
     glTexStorage2D(GL_TEXTURE_CUBE_MAP, levels, (GLenum)internal_format, width, height);
-    checkGLError();
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
     tex->done();

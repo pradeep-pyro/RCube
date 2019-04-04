@@ -1,5 +1,5 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -38,4 +38,4 @@ protected:
 
 } // namespace rcube
 
-#endif // APPLICATION_H
+#endif // WINDOW_H

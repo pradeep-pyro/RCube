@@ -1,5 +1,5 @@
 #include "window.h"
-#include "../rcube.h"
+#include "rcube.h"
 #include <iostream>
 
 namespace rcube {

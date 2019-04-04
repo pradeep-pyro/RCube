@@ -45,6 +45,20 @@ void RenderSystem::initialize() {
     assert(effect_framebuffer_->isComplete());
     renderer.initialize();
     checkGLError();
+
+    const auto &renderable_entities = registered_entities_[filters_[2]];
+    for (const auto &e : renderable_entities) {
+        Drawable *dr = world_->getComponent<Drawable>(e);
+        dr->material->initialize();
+    }
+    const auto &camera_entities = registered_entities_[filters_[1]];
+    for (const auto &e : camera_entities) {
+        Camera *cam = world_->getComponent<Camera>(e);
+        for (auto item : cam->postprocess) {
+            item->initialize();
+        }
+    }
+
 }
 
 void RenderSystem::cleanup() {

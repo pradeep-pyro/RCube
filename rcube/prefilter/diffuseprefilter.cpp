@@ -74,10 +74,10 @@ vec3 cosineSampleCartesian(vec2 u) {
     float sqrt_u0 = sqrt(u[0]);
     // sample is vec2(asin(sqrt_u0), 2 * PI * u[1]);
     // x = sin u0 cos u1
-    float x = cos(2 * PI * u[1]) * sqrt_u0;
+    float x = sqrt_u0 * cos(2 * PI * u[1]);
     // y = sin u0 sin u1
-    float y = sin(2 * PI * u[1]) * sqrt_u0;
-    // z = cos u0, and cos(asin(x)) = cos(1 - x^2)
+    float y = sqrt_u0 * sin(2 * PI * u[1]);
+    // z = cos u0, and cos(asin(x)) = sqrt(1 - x^2)
     float z = sqrt(max(0, 1 - u[0]));
     return vec3(x, y, z);
 }
@@ -89,9 +89,7 @@ void main() {
     vec3 right = cross(up, N);
     up = cross(N, right);
 
-    float sampleDelta = 0.025;
     int count = 0;
-
     vec3 irradiance = vec3(0.0);
 
 #ifdef IMPORTANCE_SAMPLING

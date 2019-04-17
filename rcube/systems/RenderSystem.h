@@ -10,7 +10,10 @@ namespace rcube {
 
 class RenderSystem : public System {
 public:
-    GLRenderer renderer;
+    struct RenderSystemConfig {
+        glm::ivec2 resolution = glm::ivec2(1280, 720);
+        unsigned int msaa = 0;
+    };
 
     RenderSystem(glm::ivec2 resolution=glm::ivec2(1280, 720), unsigned int msaa=0);
     virtual ~RenderSystem() override = default;
@@ -20,7 +23,7 @@ public:
     virtual unsigned int priority() const override;
 private:
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
-
+    GLRenderer renderer;
     std::shared_ptr<Framebuffer> framebufferms_;
     std::shared_ptr<Framebuffer> framebuffer_;
     std::shared_ptr<Framebuffer> effect_framebuffer_;

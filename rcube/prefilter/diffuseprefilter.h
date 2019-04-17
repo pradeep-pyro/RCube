@@ -39,10 +39,6 @@ private:
     std::vector<glm::mat4> views_;
 };
 
-std::shared_ptr<TextureCubemap>
-prefilterDiffuseIrradiance(std::shared_ptr<TextureCubemap> env_map,
-                           unsigned int resolution=32);
-
 } // namespace rcube
 
 #endif // DIFFUSE_IRRADIANCE_H

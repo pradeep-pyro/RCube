@@ -44,9 +44,7 @@ bool Framebuffer::initialized() const {
 
 void Framebuffer::release() {
     glDeleteFramebuffers(1, &id_);
-    for (auto &tex : colors_) {
-        tex->release();
-    }
+    clearColorAttachments();
     if (hasDepthStencilAttachment()) {
         depth_stencil_->release();
     }
@@ -71,14 +69,14 @@ bool Framebuffer::isComplete() const {
     return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
-void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size_t samples) {
+void Framebuffer::addColorAttachment(TextureInternalFormat internal_format,
+                                     size_t levels, size_t samples) {
     use();
     std::shared_ptr<Texture2D> tex;
     if (samples == 0) {
-        tex = Texture2D::create(width_, height_, 1, internal_format);
+        tex = Texture2D::create(width_, height_, levels, internal_format);
     }
     else {
-    cout << "Creating MS with wxh:" << width_ << "x" << height_ << endl;
         tex = Texture2D::createMS(width_, height_, samples, internal_format);
     }
     colors_.push_back(tex);
@@ -88,6 +86,32 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size
     glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
     glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
     done();
+}
+
+void Framebuffer::clearColorAttachments() {
+    for (auto &tex : colors_) {
+        tex->release();
+    }
+}
+
+void Framebuffer::resize(size_t width, size_t height) {
+    if (width_ == width && height_ == height) {
+        return;
+    }
+    width_ = width;
+    height_ = height;
+    for (size_t i = 0; i < colors_.size(); ++i) {
+        auto new_tex = Texture2D::create(width, height, colors_[i]->levels(),
+                                         colors_[i]->internalFormat());
+        colors_[i]->release();
+        colors_[i] = new_tex;
+    }
+    if (has_depth_stencil_) {
+        auto new_tex = Texture2D::create(width, height, 1 /*mipmap is always 1*/,
+                                         depth_stencil_->internalFormat());
+        depth_stencil_->release();
+        depth_stencil_ = new_tex;
+    }
 }
 
 void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size_t samples) {
@@ -109,6 +133,13 @@ void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size
                            depth_stencil_->id(), 0);
     has_depth_stencil_ = true;
     done();
+}
+
+void Framebuffer::clearDepthAttachment() {
+    if (has_depth_stencil_) {
+        depth_stencil_->release();
+        has_depth_stencil_ = false;
+    }
 }
 
 size_t Framebuffer::numColorAttachments() const {

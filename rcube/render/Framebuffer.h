@@ -51,7 +51,14 @@ public:
      * Add another color attachment
      * @param format Format of the color buffer in the GPU
      */
-    void addColorAttachment(TextureInternalFormat format, size_t samples=0);
+    void addColorAttachment(TextureInternalFormat format, size_t levels=1,
+                            size_t samples=0);
+
+    void clearColorAttachments();
+
+    void clearDepthAttachment();
+
+    void resize(size_t width, size_t height);
 
     /**
      * Add/replace the depth attachment

@@ -4,7 +4,7 @@
 
 namespace rcube {
 
-std::string IrradianceShader::vertexShader() {
+std::string DiffuseIrradianceShader::vertexShader() {
     return
 R"(
 #version 420
@@ -25,7 +25,7 @@ void main() {
 )";
 }
 
-std::string IrradianceShader::fragmentShader() {
+std::string DiffuseIrradianceShader::fragmentShader() {
     return
 R"(
 #version 420
@@ -118,18 +118,18 @@ void main() {
 )";
 }
 
-std::string IrradianceShader::geometryShader() {
+std::string DiffuseIrradianceShader::geometryShader() {
     return "";
 }
 
-void IrradianceShader::setUniforms() {
+void DiffuseIrradianceShader::setUniforms() {
     if (environment_map != nullptr) {
         environment_map->use(3);
     }
     shader_->setUniform("num_samples", num_samples);
 }
 
-int IrradianceShader::renderPriority() const {
+int DiffuseIrradianceShader::renderPriority() const {
     return RenderPriority::Opaque;
 }
 
@@ -147,7 +147,7 @@ DiffusePrefilter::DiffusePrefilter(unsigned int resolution)
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create(resolution, resolution);
-    fbo_->addColorAttachment(TextureInternalFormat::RGB8);
+    fbo_->addColorAttachment(TextureInternalFormat::RGB16F);
     fbo_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
 
     // Matrices for rendering the cubemap from cameras set pointing at the

@@ -16,7 +16,7 @@ add_subdirectory(dependencies/glfw)
 add_subdirectory(dependencies/glad)
 add_subdirectory(dependencies/stb_image)
 
-target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/rcube)
+target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glm)
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw/include)
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include)

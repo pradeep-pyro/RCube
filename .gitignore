@@ -32,3 +32,5 @@
 *.app
 
 *.user
+
+build

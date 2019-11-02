@@ -24,13 +24,6 @@ public:
                                                  const std::string &geometry_shader,
                                                  const std::string &fragment_shader,
                                                  bool debug=false);
-    static std::shared_ptr<ShaderProgram> createFromFile(const std::string &vertex_shader,
-                                                         const std::string &fragment_shader,
-                                                         bool debug=false);
-    static std::shared_ptr<ShaderProgram> createFromFile(const std::string &vertex_shader,
-                                                         const std::string &geometry_shader,
-                                                         const std::string &fragment_shader,
-                                                         bool debug=false);
     void drawArrays(GLint mode, uint32_t first, uint32_t count) const;
     void drawElements(GLint mode, uint32_t first, uint32_t count) const;
     bool link(bool debug=false);

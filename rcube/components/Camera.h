@@ -28,8 +28,8 @@ public:
     }
     bool orthographic = false;          /// Whether the camera uses orthographic projection
     float fov = glm::radians(60.f);     /// Field of view when using perspective projection
-    float near = 0.1f;                  /// The closest point relative to the camera which will be be drawn
-    float far = 300.f;                  /// The farthest point relative to the camera which will be be drawn
+    float near_plane = 0.1f;                  /// The closest point relative to the camera which will be be drawn
+    float far_plane = 300.f;                  /// The farthest point relative to the camera which will be be drawn
     float orthographic_size = 2;        /// Used to control field of view indirectly when using orthographic projection
     glm::vec3 target = glm::vec3(0);    /// Target where the camera points to
     glm::vec3 up = glm::vec3(0, 1, 0);  /// Up orientation w.r.t. the camera

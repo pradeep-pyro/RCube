@@ -6,8 +6,8 @@
 #include <stdexcept>
 #include <string>
 #include <algorithm>
-#include "../ext/stb_image/stb_image.h"
-#include "../ext/stb_image/stb_image_write.h"
+#include "stb_image/stb_image.h"
+#include "stb_image/stb_image_write.h"
 
 namespace rcube {
 

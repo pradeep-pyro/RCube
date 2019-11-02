@@ -26,8 +26,8 @@ void CameraSystem::update(bool /* force */ ) {
         float half_h = 0.5f * cam->viewport_size.y;
         cam->projection_to_viewport = glm::mat4(half_w, 0.f, 0.f, 0.f,
                                                 0.f, half_h, 0.f, 0.f,
-                                                0.f, 0.f, 0.5f * (cam->far - cam->near), 0.f,
-                                                half_w, half_h, 0.5f * (cam->far + cam->near), 1.f);
+                                                0.f, 0.f, 0.5f * (cam->far_plane - cam->near_plane), 0.f,
+                                                half_w, half_h, 0.5f * (cam->far_plane + cam->near_plane), 1.f);
         Transform *tr = world_->getComponent<Transform>(e);
         glm::vec3 pos = tr->worldPosition();
         cam->world_to_view = glm::lookAt(pos, cam->target, cam->up);
@@ -36,12 +36,12 @@ void CameraSystem::update(bool /* force */ ) {
             float half_ortho_h = cam->orthographic_size / 2.f;
             float half_ortho_w = half_ortho_h * aspect_ratio;
             cam->view_to_projection = glm::ortho(-half_ortho_w, half_ortho_w, -half_ortho_h, half_ortho_h,
-                                                 cam->near, cam->far);
+                                                 cam->near_plane, cam->far_plane);
         }
         else {
-            float fH = std::tan(cam->fov) * cam->near;
+            float fH = std::tan(cam->fov) * cam->near_plane;
             float fW = fH * aspect_ratio;
-            cam->view_to_projection = glm::frustum(-fW, fW, -fH, fH, cam->near, cam->far);
+            cam->view_to_projection = glm::frustum(-fW, fW, -fH, fH, cam->near_plane, cam->far_plane);
         }
     }
 }

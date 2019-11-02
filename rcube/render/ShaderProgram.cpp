@@ -44,18 +44,6 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_s
     return prog;
 }
 
-std::shared_ptr<ShaderProgram> ShaderProgram::createFromFile(const std::string &vertex_shader,
-                                                             const std::string &fragment_shader,
-                                                             bool debug) {
-
-}
-std::shared_ptr<ShaderProgram> ShaderProgram::createFromFile(const std::string &vertex_shader,
-                                                             const std::string &geometry_shader,
-                                                             const std::string &fragment_shader,
-                                                             bool debug) {
-
-}
-
 void ShaderProgram::release() {
     if (id_ != 0) {
         glDeleteProgram(id_);

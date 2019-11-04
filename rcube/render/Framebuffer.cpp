@@ -73,6 +73,7 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format,
                                      size_t levels, size_t samples) {
     use();
     std::shared_ptr<Texture2D> tex;
+    levels = std::max(static_cast<size_t>(1), levels);
     if (samples == 0) {
         tex = Texture2D::create(width_, height_, levels, internal_format);
     }

@@ -33,7 +33,7 @@ unsigned int RenderSystem::priority() const {
 
 void RenderSystem::initialize() {
     framebufferms_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    framebufferms_->addColorAttachment(TextureInternalFormat::RGBA16, msaa_);
+    framebufferms_->addColorAttachment(TextureInternalFormat::RGBA16, 1, msaa_);
     framebufferms_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8, msaa_);
     assert(framebufferms_->isComplete());
     framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);

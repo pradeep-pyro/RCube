@@ -22,3 +22,5 @@ target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include)
 
 target_link_libraries(RCube glm_static glfw glad stb_image)
+
+add_subdirectory(test)

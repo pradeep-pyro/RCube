@@ -2,7 +2,8 @@
 #define BOX_H
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 
-namespace rcube {
+namespace rcube
+{
 
 /**
  * Creates mesh data representing a box.

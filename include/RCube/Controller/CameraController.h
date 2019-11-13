@@ -4,7 +4,8 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/Transform.h"
 
-namespace rcube {
+namespace rcube
+{
 
 /**
  * The CameraController class is the base class from which different kinds of
@@ -14,8 +15,9 @@ namespace rcube {
  *
  * The class can be extended by adding methods to modify the stored camera or its transform.
  */
-class CameraController {
-public:
+class CameraController
+{
+  public:
     /**
      * Constructor
      */
@@ -40,9 +42,9 @@ public:
      * Return a pointer to the camera component being controlled
      * @return Pointer to Camera
      */
-    Camera * camera() const;
+    Camera *camera() const;
 
-protected:
+  protected:
     Camera *camera_;
     Transform *transform_;
     float width_, height_;

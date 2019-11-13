@@ -1,57 +1,72 @@
-#include <iostream>
 #include "RCube/Core/Arch/World.h"
+#include <iostream>
 
-namespace rcube {
+namespace rcube
+{
 
-void World::initialize() {
-    for (const auto &sys : systems_) {
+void World::initialize()
+{
+    for (const auto &sys : systems_)
+    {
         sys->initialize();
     }
 }
 
-void World::cleanup() {
-    for (const auto &sys : systems_) {
+void World::cleanup()
+{
+    for (const auto &sys : systems_)
+    {
         sys->cleanup();
     }
     systems_.clear();
     component_mgrs_.clear();
 }
 
-EntityHandle World::createEntity() {
-    return EntityHandle { entity_mgr_.createEntity(), this };
+EntityHandle World::createEntity()
+{
+    return EntityHandle{entity_mgr_.createEntity(), this};
 }
 
-bool World::hasEntity(EntityHandle ent) const {
+bool World::hasEntity(EntityHandle ent) const
+{
     return entity_mgr_.hasEntity(ent.entity);
 }
 
-void World::removeEntity(EntityHandle ent) {
-    if (ent.world != this) {
+void World::removeEntity(EntityHandle ent)
+{
+    if (ent.world != this)
+    {
         std::cerr << "Given EntityHandle was not generated from this World" << std::endl;
         return;
     }
-    for (auto &mgr_ : component_mgrs_) {
+    for (auto &mgr_ : component_mgrs_)
+    {
         mgr_.second->remove(ent.entity);
         updateEntityToSystem(ent.entity, mgr_.first, false);
     }
     entity_mgr_.removeEntity(ent.entity);
 }
 
-EntityHandleIterator<std::unordered_set<Entity>> World::entities() {
+EntityHandleIterator<std::unordered_set<Entity>> World::entities()
+{
     return EntityHandleIterator<decltype(entity_mgr_.entities)>(this, entity_mgr_.entities);
 }
 
-size_t World::numEntities() const {
+size_t World::numEntities() const
+{
     return entity_mgr_.count();
 }
 
-void World::update() {
-    for (const auto &sys : systems_) {
+void World::update()
+{
+    for (const auto &sys : systems_)
+    {
         sys->update(false);
     }
 }
 
-void World::addSystem(std::unique_ptr<System> sys) {
+void World::addSystem(std::unique_ptr<System> sys)
+{
     sys->registerWorld(this);
     systems_.push_back(std::move(sys));
     std::sort(systems_.begin(), systems_.end(),
@@ -60,20 +75,25 @@ void World::addSystem(std::unique_ptr<System> sys) {
               });
 }
 
-void World::updateEntityToSystem(Entity ent, int component_family, bool flag) {
+void World::updateEntityToSystem(Entity ent, int component_family, bool flag)
+{
     ComponentMask old_entity_mask = entity_masks_[ent];
     entity_masks_[ent].set(component_family, flag);
 
     ComponentMask new_entity_mask = entity_masks_[ent];
 
-    for (auto &sys : systems_) {
-        for (ComponentMask sys_mask : sys->filters()) {
+    for (auto &sys : systems_)
+    {
+        for (ComponentMask sys_mask : sys->filters())
+        {
             bool new_match = new_entity_mask.match(sys_mask);
             bool old_match = old_entity_mask.match(sys_mask);
-            if (new_match && !old_match) {
+            if (new_match && !old_match)
+            {
                 sys->registerEntity(ent, sys_mask);
             }
-            else if (!new_match && old_match) {
+            else if (!new_match && old_match)
+            {
                 sys->unregisterEntity(ent, sys_mask);
             }
         }

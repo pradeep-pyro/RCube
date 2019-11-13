@@ -1,54 +1,30 @@
 #include "RCube/Core/Graphics/OpenGL/Renderer.h"
-#include "glm/gtx/string_cast.hpp"
-#include "glm/gtc/matrix_transform.hpp"
+#include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
-#include"RCube/Core/Graphics/Materials/FlatMaterial.h"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/string_cast.hpp"
 
-namespace rcube {
+namespace rcube
+{
 
 const std::vector<glm::vec3> skybox_vertices = {
-    glm::vec3(-1.0f,  1.0f, -1.0f),
-    glm::vec3(-1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f,  1.0f, -1.0f),
-    glm::vec3(-1.0f,  1.0f, -1.0f),
+    glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec3(-1.0f, 1.0f, -1.0f),
 
-    glm::vec3(-1.0f, -1.0f,  1.0f),
-    glm::vec3(-1.0f, -1.0f, -1.0f),
-    glm::vec3(-1.0f,  1.0f, -1.0f),
-    glm::vec3(-1.0f,  1.0f, -1.0f),
-    glm::vec3(-1.0f,  1.0f,  1.0f),
-    glm::vec3(-1.0f, -1.0f,  1.0f),
+    glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, 1.0f, -1.0f),
+    glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec3(-1.0f, -1.0f, 1.0f),
 
-    glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f,  1.0f),
-    glm::vec3(1.0f,  1.0f,  1.0f),
-    glm::vec3(1.0f,  1.0f,  1.0f),
-    glm::vec3(1.0f,  1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec3(1.0f, -1.0f, -1.0f),
 
-    glm::vec3(-1.0f, -1.0f,  1.0f),
-    glm::vec3(-1.0f,  1.0f,  1.0f),
-    glm::vec3(1.0f,  1.0f,  1.0f),
-    glm::vec3(1.0f,  1.0f,  1.0f),
-    glm::vec3(1.0f, -1.0f,  1.0f),
-    glm::vec3(-1.0f, -1.0f,  1.0f),
+    glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec3(-1.0f, -1.0f, 1.0f),
 
-    glm::vec3(-1.0f,  1.0f, -1.0f),
-    glm::vec3(1.0f,  1.0f, -1.0f),
-    glm::vec3(1.0f,  1.0f,  1.0f),
-    glm::vec3(1.0f,  1.0f,  1.0f),
-    glm::vec3(-1.0f,  1.0f,  1.0f),
-    glm::vec3(-1.0f,  1.0f, -1.0f),
+    glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec3(-1.0f, 1.0f, -1.0f),
 
-    glm::vec3(-1.0f, -1.0f, -1.0f),
-    glm::vec3(-1.0f, -1.0f,  1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(-1.0f, -1.0f,  1.0f),
-    glm::vec3(1.0f, -1.0f,  1.0f)
-};
+    glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, 1.0f)};
 
 const std::string skybox_vert_src = R"(
 #version 420
@@ -82,7 +58,6 @@ void main() {
 }
 )";
 
-
 const std::string quad_vert_src = R"(
 #version 420
 layout (location = 0) in vec3 vertex;
@@ -107,12 +82,15 @@ void main() {
 )";
 
 GLRenderer::GLRenderer()
-    : top_(0), left_(0), width_(1280), height_(720),
-      clear_color_(glm::vec4(1.f)), init_(false), num_lights_(0) {
+    : top_(0), left_(0), width_(1280), height_(720), clear_color_(glm::vec4(1.f)), init_(false),
+      num_lights_(0)
+{
 }
 
-void GLRenderer::cleanup() {
-    if (init_) {
+void GLRenderer::cleanup()
+{
+    if (init_)
+    {
         glDeleteBuffers(1, &ubo_matrices_);
         glDeleteBuffers(1, &ubo_lights_);
         skybox_mesh_->release();
@@ -123,31 +101,39 @@ void GLRenderer::cleanup() {
     }
 }
 
-const glm::vec4 & GLRenderer::clearColor() const {
+const glm::vec4 &GLRenderer::clearColor() const
+{
     return clear_color_;
 }
 
-void GLRenderer::setClearColor(const glm::vec4 &color) {
+void GLRenderer::setClearColor(const glm::vec4 &color)
+{
     clear_color_ = color;
 }
 
-void GLRenderer::clear(bool color, bool depth, bool stencil) {
+void GLRenderer::clear(bool color, bool depth, bool stencil)
+{
     glClearColor(clear_color_[0], clear_color_[1], clear_color_[2], clear_color_[3]);
     GLbitfield clear_bits = 0;
-    if (color) {
+    if (color)
+    {
         clear_bits |= GL_COLOR_BUFFER_BIT;
     }
-    if (depth) {
+    if (depth)
+    {
         clear_bits |= GL_DEPTH_BUFFER_BIT;
     }
-    if (stencil) {
+    if (stencil)
+    {
         clear_bits |= GL_STENCIL_BUFFER_BIT;
     }
     glClear(clear_bits);
 }
 
-void GLRenderer::initialize() {
-    if (init_) {
+void GLRenderer::initialize()
+{
+    if (init_)
+    {
         return;
     }
     glGenBuffers(1, &ubo_matrices_);
@@ -163,7 +149,8 @@ void GLRenderer::initialize() {
     quad_mesh_ = Mesh::create();
     quad_mesh_->data.vertices = {glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
                                  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)};
-    quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)};
+    quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1),
+                                  glm::vec2(1, 0)};
     quad_mesh_->uploadToGPU();
     quad_shader_ = ShaderProgram::create(quad_vert_src, quad_frag_src, true);
 
@@ -176,7 +163,8 @@ void GLRenderer::initialize() {
     init_ = true;
 }
 
-void GLRenderer::resize(int top, int left, int width, int height) {
+void GLRenderer::resize(int top, int left, int width, int height)
+{
     top_ = top;
     left_ = left;
     width_ = width;
@@ -190,30 +178,35 @@ void GLRenderer::resize(int top, int left, int width, int height) {
 }
 
 void GLRenderer::setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
-                           const glm::mat4 &projection_to_viewport) {
+                           const glm::mat4 &projection_to_viewport)
+{
     initialize();
     // Copy projection and viewport matrices to UBO
     int float4x4_size = sizeof(glm::mat4);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, float4x4_size, glm::value_ptr(world_to_view));
-    glBufferSubData(GL_UNIFORM_BUFFER, float4x4_size, float4x4_size, glm::value_ptr(view_to_projection));
-    glBufferSubData(GL_UNIFORM_BUFFER, 2*float4x4_size, float4x4_size, glm::value_ptr(projection_to_viewport));
+    glBufferSubData(GL_UNIFORM_BUFFER, float4x4_size, float4x4_size,
+                    glm::value_ptr(view_to_projection));
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * float4x4_size, float4x4_size,
+                    glm::value_ptr(projection_to_viewport));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
     eye_pos_ = glm::vec3(glm::inverse(world_to_view)[3]);
 }
 
-void GLRenderer::setLights(const std::vector<Light> &lights) {
+void GLRenderer::setLights(const std::vector<Light> &lights)
+{
     initialize();
     // Copy lights
     std::vector<float> light_data;
-    assert (lights.size() < 99);
+    assert(lights.size() < 99);
     light_data.reserve(lights.size() * 12);
-    for (const Light &l : lights) {
+    for (const Light &l : lights)
+    {
         glm::vec3 pos_xyz = l.position;
-        //pos_xyz = glm::vec3(world_to_view * glm::vec4(pos_xyz, 1.f));
+        // pos_xyz = glm::vec3(world_to_view * glm::vec4(pos_xyz, 1.f));
         glm::vec3 dir = glm::vec3(l.direction);
-        //dir = glm::vec3(world_to_view * glm::vec4(dir, 0.f));
+        // dir = glm::vec3(world_to_view * glm::vec4(dir, 0.f));
         light_data.push_back(pos_xyz.x);
         light_data.push_back(pos_xyz.y);
         light_data.push_back(pos_xyz.z);
@@ -234,12 +227,15 @@ void GLRenderer::setLights(const std::vector<Light> &lights) {
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo_lights_);
 }
 
-void GLRenderer::updateSettings(const RenderSettings &settings) {
+void GLRenderer::updateSettings(const RenderSettings &settings)
+{
     // Depth test
-    if (settings.depth_test) {
+    if (settings.depth_test)
+    {
         glEnable(GL_DEPTH_TEST);
     }
-    else {
+    else
+    {
         glDisable(GL_DEPTH_TEST);
     }
 
@@ -247,29 +243,34 @@ void GLRenderer::updateSettings(const RenderSettings &settings) {
     glDepthMask(static_cast<GLboolean>(settings.depth_write));
 
     // Blending
-    if (settings.blending) {
+    if (settings.blending)
+    {
         glEnable(GL_BLEND);
         glBlendFunc(static_cast<GLenum>(settings.blendfunc_src),
                     static_cast<GLenum>(settings.blendfunc_dst));
     }
-    else {
+    else
+    {
         glDisable(GL_BLEND);
     }
 
     // Face Culling
-    if (settings.culling) {
+    if (settings.culling)
+    {
         glEnable(GL_CULL_FACE);
         glCullFace(static_cast<GLenum>(settings.cull_mode));
     }
-    else {
+    else
+    {
         glDisable(GL_CULL_FACE);
     }
 }
 
-void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world) {
+void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world)
+{
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
 
-    assert (material != nullptr);
+    assert(material != nullptr);
 
     // Update settings
     updateSettings(material->render_settings);
@@ -279,20 +280,23 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
     std::shared_ptr<ShaderProgram> sh = material->shader();
     sh->setUniform("model_matrix", model_to_world);
     sh->setUniform("eye_pos", eye_pos_);
-    sh->setUniform("normal_matrix",normal_matrix);
+    sh->setUniform("normal_matrix", normal_matrix);
     sh->setUniform("num_lights", static_cast<int>(num_lights_));
     mesh->use();
-    if (!mesh->indexed()) {
-        material->shader()->drawArrays(static_cast<GLint>(mesh->data.primitive),
-                                       0, mesh->numVertices());
+    if (!mesh->indexed())
+    {
+        material->shader()->drawArrays(static_cast<GLint>(mesh->data.primitive), 0,
+                                       mesh->numVertices());
     }
-    else {
-        material->shader()->drawElements(static_cast<GLint>(mesh->data.primitive),
-                                         0, mesh->numPrimitives());
+    else
+    {
+        material->shader()->drawElements(static_cast<GLint>(mesh->data.primitive), 0,
+                                         mesh->numPrimitives());
     }
 }
 
-void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap) {
+void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
+{
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     cubemap->use(3);
@@ -302,7 +306,8 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap) {
     glDepthFunc(GL_LESS);
 }
 
-void GLRenderer::renderEffect(Effect *effect, Framebuffer *input) {
+void GLRenderer::renderEffect(Effect *effect, Framebuffer *input)
+{
     effect->input = input;
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
@@ -312,7 +317,8 @@ void GLRenderer::renderEffect(Effect *effect, Framebuffer *input) {
     effect->done();
 }
 
-void GLRenderer::renderTextureToScreen(Texture2D *tex) {
+void GLRenderer::renderTextureToScreen(Texture2D *tex)
+{
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     tex->use(0);
     clear();

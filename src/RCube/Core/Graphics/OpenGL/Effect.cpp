@@ -1,6 +1,7 @@
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 
-namespace rcube {
+namespace rcube
+{
 
 const std::string vs_src = R"(
 #version 420
@@ -14,11 +15,14 @@ void main() {
 }
 )";
 
-Effect::Effect() : shader_(std::make_shared<ShaderProgram>()), init_(false) {
+Effect::Effect() : shader_(std::make_shared<ShaderProgram>()), init_(false)
+{
 }
 
-void Effect::initialize() {
-    if (init_) {
+void Effect::initialize()
+{
+    if (init_)
+    {
         return;
     }
     const std::string &frag_src = fragmentShader();
@@ -26,22 +30,26 @@ void Effect::initialize() {
     init_ = true;
 }
 
-std::shared_ptr<ShaderProgram> Effect::shader() const {
+std::shared_ptr<ShaderProgram> Effect::shader() const
+{
     return shader_;
 }
 
-void Effect::use() {
+void Effect::use()
+{
     initialize();
     chooseTextures();
     shader_->use();
     setUniforms();
 }
 
-void Effect::done() {
+void Effect::done()
+{
     shader_->done();
 }
 
-void Effect::chooseTextures() {
+void Effect::chooseTextures()
+{
     input->colorAttachment(0)->use(0);
 }
 

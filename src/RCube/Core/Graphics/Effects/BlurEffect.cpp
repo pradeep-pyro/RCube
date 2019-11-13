@@ -1,17 +1,20 @@
 #include "RCube/Core/Graphics/Effects/BlurEffect.h"
 
-namespace rcube {
+namespace rcube
+{
 
-BlurEffect::BlurEffect(bool horizontal)
-    : horizontal_(horizontal) {
+BlurEffect::BlurEffect(bool horizontal) : horizontal_(horizontal)
+{
     initialize();
 }
 
-void BlurEffect::setUniforms() {
+void BlurEffect::setUniforms()
+{
     shader_->setUniform("horizontal", horizontal_);
 }
 
-std::string BlurEffect::fragmentShader() {
+std::string BlurEffect::fragmentShader()
+{
     return R"(
 #version 420
 in vec2 v_texcoord;

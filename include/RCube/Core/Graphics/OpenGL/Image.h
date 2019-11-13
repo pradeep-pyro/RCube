@@ -1,25 +1,29 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include <vector>
+#include "stb_image/stb_image.h"
+#include "stb_image/stb_image_write.h"
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <algorithm>
-#include "stb_image/stb_image.h"
-#include "stb_image/stb_image_write.h"
+#include <vector>
 
-namespace rcube {
+namespace rcube
+{
 
-class Image {
-public:
+class Image
+{
+  public:
     Image() = default;
 
-    static Image fromFile(const std::string &filename, int n_channels) {
+    static Image fromFile(const std::string &filename, int n_channels)
+    {
         int w, h, c;
         int desired_c = n_channels;
         unsigned char *pix = stbi_load(filename.c_str(), &w, &h, &c, desired_c);
-        if (pix == nullptr) {
+        if (pix == nullptr)
+        {
             throw std::runtime_error("Unable to load image. Check file path: " + filename);
         }
         Image im;
@@ -31,45 +35,54 @@ public:
         return im;
     }
 
-    void saveBMP(const std::string &filename, bool flip_vertically=false) {
+    void saveBMP(const std::string &filename, bool flip_vertically = false)
+    {
         stbi_flip_vertically_on_write(flip_vertically);
         stbi_write_bmp(filename.c_str(), width_, height_, channels_, pixels_.data());
     }
 
-    int width() const {
+    int width() const
+    {
         return width_;
     }
 
-    int height() const {
+    int height() const
+    {
         return height_;
     }
 
-    int channels() const {
+    int channels() const
+    {
         return channels_;
     }
 
-    const std::vector<unsigned char> & pixels() const {
+    const std::vector<unsigned char> &pixels() const
+    {
         return pixels_;
     }
 
-    std::vector<unsigned char> & pixels() {
+    std::vector<unsigned char> &pixels()
+    {
         return pixels_;
     }
 
-    void setPixels(int width, int height, int channels, std::vector<unsigned char> &data) {
+    void setPixels(int width, int height, int channels, std::vector<unsigned char> &data)
+    {
         pixels_ = data;
         width_ = width;
         height_ = height;
         channels_ = channels;
     }
 
-    void setPixels(int width, int height, int channels, unsigned char *data) {
+    void setPixels(int width, int height, int channels, unsigned char *data)
+    {
         pixels_.assign(data, data + width * height * channels);
         width_ = width;
         height_ = height;
         channels_ = channels;
     }
-private:
+
+  private:
     int width_, height_, channels_;
     std::vector<unsigned char> pixels_;
 };

@@ -1,9 +1,10 @@
 #ifndef CHECKERBOARD_H
 #define CHECKERBOARD_H
 
-#include "glm/glm.hpp"
 #include "RCube/Core/Graphics/OpenGL/Image.h"
-namespace rcube {
+#include "glm/glm.hpp"
+namespace rcube
+{
 
 /**
  * Returns an image depicting a checkerboard texture
@@ -15,8 +16,8 @@ namespace rcube {
  * @param color2 Color 2
  * @return
  */
-Image checkerboard(int width, int height, int checker_width, int checker_height,
-                   glm::vec3 color1, glm::vec3 color2);
+Image checkerboard(int width, int height, int checker_width, int checker_height, glm::vec3 color1,
+                   glm::vec3 color2);
 
 } // namespace rcube
 

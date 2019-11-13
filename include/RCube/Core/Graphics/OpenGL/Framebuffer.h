@@ -1,19 +1,21 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include "glad/glad.h"
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
+#include "glad/glad.h"
 #include <vector>
 
-namespace rcube {
+namespace rcube
+{
 
 /**
  * Framebuffer represents a collection of color, depth and stencil buffers that can be
  * used for off-screen rendering.
  * Use the Framebuffer::create(...) static method to create a new framebuffer.
  */
-class Framebuffer {
-public:
+class Framebuffer
+{
+  public:
     Framebuffer();
     Framebuffer(const Framebuffer &other) = delete;
     ~Framebuffer();
@@ -51,8 +53,7 @@ public:
      * Add another color attachment
      * @param format Format of the color buffer in the GPU
      */
-    void addColorAttachment(TextureInternalFormat format, size_t levels=1,
-                            size_t samples=0);
+    void addColorAttachment(TextureInternalFormat format, size_t levels = 1, size_t samples = 0);
 
     void clearColorAttachments();
 
@@ -64,14 +65,14 @@ public:
      * Add/replace the depth attachment
      * @param format Format of the depth buffer in the GPU
      */
-    void addDepthAttachment(TextureInternalFormat format, size_t samples=0);
+    void addDepthAttachment(TextureInternalFormat format, size_t samples = 0);
 
     /**
      * Returns the ith color attachment
      * @param i Index of the color attachment
      * @return Pointer to Texture2D
      */
-    Texture2D * colorAttachment(size_t i=0);
+    Texture2D *colorAttachment(size_t i = 0);
 
     /**
      * Returns the number of color attachments in this framebuffer
@@ -108,14 +109,13 @@ public:
      * @param attachment_index Index of the color attachment
      * @return Image
      */
-    Image getImage(int attachment_index=0) const;
+    Image getImage(int attachment_index = 0) const;
     /**
      * Blits (copies) data from the current framebuffer to the target
      * Only works if both framebuffers match in dimensions
      * @param target_fbo
      */
-    void blit(Framebuffer &target_fbo, bool color=true, bool depth=true,
-              bool stencil=true);
+    void blit(Framebuffer &target_fbo, bool color = true, bool depth = true, bool stencil = true);
 
     /**
      * Blits (copies) data from the current framebuffer to the default framebuffer
@@ -126,8 +126,8 @@ public:
      * @param stencil Whether to copy stencil buffer
      */
 
-    void blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color=true,
-                      bool depth=true, bool stencil=true);
+    void blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color = true, bool depth = true,
+                      bool stencil = true);
     /**
      * Blits (copies) data from the current framebuffer to the default framebuffer
      * @param src0 ROI denoted by top-left point in current framebuffer
@@ -139,10 +139,10 @@ public:
      * @param stencil Whether to copy stencil buffer
      */
 
-    void blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0,
-                      glm::ivec2 dst1, bool color=true, bool depth=true,
-                      bool stencil=true);
-private:
+    void blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1,
+                      bool color = true, bool depth = true, bool stencil = true);
+
+  private:
     void addAttachment(GLenum attachment, GLenum data_type, unsigned int *attachment_id);
 
     unsigned int id_ = 0;

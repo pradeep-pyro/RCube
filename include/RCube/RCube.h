@@ -4,11 +4,12 @@
 #include <memory>
 
 #include "RCube/Core/Arch/World.h"
-#include "RCube/Systems/TransformSystem.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/RenderSystem.h"
+#include "RCube/Systems/TransformSystem.h"
 
-namespace rcube {
+namespace rcube
+{
 
 typedef void (*procAddress)(const char *);
 
@@ -16,7 +17,7 @@ typedef void (*procAddress)(const char *);
  * Uses GLAD to initialize OpenGL as required by RCube
  * @param p OpenGL loader function (optional), e.g. glfwGetProcAddress
  */
-void initGL(procAddress p=nullptr);
+void initGL(procAddress p = nullptr);
 
 } // namespace rcube
 

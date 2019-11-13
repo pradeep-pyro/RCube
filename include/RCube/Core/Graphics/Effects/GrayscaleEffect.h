@@ -2,7 +2,8 @@
 #define GRAYSCALEEFFECT_H
 
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
-namespace rcube {
+namespace rcube
+{
 
 /**
  * GrayscaleEffect is a postprocessing effect that converts the contents of the screen
@@ -10,8 +11,9 @@ namespace rcube {
  * To use, simply add this effect to a Camera component:
  * entity.get<Camera>()->postprocess.push_back(...)
  */
-class GrayscaleEffect : public Effect {
-public:
+class GrayscaleEffect : public Effect
+{
+  public:
     GrayscaleEffect();
     std::string fragmentShader() override;
     void setUniforms() override;

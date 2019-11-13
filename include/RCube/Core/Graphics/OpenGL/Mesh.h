@@ -1,18 +1,23 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <vector>
-#include "glm/glm.hpp"
 #include "glad/glad.h"
+#include "glm/glm.hpp"
 #include <memory>
+#include <vector>
 
-namespace rcube {
+namespace rcube
+{
 
-enum class MeshPrimitive {
-    Points = GL_POINTS, Lines = GL_LINES, Triangles = GL_TRIANGLES
+enum class MeshPrimitive
+{
+    Points = GL_POINTS,
+    Lines = GL_LINES,
+    Triangles = GL_TRIANGLES
 };
 
-enum class MeshAttributes {
+enum class MeshAttributes
+{
     Vertices = 0,
     Normals = 1,
     TexCoords = 2,
@@ -20,7 +25,8 @@ enum class MeshAttributes {
     Tangents = 4
 };
 
-struct MeshData {
+struct MeshData
+{
     std::vector<glm::vec3> vertices, normals, colors, tangents;
     std::vector<glm::vec2> texcoords;
     std::vector<unsigned int> indices;
@@ -36,15 +42,16 @@ struct MeshData {
 
 // Represents a 3D triangle/line Mesh with vertex positions, normals,
 // texcoords, colors using OpenGL buffers
-class Mesh {
-public:
+class Mesh
+{
+  public:
     MeshData data;
 
     Mesh() = default;
 
     Mesh(const Mesh &other) = delete;
 
-    Mesh & operator=(const Mesh &other) = delete;
+    Mesh &operator=(const Mesh &other) = delete;
 
     /**
      * Initialize actually creates the vertex attribute object and buffers on the OpenGL side
@@ -65,14 +72,13 @@ public:
 
     bool indexed() const;
 
-    void uploadToGPU(bool clear_cpu_data=false);
+    void uploadToGPU(bool clear_cpu_data = false);
 
     size_t numVertices() const;
 
     size_t numPrimitives() const;
 
-private:
-
+  private:
     void enableAttribute(MeshAttributes attr);
 
     void disableAttribute(MeshAttributes attr);
@@ -88,9 +94,11 @@ private:
     void setDefaultValue(GLuint id, const glm::vec2 &val);
 
     // Opengl Buffer IDs
-    struct GLBufferIDs {
-        GLBufferIDs() : vao(0), vertices(0), normals(0), indices(0),
-            texcoords(0), colors(0), tangents(0) {
+    struct GLBufferIDs
+    {
+        GLBufferIDs()
+            : vao(0), vertices(0), normals(0), indices(0), texcoords(0), colors(0), tangents(0)
+        {
         }
         GLuint vao, vertices, normals, indices, texcoords, colors, tangents;
     };
@@ -105,7 +113,7 @@ private:
     bool has_normals_ = false;
     bool has_texcoords_ = false;
     bool has_colors_ = false;
-    bool has_tangents_ =false;
+    bool has_tangents_ = false;
     bool indexed_ = false;
     bool init_ = false;
 };

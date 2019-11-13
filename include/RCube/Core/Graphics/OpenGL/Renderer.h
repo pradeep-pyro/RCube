@@ -1,21 +1,23 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "glm/glm.hpp"
 #include "glad/glad.h"
-#include <vector>
+#include "glm/glm.hpp"
 #include <memory>
+#include <vector>
 
-#include "RCube/Core/Graphics/OpenGL/Mesh.h"
-#include "RCube/Core/Graphics/OpenGL/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
-#include "RCube/Core/Graphics/OpenGL/Light.h"
 #include "RCube/Core/Graphics/OpenGL/Image.h"
+#include "RCube/Core/Graphics/OpenGL/Light.h"
+#include "RCube/Core/Graphics/OpenGL/Material.h"
+#include "RCube/Core/Graphics/OpenGL/Mesh.h"
 
-namespace rcube {
+namespace rcube
+{
 
-class GLRenderer {
-public:
+class GLRenderer
+{
+  public:
     GLRenderer();
 
     /**
@@ -55,7 +57,7 @@ public:
      * passed to glClearColor()
      * @return clear color
      */
-    const glm::vec4 & clearColor() const;
+    const glm::vec4 &clearColor() const;
 
     /**
      * @brief setClearColor Sets the color that is used to clear the screen i.e.,
@@ -67,10 +69,9 @@ public:
     /**
      * @brief clear Clear the screen (calls glClear()) with set clear bits
      */
-    void clear(bool color=true, bool depth=true, bool stencil=false);
+    void clear(bool color = true, bool depth = true, bool stencil = false);
 
-private:
-
+  private:
     void updateSettings(const RenderSettings &settings);
 
     // Uniform buffer objects

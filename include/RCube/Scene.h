@@ -2,7 +2,8 @@
 #define SCENE_H
 
 #include "RCube/Core/Arch/World.h"
-namespace rcube {
+namespace rcube
+{
 
 /**
  * Scene is the primary interface for the user and is a lightweight wrapper around
@@ -11,8 +12,9 @@ namespace rcube {
  *
  * rcube::World can also be used directly instead of rcube::Scene
  */
-class Scene : public World {
-public:
+class Scene : public World
+{
+  public:
     Scene();
     EntityHandle createCamera();
     EntityHandle createDrawable();

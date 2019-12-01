@@ -9,24 +9,32 @@
 #include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include "RCube/Controller/OrbitController.h"
-
+#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
+#include "RCube/Core/Graphics/MeshGen/Plane.h"
+#include "RCube/Core/Graphics/MeshGen/Box.h"
+#include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 
 class App : public rcube::Window
 {
     rcube::Scene mScene;
     rcube::EntityHandle mGroundPlane;
     rcube::EntityHandle mCamera;
+    rcube::EntityHandle mSphere;
+    rcube::EntityHandle mBox;
+    rcube::EntityHandle mPlane;
     rcube::OrbitController mCtrl;
 
 public:
     App() : rcube::Window("Hello sphere")
     {
         using namespace rcube;
-        EntityHandle sphere = mScene.createDrawable();
 
-        // Create gound plane
+        // Create ground plane
         std::shared_ptr<Mesh> gridMesh = Mesh::create();
-        gridMesh->data = rcube::grid(2, 2, 10, 10, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0));
+        gridMesh->data = rcube::grid(2, 2, 10, 10,
+            glm::vec3(1.0, 0.0, 0.0),
+            glm::vec3(0.0, 1.0, 0.0),
+            glm::vec3(0.0, 0.0, 0.0));
         gridMesh->uploadToGPU();
         std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();
         mGroundPlane = mScene.createDrawable();
@@ -35,13 +43,40 @@ public:
 
         // Create a sphere
         std::shared_ptr<Mesh> sphereMesh = Mesh::create();
-        std::shared_ptr<BlinnPhongMaterial> blinnPhong = std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-        blinnPhong->show_wireframe = true;
         sphereMesh->data = icoSphere(0.5, 3);
         sphereMesh->uploadToGPU();
-        sphere.get<Drawable>()->mesh = sphereMesh;
-        sphere.get<Drawable>()->material = blinnPhong;
+        std::shared_ptr<PhysicallyBasedMaterial> pbm = std::make_shared<PhysicallyBasedMaterial>();
+        pbm->roughness = 0.2;
+        mSphere = mScene.createDrawable();
+        mSphere.get<Drawable>()->mesh = sphereMesh;
+        mSphere.get<Drawable>()->material = pbm;
 
+
+        //create a plane
+        std::shared_ptr<Mesh> planeMesh = Mesh::create();
+        planeMesh->data = plane(2, 2, 10, 10, rcube::Orientation::PositiveY);
+        planeMesh->uploadToGPU();
+        std::shared_ptr<BlinnPhongMaterial> blinnPhong = std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
+        blinnPhong->show_wireframe = true;
+        mPlane = mScene.createDrawable();
+        mPlane.get<Drawable>()->mesh = planeMesh;
+        mPlane.get<Drawable>()->material = blinnPhong;
+
+                        
+        //create box with texture 
+        std::shared_ptr<Mesh> boxMesh = Mesh::create();
+        boxMesh->data = box(1, 1, 1, 1, 1, 1);
+        boxMesh->uploadToGPU();
+        std::shared_ptr<BlinnPhongMaterial> tex_blinnPhone = std::make_shared<BlinnPhongMaterial>();
+        tex_blinnPhone->diffuse_texture = Texture2D::create(128, 128, 1, rcube::TextureInternalFormat::RGBA8);
+        tex_blinnPhone->diffuse_texture->setData(checkerboard(128, 128, 8, 8, glm::vec3(0, 0, 0), glm::vec3(1, 1, 1)));
+        tex_blinnPhone->use_diffuse_texture = true;
+        std::cout << tex_blinnPhone->diffuse_texture->valid() << std::endl;
+        mBox = mScene.createDrawable();
+        mBox.get<Drawable>()->mesh = boxMesh;
+        mBox.get<Drawable>()->material = tex_blinnPhone;
+        mBox.get<Transform>()->translate(glm::vec3(1, 1, 1));
+                     
         // Create a camera
         mCamera = mScene.createCamera();
         mCamera.get<Transform>()->setPosition(glm::vec3(0, 0, 1));
@@ -49,9 +84,13 @@ public:
         mCamera.get<Camera>()->near_plane = 0.01f;
         mCamera.get<Camera>()->background_color = glm::vec4(0.3, 0.3, 0.3, 1.0);
         EntityHandle light = mScene.createPointLight();
-        light.get<Transform>()->setPosition(glm::vec3(1, 1, 0));
+        light.get<Transform>()->setPosition(glm::vec3(0, 0, 0));
+        //set light to follow the camera 
+        light.get<Transform>()->setParent(mCamera.get<Transform>());
         mCtrl.resize(1280, 720);
         mCtrl.setEntity(mCamera);
+
+        //init scene
         mScene.initialize();
     }
 
@@ -95,6 +134,7 @@ public:
             mCtrl.startOrbiting(pos.x, pos.y);
         }
     }
+
     virtual void onMouseRelease(int key, int mods)
     {
         glm::dvec2 pos = getMousePosition();
@@ -107,6 +147,7 @@ public:
             mCtrl.stopOrbiting(pos.x, pos.y);
         }
     }
+
     virtual void onMouseMove(double xpos, double ypos)
     {
         glm::dvec2 pos = getMousePosition();

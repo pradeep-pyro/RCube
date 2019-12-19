@@ -143,8 +143,6 @@ class Framebuffer
                       bool color = true, bool depth = true, bool stencil = true);
 
   private:
-    void addAttachment(GLenum attachment, GLenum data_type, unsigned int *attachment_id);
-
     unsigned int id_ = 0;
     size_t width_ = 0;
     size_t height_ = 0;

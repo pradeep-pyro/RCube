@@ -8,6 +8,7 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
+#include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Controller/OrbitController.h"
 
 
@@ -36,8 +37,13 @@ public:
         // Create a sphere
         std::shared_ptr<Mesh> sphereMesh = Mesh::create();
         std::shared_ptr<BlinnPhongMaterial> blinnPhong = std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-        blinnPhong->show_wireframe = true;
-        sphereMesh->data = icoSphere(0.5, 3);
+        blinnPhong->show_wireframe = false;
+        blinnPhong->diffuse_texture = Texture2D::create(256, 256, 1);
+        
+        Image checker = checkerboard(256, 256, 32, 32, glm::vec3(1, 1, 1), glm::vec3(0, 1, 0));
+        blinnPhong->diffuse_texture->setData(checker);
+        blinnPhong->use_diffuse_texture = true;
+        sphereMesh->data = cubeSphere(0.5, 10);
         sphereMesh->uploadToGPU();
         sphere.get<Drawable>()->mesh = sphereMesh;
         sphere.get<Drawable>()->material = blinnPhong;
@@ -48,8 +54,12 @@ public:
         mCamera.get<Camera>()->fov = glm::radians(30.0);
         mCamera.get<Camera>()->near_plane = 0.01f;
         mCamera.get<Camera>()->background_color = glm::vec4(0.3, 0.3, 0.3, 1.0);
-        EntityHandle light = mScene.createPointLight();
-        light.get<Transform>()->setPosition(glm::vec3(1, 1, 0));
+        EntityHandle light1 = mScene.createPointLight();
+        light1.get<Transform>()->setPosition(glm::vec3(1, 1, 0));
+
+        EntityHandle light2 = mScene.createPointLight();
+        light2.get<Transform>()->setParent(mCamera.get<Transform>());
+
         mCtrl.resize(1280, 720);
         mCtrl.setEntity(mCamera);
         mScene.initialize();

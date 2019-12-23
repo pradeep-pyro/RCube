@@ -1,7 +1,8 @@
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include <string>
 
-namespace rcube {
+namespace rcube
+{
 
 const std::string vert_src = R"(
 #version 420
@@ -37,25 +38,32 @@ void main() {
 }
 )";
 
-FlatMaterial::FlatMaterial() {
+FlatMaterial::FlatMaterial()
+{
     render_settings.blending = false;
     render_settings.depth_write = true;
     render_settings.depth_test = true;
     render_settings.culling = false;
     initialize();
 }
-std::string FlatMaterial::vertexShader() {
+std::string FlatMaterial::vertexShader()
+{
     return vert_src;
 }
-std::string FlatMaterial::fragmentShader() {
+std::string FlatMaterial::fragmentShader()
+{
     return frag_src;
 }
-std::string FlatMaterial::geometryShader() {
+std::string FlatMaterial::geometryShader()
+{
     return "";
 }
-void FlatMaterial::setUniforms() {}
+void FlatMaterial::setUniforms()
+{
+}
 
-int FlatMaterial::renderPriority() const {
+int FlatMaterial::renderPriority() const
+{
     return RenderPriority::Opaque;
 }
 

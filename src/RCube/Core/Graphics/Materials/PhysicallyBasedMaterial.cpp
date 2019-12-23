@@ -1,9 +1,10 @@
 #include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 
-namespace rcube {
+namespace rcube
+{
 
-const std::string vert_str = \
-                             R"(
+const std::string vert_str =
+    R"(
 #version 420
 layout (location = 0) in vec3 vertex;
 layout (location = 1) in vec3 normal;
@@ -39,9 +40,8 @@ void main() {
 }
 )";
 
-
-const std::string geom_str = \
-R"(
+const std::string geom_str =
+    R"(
 #version 420
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
@@ -117,9 +117,8 @@ void main() {
 }
 )";
 
-
-const std::string frag_str = \
-R"(
+const std::string frag_str =
+    R"(
 #version 420
 
 #define MAX_LIGHTS 99
@@ -318,44 +317,55 @@ void main() {
 )";
 
 PhysicallyBasedMaterial::PhysicallyBasedMaterial(glm::vec3 albedo, float roughness, float metalness)
-    : Material(), albedo(albedo), roughness(roughness), metalness(metalness),
-      show_wireframe(false), wireframe_thickness(1.0), wireframe_color(glm::vec3(0)),
-      use_albedo_texture(false), use_roughness_texture(false), use_metalness_texture(false) {
+    : Material(), albedo(albedo), roughness(roughness), metalness(metalness), show_wireframe(false),
+      wireframe_thickness(1.0), wireframe_color(glm::vec3(0)), use_albedo_texture(false),
+      use_roughness_texture(false), use_metalness_texture(false)
+{
     render_settings.depth_test = true;
     render_settings.depth_write = true;
     render_settings.blending = false;
     render_settings.culling = false;
     initialize();
 }
-std::string PhysicallyBasedMaterial::vertexShader() {
+std::string PhysicallyBasedMaterial::vertexShader()
+{
     return vert_str;
 }
-std::string PhysicallyBasedMaterial::fragmentShader() {
+std::string PhysicallyBasedMaterial::fragmentShader()
+{
     return frag_str;
 }
-std::string PhysicallyBasedMaterial::geometryShader() {
+std::string PhysicallyBasedMaterial::geometryShader()
+{
     return geom_str;
 }
-void PhysicallyBasedMaterial::use() {
+void PhysicallyBasedMaterial::use()
+{
     Material::use();
-    if (albedo_texture != nullptr && use_albedo_texture) {
+    if (albedo_texture != nullptr && use_albedo_texture)
+    {
         albedo_texture->use(0);
     }
-    if (roughness_texture != nullptr && use_roughness_texture) {
+    if (roughness_texture != nullptr && use_roughness_texture)
+    {
         roughness_texture->use(1);
     }
-    if (metalness_texture != nullptr && use_metalness_texture) {
+    if (metalness_texture != nullptr && use_metalness_texture)
+    {
         metalness_texture->use(2);
     }
-    if (normal_texture != nullptr && use_normal_texture) {
+    if (normal_texture != nullptr && use_normal_texture)
+    {
         normal_texture->use(3);
     }
-    if (irradiance_map != nullptr && use_irradiance_map) {
+    if (irradiance_map != nullptr && use_irradiance_map)
+    {
         irradiance_map->use(4);
     }
 }
 
-void PhysicallyBasedMaterial::setUniforms() {
+void PhysicallyBasedMaterial::setUniforms()
+{
     shader_->setUniform("material.albedo", albedo);
     shader_->setUniform("material.roughness", roughness);
     shader_->setUniform("material.metalness", metalness);
@@ -371,7 +381,8 @@ void PhysicallyBasedMaterial::setUniforms() {
     shader_->setUniform("use_irradiance_map", use_irradiance_map);
 }
 
-int PhysicallyBasedMaterial::renderPriority() const {
+int PhysicallyBasedMaterial::renderPriority() const
+{
     return RenderPriority::Opaque;
 }
 

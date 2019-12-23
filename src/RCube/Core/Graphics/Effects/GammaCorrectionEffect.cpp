@@ -1,7 +1,9 @@
 #include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
-namespace rcube {
+namespace rcube
+{
 
-std::string GammaCorrectionEffect::fragmentShader() {
+std::string GammaCorrectionEffect::fragmentShader()
+{
     return R"(
 #version 420
 in vec2 v_texcoord;
@@ -16,7 +18,8 @@ void main() {
 )";
 }
 
-void GammaCorrectionEffect::setUniforms() {
+void GammaCorrectionEffect::setUniforms()
+{
     // Nothing to do
 }
 

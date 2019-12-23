@@ -3,7 +3,8 @@
 
 #include "RCube/Components/BaseLight.h"
 
-namespace rcube {
+namespace rcube
+{
 
 /**
  * PointLight represents a light that emits light in all directions.
@@ -11,9 +12,10 @@ namespace rcube {
  * To create a valid point light, add a PointLight component and a
  * Transform component (light's position) to an entity.
  */
-class PointLight : public BaseLight {
-public:
-    PointLight(float radius=1.f, glm::vec3 color=glm::vec3(1.f));
+class PointLight : public BaseLight
+{
+  public:
+    PointLight(float radius = 1.f, glm::vec3 color = glm::vec3(1.f));
     /**
      * Get the radius of the point light
      * @return Radius
@@ -29,7 +31,7 @@ public:
      * Get the color of the light
      * @return Color
      */
-    const glm::vec3 & color() const;
+    const glm::vec3 &color() const;
 
     /**
      * Set the color of the light

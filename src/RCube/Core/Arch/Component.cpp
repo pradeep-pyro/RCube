@@ -1,6 +1,8 @@
 #include "RCube/Core/Arch/Component.h"
-namespace rcube {
-namespace internal {
+namespace rcube
+{
+namespace internal
+{
 
 unsigned int ComponentCounter::counter = 0;
 

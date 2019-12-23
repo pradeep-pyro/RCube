@@ -1,10 +1,11 @@
 #include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
 #include "stb_image/stb_image.h"
 
-namespace rcube {
+namespace rcube
+{
 
-const std::string vert_str = \
-                             R"(
+const std::string vert_str =
+    R"(
 #version 420
 layout (location = 0) in vec3 vertex;
 layout (location = 1) in vec3 normal;
@@ -40,9 +41,8 @@ void main() {
 }
 )";
 
-
-const std::string geom_str = \
-R"(
+const std::string geom_str =
+    R"(
 #version 420
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
@@ -118,9 +118,8 @@ void main() {
 }
 )";
 
-
-const std::string frag_str = \
-R"(
+const std::string frag_str =
+    R"(
 #version 420
 
 #define MAX_LIGHTS 99
@@ -265,10 +264,13 @@ void main() {
 }
 )";
 
-BlinnPhongMaterial::BlinnPhongMaterial(glm::vec3 diffuse_color, glm::vec3 specular_color, float shininess)
-    : Material(), diffuse_color(diffuse_color), specular_color(specular_color), shininess(shininess),
-      reflectivity(0.5), show_wireframe(false), wireframe_thickness(1.0), wireframe_color(glm::vec3(0)),
-      use_diffuse_texture(false), use_specular_texture(false), use_environment_map(false), show_backface(false) {
+BlinnPhongMaterial::BlinnPhongMaterial(glm::vec3 diffuse_color, glm::vec3 specular_color,
+                                       float shininess)
+    : Material(), diffuse_color(diffuse_color), specular_color(specular_color),
+      shininess(shininess), reflectivity(0.5), show_wireframe(false), wireframe_thickness(1.0),
+      wireframe_color(glm::vec3(0)), use_diffuse_texture(false), use_specular_texture(false),
+      use_environment_map(false), show_backface(false)
+{
     blend_environment_map = Combine::Multiply;
     render_settings.depth_test = true;
     render_settings.depth_write = true;
@@ -276,31 +278,40 @@ BlinnPhongMaterial::BlinnPhongMaterial(glm::vec3 diffuse_color, glm::vec3 specul
     render_settings.culling = false;
     initialize();
 }
-std::string BlinnPhongMaterial::vertexShader() {
+std::string BlinnPhongMaterial::vertexShader()
+{
     return vert_str;
 }
-std::string BlinnPhongMaterial::fragmentShader() {
+std::string BlinnPhongMaterial::fragmentShader()
+{
     return frag_str;
 }
-std::string BlinnPhongMaterial::geometryShader() {
+std::string BlinnPhongMaterial::geometryShader()
+{
     return geom_str;
 }
-void BlinnPhongMaterial::use() {
+void BlinnPhongMaterial::use()
+{
     Material::use();
-    if (diffuse_texture != nullptr && use_diffuse_texture) {
+    if (diffuse_texture != nullptr && use_diffuse_texture)
+    {
         diffuse_texture->use(0);
     }
-    if (specular_texture != nullptr && use_specular_texture) {
+    if (specular_texture != nullptr && use_specular_texture)
+    {
         specular_texture->use(1);
     }
-    if (normal_texture != nullptr && use_normal_texture) {
+    if (normal_texture != nullptr && use_normal_texture)
+    {
         normal_texture->use(2);
     }
-    if (environment_map != nullptr && use_environment_map) {
+    if (environment_map != nullptr && use_environment_map)
+    {
         environment_map->use(3);
     }
 }
-void BlinnPhongMaterial::setUniforms() {
+void BlinnPhongMaterial::setUniforms()
+{
     shader_->setUniform("material.diffuse", diffuse_color);
     shader_->setUniform("material.specular", specular_color);
     shader_->setUniform("material.shininess", shininess);
@@ -318,7 +329,8 @@ void BlinnPhongMaterial::setUniforms() {
     shader_->setUniform("blend_environment_map", static_cast<int>(blend_environment_map));
 }
 
-int BlinnPhongMaterial::renderPriority() const {
+int BlinnPhongMaterial::renderPriority() const
+{
     return RenderPriority::Opaque;
 }
 

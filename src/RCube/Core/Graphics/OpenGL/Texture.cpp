@@ -1,11 +1,14 @@
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
-#include <vector>
 #include "glm/gtc/type_ptr.hpp"
+#include <vector>
 
-namespace rcube {
+namespace rcube
+{
 
-const std::string ERROR_IMAGE_TEXTURE_MISMATCH = "Image dimensions are different from allocated texture dimensions";
-const std::string ERROR_IMAGE_CHANNELS_MISMATCH = "Unexpected number of channels, expected 1, 3, or 4";
+const std::string ERROR_IMAGE_TEXTURE_MISMATCH =
+    "Image dimensions are different from allocated texture dimensions";
+const std::string ERROR_IMAGE_CHANNELS_MISMATCH =
+    "Unexpected number of channels, expected 1, 3, or 4";
 const std::string ERROR_TEXTURE_UNINITIALIZED = "Cannot use texture without initializing";
 
 // --------------------------------------
@@ -13,7 +16,8 @@ const std::string ERROR_TEXTURE_UNINITIALIZED = "Cannot use texture without init
 // --------------------------------------
 
 std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t levels,
-                                             TextureInternalFormat internal_format) {
+                                             TextureInternalFormat internal_format)
+{
     auto tex = std::make_shared<Texture2D>();
     tex->width_ = width;
     tex->height_ = height;
@@ -31,7 +35,8 @@ std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t
 }
 
 std::shared_ptr<Texture2D> Texture2D::createMS(size_t width, size_t height, size_t num_samples,
-                                               TextureInternalFormat internal_format) {
+                                               TextureInternalFormat internal_format)
+{
     auto tex = std::make_shared<Texture2D>();
     tex->width_ = width;
     tex->height_ = height;
@@ -41,30 +46,37 @@ std::shared_ptr<Texture2D> Texture2D::createMS(size_t width, size_t height, size
     tex->target_ = GL_TEXTURE_2D_MULTISAMPLE;
     glGenTextures(1, &tex->id_);
     tex->use();
-    glTexStorage2DMultisample(tex->target_, tex->num_samples_, (GLenum)internal_format, width, height, GL_TRUE);
-        tex->setWrapMode(TextureWrapMode::ClampToEdge);
+    glTexStorage2DMultisample(tex->target_, tex->num_samples_, (GLenum)internal_format, width,
+                              height, GL_TRUE);
+    tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
     tex->done();
     return tex;
 }
 
-Texture2D::~Texture2D() {
+Texture2D::~Texture2D()
+{
     release();
 }
 
-bool Texture2D::valid() const {
+bool Texture2D::valid() const
+{
     return id_ > 0;
 }
 
-void Texture2D::release() {
-    if (valid()) {
+void Texture2D::release()
+{
+    if (valid())
+    {
         glDeleteTextures(1, &id_);
         id_ = 0;
     }
 }
 
-void Texture2D::setBorderColor(const glm::vec4 &color) {
-    if (num_samples_ > 0) {
+void Texture2D::setBorderColor(const glm::vec4 &color)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -72,8 +84,10 @@ void Texture2D::setBorderColor(const glm::vec4 &color) {
     done();
 }
 
-void Texture2D::setFilterMode(TextureFilterMode mode) {
-    if (num_samples_ > 0) {
+void Texture2D::setFilterMode(TextureFilterMode mode)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -82,8 +96,10 @@ void Texture2D::setFilterMode(TextureFilterMode mode) {
     done();
 }
 
-void Texture2D::setFilterModeMin(TextureFilterMode mode) {
-    if (num_samples_ > 0) {
+void Texture2D::setFilterModeMin(TextureFilterMode mode)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -91,8 +107,10 @@ void Texture2D::setFilterModeMin(TextureFilterMode mode) {
     done();
 }
 
-void Texture2D::setFilterModeMag(TextureFilterMode mode) {
-    if (num_samples_ > 0) {
+void Texture2D::setFilterModeMag(TextureFilterMode mode)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -100,8 +118,10 @@ void Texture2D::setFilterModeMag(TextureFilterMode mode) {
     done();
 }
 
-void Texture2D::generateMipMap() {
-    if (num_samples_ > 0) {
+void Texture2D::generateMipMap()
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -109,8 +129,10 @@ void Texture2D::generateMipMap() {
     done();
 }
 
-void Texture2D::setWrapMode(TextureWrapMode mode) {
-    if (num_samples_ > 0) {
+void Texture2D::setWrapMode(TextureWrapMode mode)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -119,8 +141,10 @@ void Texture2D::setWrapMode(TextureWrapMode mode) {
     done();
 }
 
-void Texture2D::setWrapModeS(TextureWrapMode mode) {
-    if (num_samples_ > 0) {
+void Texture2D::setWrapModeS(TextureWrapMode mode)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -128,8 +152,10 @@ void Texture2D::setWrapModeS(TextureWrapMode mode) {
     done();
 }
 
-void Texture2D::setWrapModeT(TextureWrapMode mode) {
-    if (num_samples_ > 0) {
+void Texture2D::setWrapModeT(TextureWrapMode mode)
+{
+    if (num_samples_ > 0)
+    {
         return;
     }
     use();
@@ -137,77 +163,96 @@ void Texture2D::setWrapModeT(TextureWrapMode mode) {
     done();
 }
 
-void Texture2D::setData(const unsigned char* data, TextureFormat format, size_t level) {
+void Texture2D::setData(const unsigned char *data, TextureFormat format, size_t level)
+{
     use();
     glTexSubImage2D(target_, level, 0, 0, width_, height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
     generateMipMap();
     done();
 }
 
-void Texture2D::setData(const float* data, TextureFormat format, size_t level) {
+void Texture2D::setData(const float *data, TextureFormat format, size_t level)
+{
     use();
     glTexSubImage2D(target_, level, 0, 0, width_, height_, (GLenum)format, GL_FLOAT, data);
     generateMipMap();
     done();
 }
 
-void Texture2D::setData(const Image &im) {
-    if (im.width() != width_ || im.height() != height_) {
+void Texture2D::setData(const Image &im)
+{
+    if (im.width() != width_ || im.height() != height_)
+    {
         throw std::invalid_argument(ERROR_IMAGE_TEXTURE_MISMATCH);
     }
     TextureFormat format;
-    if (im.channels() == 3) {
+    if (im.channels() == 3)
+    {
         format = TextureFormat::RGB;
     }
-    else if (im.channels() == 4) {
+    else if (im.channels() == 4)
+    {
         format = TextureFormat::RGBA;
     }
-    else if (im.channels() == 1) {
+    else if (im.channels() == 1)
+    {
         format = TextureFormat::Red;
     }
-    else {
+    else
+    {
         throw std::runtime_error(ERROR_IMAGE_CHANNELS_MISMATCH);
     }
     setData(im.pixels().data(), format);
 }
 
-void Texture2D::setData(const Image &im, TextureFormat fmt) {
-    if (im.width() != width_ || im.height() != height_) {
+void Texture2D::setData(const Image &im, TextureFormat fmt)
+{
+    if (im.width() != width_ || im.height() != height_)
+    {
         throw std::invalid_argument(ERROR_IMAGE_TEXTURE_MISMATCH);
     }
     setData(im.pixels().data(), fmt);
 }
 
-size_t Texture2D::width() const {
+size_t Texture2D::width() const
+{
     return width_;
 }
 
-size_t Texture2D::height() const {
+size_t Texture2D::height() const
+{
     return height_;
 }
 
-size_t Texture2D::levels() const {
+size_t Texture2D::levels() const
+{
     return levels_;
 }
 
-size_t Texture2D::numSamples() const {
+size_t Texture2D::numSamples() const
+{
     return num_samples_;
 }
 
-GLenum Texture2D::target() const {
+GLenum Texture2D::target() const
+{
     return target_;
 }
 
-TextureInternalFormat Texture2D::internalFormat() const {
+TextureInternalFormat Texture2D::internalFormat() const
+{
     return internal_format_;
 }
 
-GLuint Texture2D::id() const {
+GLuint Texture2D::id() const
+{
     return id_;
 }
 
-void Texture2D::use(size_t unit) {
-    if (!valid()) {
+void Texture2D::use(size_t unit)
+{
+    if (!valid())
+    {
         throw std::runtime_error(ERROR_TEXTURE_UNINITIALIZED);
     }
     unit_ = unit;
@@ -215,8 +260,10 @@ void Texture2D::use(size_t unit) {
     glBindTexture(target_, id_);
 }
 
-void Texture2D::done() {
-    if (in_use_) {
+void Texture2D::done()
+{
+    if (in_use_)
+    {
         glActiveTexture(GL_TEXTURE0 + unit_);
         glBindTexture(target_, 0);
         in_use_ = false;
@@ -226,12 +273,15 @@ void Texture2D::done() {
 // --------------------------------------
 // TextureCube
 // --------------------------------------
-TextureCubemap::~TextureCubemap() {
+TextureCubemap::~TextureCubemap()
+{
     release();
 }
 
-std::shared_ptr<TextureCubemap> TextureCubemap::create(size_t width, size_t height, size_t levels, bool seamless,
-                                                       TextureInternalFormat internal_format) {
+std::shared_ptr<TextureCubemap> TextureCubemap::create(size_t width, size_t height, size_t levels,
+                                                       bool seamless,
+                                                       TextureInternalFormat internal_format)
+{
     auto tex = std::make_shared<TextureCubemap>();
     tex->width_ = width;
     tex->height_ = height;
@@ -247,14 +297,17 @@ std::shared_ptr<TextureCubemap> TextureCubemap::create(size_t width, size_t heig
     return tex;
 }
 
-void TextureCubemap::release() {
-    if (id_ > 0) {
+void TextureCubemap::release()
+{
+    if (id_ > 0)
+    {
         glDeleteTextures(1, &id_);
         id_ = 0;
     }
 }
 
-void TextureCubemap::setWrapMode(TextureWrapMode mode) {
+void TextureCubemap::setWrapMode(TextureWrapMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(mode));
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(mode));
@@ -262,64 +315,79 @@ void TextureCubemap::setWrapMode(TextureWrapMode mode) {
     done();
 }
 
-void TextureCubemap::setWrapModeS(TextureWrapMode mode) {
+void TextureCubemap::setWrapModeS(TextureWrapMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(mode));
     done();
 }
 
-void TextureCubemap::setWrapModeT(TextureWrapMode mode) {
+void TextureCubemap::setWrapModeT(TextureWrapMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(mode));
     done();
 }
 
-void TextureCubemap::setWrapModeR(TextureWrapMode mode) {
+void TextureCubemap::setWrapModeR(TextureWrapMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(mode));
     done();
 }
 
-void TextureCubemap::setData(int i, const unsigned char *data, size_t width, size_t height, size_t level,
-                             TextureFormat format) {
+void TextureCubemap::setData(int i, const unsigned char *data, size_t width, size_t height,
+                             size_t level, TextureFormat format)
+{
     assert(i >= 0 && i < 6);
-    if (width != width_ || height != height_ || level >= levels_) {
+    if (width != width_ || height != height_ || level >= levels_)
+    {
         throw std::runtime_error(ERROR_IMAGE_TEXTURE_MISMATCH);
     }
     use();
-    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, 0, 0, width_, height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, 0, 0, width_, height_,
+                    (GLenum)format, GL_UNSIGNED_BYTE, data);
     width_ = width;
     height_ = height;
     done();
 }
 
-void TextureCubemap::setData(int i, const Image &im, size_t level) {
+void TextureCubemap::setData(int i, const Image &im, size_t level)
+{
     TextureFormat format = TextureFormat::RGB;
-    if (im.channels() == 1) {
-        format =  TextureFormat::Red;
+    if (im.channels() == 1)
+    {
+        format = TextureFormat::Red;
     }
-    else if (im.channels() == 3) {
-        format =  TextureFormat::RGB;
+    else if (im.channels() == 3)
+    {
+        format = TextureFormat::RGB;
     }
-    else if (im.channels() == 4) {
-        format =  TextureFormat::RGBA;
+    else if (im.channels() == 4)
+    {
+        format = TextureFormat::RGBA;
     }
-    else {
+    else
+    {
         throw std::runtime_error(ERROR_IMAGE_CHANNELS_MISMATCH);
     }
 
-    if (im.width() != width_ || im.height() != height_ || level >= levels_) {
+    if (im.width() != width_ || im.height() != height_ || level >= levels_)
+    {
         throw std::runtime_error(ERROR_IMAGE_TEXTURE_MISMATCH);
     }
 
     setData(i, im.pixels().data(), im.width(), im.height(), level, format);
 }
 
-void TextureCubemap::use(size_t unit) {
-    if (seamless_) {
+void TextureCubemap::use(size_t unit)
+{
+    if (seamless_)
+    {
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
-    else {
+    else
+    {
         glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
     unit_ = unit;
@@ -327,52 +395,62 @@ void TextureCubemap::use(size_t unit) {
     glBindTexture(GL_TEXTURE_CUBE_MAP, id_);
 }
 
-void TextureCubemap::done() {
-    if (in_use_) {
+void TextureCubemap::done()
+{
+    if (in_use_)
+    {
         glActiveTexture(GL_TEXTURE0 + unit_);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         in_use_ = false;
     }
 }
 
-void TextureCubemap::setFilterModeMin(TextureFilterMode mode) {
+void TextureCubemap::setFilterModeMin(TextureFilterMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
     done();
 }
 
-void TextureCubemap::setFilterModeMag(TextureFilterMode mode) {
+void TextureCubemap::setFilterModeMag(TextureFilterMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)mode);
     done();
 }
 
-void TextureCubemap::setFilterMode(TextureFilterMode mode) {
+void TextureCubemap::setFilterMode(TextureFilterMode mode)
+{
     use();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)mode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint)mode);
     done();
 }
 
-void TextureCubemap::generateMipMap() {
+void TextureCubemap::generateMipMap()
+{
     use();
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     done();
 }
 
-bool TextureCubemap::valid() const {
+bool TextureCubemap::valid() const
+{
     return id_ > 0;
 }
 
-GLenum TextureCubemap::target() const {
+GLenum TextureCubemap::target() const
+{
     return GL_TEXTURE_CUBE_MAP;
 }
 
-GLenum TextureCubemap::target(Side side) const {
+GLenum TextureCubemap::target(Side side) const
+{
     return GL_TEXTURE_CUBE_MAP_POSITIVE_X + side;
 }
 
-GLuint TextureCubemap::id() const {
+GLuint TextureCubemap::id() const
+{
     return id_;
 }
 

@@ -1,19 +1,21 @@
 #ifndef COMPONENTMANAGER_H
 #define COMPONENTMANAGER_H
 
-#include <map>
+#include "RCube/Core/Arch/Entity.h"
 #include <array>
 #include <iostream>
+#include <map>
 #include <vector>
-#include "RCube/Core/Arch/Entity.h"
-namespace rcube {
+namespace rcube
+{
 
 /**
  * Base class for all component managers.
  * For internal use only.
  */
-class BaseComponentManager {
-public:
+class BaseComponentManager
+{
+  public:
     virtual ~BaseComponentManager() = default;
     virtual bool has(Entity e) const = 0;
     virtual void remove(Entity e) = 0;
@@ -22,12 +24,13 @@ public:
 /**
  * ComponentManager stores the component of type T corresponding to all entities created
  */
-template <typename T>
-class ComponentManager : public BaseComponentManager {
-public:
+template <typename T> class ComponentManager : public BaseComponentManager
+{
+  public:
     typedef unsigned int ComponentIndex;
     virtual ~ComponentManager() = default;
-    ComponentManager() {
+    ComponentManager()
+    {
         component_data_.data.resize(1024);
     }
     /**
@@ -35,8 +38,9 @@ public:
      * @param e Entity to add component to
      * @param component Component to be added
      */
-    void add(Entity e, const T &component) {
-        ComponentIndex new_index = ComponentIndex{ component_data_.size };
+    void add(Entity e, const T &component)
+    {
+        ComponentIndex new_index = ComponentIndex{component_data_.size};
         component_data_.size += 1;
         entity_map_[e] = new_index;
         component_data_.data[new_index] = component;
@@ -46,8 +50,10 @@ public:
      * Remove the component of type T from the given entity
      * @param e Entity to add component to
      */
-    void remove(Entity e) override {
-        if (entity_map_.find(e) == entity_map_.end()) {
+    void remove(Entity e) override
+    {
+        if (entity_map_.find(e) == entity_map_.end())
+        {
             return;
         }
         ComponentIndex to_remove = entity_map_[e];
@@ -61,13 +67,15 @@ public:
      * @param e Entity
      * @return Whether entity has this component
      */
-    bool has(Entity e) const override {
+    bool has(Entity e) const override
+    {
         return entity_map_.find(e) != entity_map_.end();
     }
     /**
      * Clears all components and entities from the manager
      */
-    void clear() {
+    void clear()
+    {
         entity_map_.clear();
         component_data_.data.clear();
         component_data_.size = 0;
@@ -77,8 +85,10 @@ public:
      * @param e Entity
      * @return Pointer to component of type T
      */
-    T * get(Entity e) {
-        if (entity_map_.find(e) == entity_map_.end()) {
+    T *get(Entity e)
+    {
+        if (entity_map_.find(e) == entity_map_.end())
+        {
             // throw std::runtime_error("Entity does not have requested component");
             std::cerr << "Entity does not have requested component" << std::endl;
             return nullptr;
@@ -86,10 +96,11 @@ public:
         return &(component_data_.data[entity_map_[e]]);
     }
 
-private:
-    struct ComponentData {
+  private:
+    struct ComponentData
+    {
         unsigned int size = 1;
-        //std::array<T, 1024> data;
+        // std::array<T, 1024> data;
         std::vector<T> data;
     };
     std::map<Entity, ComponentIndex> entity_map_;

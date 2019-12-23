@@ -2,43 +2,30 @@
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "glm/gtc/constants.hpp"
 
-namespace rcube {
+namespace rcube
+{
 
-MeshData icoSphere(float radius, unsigned int subdivisions) {
+MeshData icoSphere(float radius, unsigned int subdivisions)
+{
     // Golden ratio
     const float t = (1.0f + std::sqrt(5.0f)) / 2.0f;
 
     // Vertices of a icosahedron
-    std::vector<glm::vec3> verts = {{-1, t, 0},  {1, t, 0},   {-1, -t, 0},
-                                    {1, -t, 0},  {0, -1, t},  {0, 1, t},
-                                    {0, -1, -t}, {0, 1, -t},  {t, 0, -1},
-                                    {t, 0, 1},   {-t, 0, -1}, {-t, 0, 1}};
+    std::vector<glm::vec3> verts = {{-1, t, 0}, {1, t, 0}, {-1, -t, 0}, {1, -t, 0},
+                                    {0, -1, t}, {0, 1, t}, {0, -1, -t}, {0, 1, -t},
+                                    {t, 0, -1}, {t, 0, 1}, {-t, 0, -1}, {-t, 0, 1}};
     // Faces of the icosahedron
-    std::vector<unsigned int> faces = {0, 11, 5,
-                                       0, 5, 1,
-                                       0, 1, 7,
-                                       0, 7, 10,
-                                       0, 10, 11,
-                                       1, 5, 9,
-                                       5, 11, 4,
-                                       11, 10, 2,
-                                       10, 7, 6,
-                                       7, 1, 8,
-                                       3, 9, 4,
-                                       3, 4, 2,
-                                       3, 2, 6,
-                                       3, 6, 8,
-                                       3, 8, 9,
-                                       4, 9, 5,
-                                       2, 4, 11,
-                                       6, 2, 10,
-                                       8, 6, 7,
-                                       9, 8, 1};
+    std::vector<unsigned int> faces = {0, 11, 5, 0, 5,  1,  0,  1,  7,  0,  7, 10, 0, 10, 11,
+                                       1, 5,  9, 5, 11, 4,  11, 10, 2,  10, 7, 6,  7, 1,  8,
+                                       3, 9,  4, 3, 4,  2,  3,  2,  6,  3,  6, 8,  3, 8,  9,
+                                       4, 9,  5, 2, 4,  11, 6,  2,  10, 8,  6, 7,  9, 8,  1};
 
     // Subdivision
-    for (unsigned int sub = 0; sub < subdivisions; ++sub) {
+    for (unsigned int sub = 0; sub < subdivisions; ++sub)
+    {
         size_t orig_len = faces.size();
-        for (size_t idx = 0; idx < orig_len; idx += 3) {
+        for (size_t idx = 0; idx < orig_len; idx += 3)
+        {
             unsigned int i = faces[idx];
             unsigned int j = faces[idx + 1];
             unsigned int k = faces[idx + 2];
@@ -62,7 +49,8 @@ MeshData icoSphere(float radius, unsigned int subdivisions) {
     // Make each vertex to lie on the sphere and find its normal
     std::vector<glm::vec3> normals;
     normals.reserve(verts.size());
-    for (auto &v : verts) {
+    for (auto &v : verts)
+    {
         auto norm_v = glm::normalize(v);
         normals.push_back(norm_v);
         v = norm_v * radius;
@@ -77,10 +65,12 @@ MeshData icoSphere(float radius, unsigned int subdivisions) {
     return data;
 }
 
-MeshData cubeSphere(float radius, unsigned int n_segments) {
+MeshData cubeSphere(float radius, unsigned int n_segments)
+{
     MeshData data = box(1, 1, 1, n_segments, n_segments, n_segments);
     assert(data.vertices.size() == data.normals.size());
-    for (size_t i = 0; i < data.vertices.size(); ++i) {
+    for (size_t i = 0; i < data.vertices.size(); ++i)
+    {
         glm::vec3 norm_v = glm::normalize(data.vertices[i]);
         data.vertices[i] = norm_v * radius;
         data.normals[i] = norm_v;

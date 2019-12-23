@@ -1,0 +1,10 @@
+BasedOnStyle: LLVM
+BreakBeforeBraces: Allman
+Standard:        Cpp11
+IndentWidth:     4   
+TabWidth:        4   
+UseTab:          Never
+ColumnLimit: 100
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AlignOperands: true

@@ -6,10 +6,12 @@
 #include "RCube/Core/Graphics/OpenGL/Renderer.h"
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
 
-namespace rcube {
+namespace rcube
+{
 
-class DiffuseIrradianceShader : public Material {
-public:
+class DiffuseIrradianceShader : public Material
+{
+  public:
     int num_samples = 512;
 
     virtual ~DiffuseIrradianceShader() override = default;
@@ -22,14 +24,16 @@ public:
     std::shared_ptr<TextureCubemap> environment_map;
 };
 
-class DiffusePrefilter {
-public:
+class DiffusePrefilter
+{
+  public:
     int num_samples = 512;
 
-    DiffusePrefilter(unsigned int resolution=32);
+    DiffusePrefilter(unsigned int resolution = 32);
     ~DiffusePrefilter();
     std::shared_ptr<TextureCubemap> prefilter(std::shared_ptr<TextureCubemap> env_map);
-private:
+
+  private:
     DiffuseIrradianceShader shader_;
     unsigned int resolution_ = 32;
     GLRenderer rdr_;

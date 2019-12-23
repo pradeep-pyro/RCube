@@ -1,12 +1,15 @@
 #include "RCube/Core/Graphics/Effects/GrayscaleEffect.h"
-namespace rcube {
+namespace rcube
+{
 
-GrayscaleEffect::GrayscaleEffect() {
+GrayscaleEffect::GrayscaleEffect()
+{
     initialize();
 }
 
-std::string GrayscaleEffect::fragmentShader() {
-       return R"(
+std::string GrayscaleEffect::fragmentShader()
+{
+    return R"(
 #version 420
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -20,7 +23,8 @@ void main() {
        )";
 }
 
-void GrayscaleEffect::setUniforms() {
+void GrayscaleEffect::setUniforms()
+{
 }
 
 } // namespace rcube

@@ -6,11 +6,13 @@
 #include "glm/glm.hpp"
 #include <string>
 
-namespace rcube {
+namespace rcube
+{
 
-class Window {
-public:
-    Window(const std::string &title, glm::ivec2 size=glm::ivec2(1280, 720));
+class Window
+{
+  public:
+    Window(const std::string &title, glm::ivec2 size = glm::ivec2(1280, 720));
     virtual ~Window() = default;
     void execute();
     bool fullscreen() const;
@@ -25,12 +27,13 @@ public:
     virtual void onMouseMove(double xpos, double ypos);
     glm::dvec2 getMousePosition() const;
     void shouldClose(bool flag);
-protected:
+
+  protected:
     virtual void initialize();
     virtual void draw();
     virtual void beforeTerminate();
 
-    GLFWwindow* window_;
+    GLFWwindow *window_;
     bool fullscreen_ = false;
     glm::ivec2 wndpos_ = glm::ivec2(0, 0);
     glm::ivec2 wndsz_ = glm::ivec2(1280, 720);

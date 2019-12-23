@@ -3,16 +3,16 @@
 
 #include <memory>
 
-#include "RCube/Core/Arch/EntityManager.h"
 #include "RCube/Core/Arch/ComponentManager.h"
+#include "RCube/Core/Arch/EntityManager.h"
 #include "RCube/Core/Arch/System.h"
 
-namespace rcube {
+namespace rcube
+{
 
 struct EntityHandle;
 
-template <typename Container>
-class EntityHandleIterator;
+template <typename Container> class EntityHandleIterator;
 
 /**
  * World is the primary interface and allows the user to create entities,
@@ -21,8 +21,9 @@ class EntityHandleIterator;
  * World acts glue between various component managers and systems and abstracts away the internal
  * representations of the ECS architecture.
  */
-class World {
-public:
+class World
+{
+  public:
     World() = default;
 
     virtual ~World() = default;
@@ -45,7 +46,8 @@ public:
      * Note: ComponentType must be default constructible
      */
     template <typename ComponentType>
-    void addComponent(Entity entity, ComponentType comp=ComponentType()) {
+    void addComponent(Entity entity, ComponentType comp = ComponentType())
+    {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         manager->add(entity, comp);
         updateEntityToSystem(entity, ComponentType::family(), true);
@@ -56,8 +58,8 @@ public:
      * An easier approach is to get an EntityHandle from create entity and
      * call entity_handle.remove<ComponentType>();
      */
-    template <typename ComponentType>
-    void removeComponent(Entity entity) {
+    template <typename ComponentType> void removeComponent(Entity entity)
+    {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         manager->remove(entity);
         updateEntityToSystem(entity, ComponentType::family(), false);
@@ -68,8 +70,8 @@ public:
      * An easier approach is to get an EntityHandle from create entity and
      * call entity_handle.get<ComponentType>();
      */
-    template <typename ComponentType>
-    ComponentType * getComponent(Entity entity) {
+    template <typename ComponentType> ComponentType *getComponent(Entity entity)
+    {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         return manager->get(entity);
     }
@@ -113,14 +115,16 @@ public:
      */
     void update();
 
-protected:
+  protected:
     void updateEntityToSystem(Entity ent, int component_family, bool flag);
 
-    template <typename ComponentType>
-    ComponentManager<ComponentType> * getComponentManager() {
+    template <typename ComponentType> ComponentManager<ComponentType> *getComponentManager()
+    {
         auto it = component_mgrs_.find(ComponentType::family());
-        if (it == component_mgrs_.end()) {
-            component_mgrs_[ComponentType::family()] = std::make_unique<ComponentManager<ComponentType>>();
+        if (it == component_mgrs_.end())
+        {
+            component_mgrs_[ComponentType::family()] =
+                std::make_unique<ComponentManager<ComponentType>>();
         }
         const auto &mgr = component_mgrs_[ComponentType::family()];
         return static_cast<ComponentManager<ComponentType> *>(mgr.get());
@@ -134,24 +138,26 @@ protected:
 
 /**
  * Wraps Entity and pointer to World so that components can be added easily
- * This enables API like entity_handle.add(component) instead of world->addComponent(entity, component)
+ * This enables API like entity_handle.add(component) instead of world->addComponent(entity,
+ * component)
  */
-struct EntityHandle {
+struct EntityHandle
+{
     Entity entity;
     World *world;
     /**
      * Add a component to the entity
      * @param comp Component to add
      */
-    template <typename T>
-    void add(T comp = T()) {
+    template <typename T> void add(T comp = T())
+    {
         world->addComponent(entity, comp);
     }
     /**
      * Remove the component of type T from the entity
      */
-    template <typename T>
-    void remove() {
+    template <typename T> void remove()
+    {
         world->removeComponent<T>(entity);
     }
     /**
@@ -159,8 +165,8 @@ struct EntityHandle {
      * @return Pointer to the component which is actually stored in
      * the world's component manager
      */
-    template <typename T>
-    T * get() {
+    template <typename T> T *get()
+    {
         return world->getComponent<T>(entity);
     }
 
@@ -168,7 +174,8 @@ struct EntityHandle {
      * Check whether this handle is valid
      * @return Whether valid
      */
-    bool valid() const {
+    bool valid() const
+    {
         return world != nullptr && world->hasEntity(*this);
     }
 };
@@ -177,21 +184,25 @@ struct EntityHandle {
  * EntityHandleIterator is a convenience class to wrap iterator like functionality
  * around Entities. Its main use is to return EntityHandles instead of raw Entitys.
  */
-template <typename Container>
-class EntityHandleIterator {
-public:
-    EntityHandleIterator(World *world, Container &cnt) {
+template <typename Container> class EntityHandleIterator
+{
+  public:
+    EntityHandleIterator(World *world, Container &cnt)
+    {
         world_ = world;
         curr_ = cnt.begin();
         end_ = cnt.end();
     }
-    EntityHandle next() {
+    EntityHandle next()
+    {
         return EntityHandle{*(curr_++), world_};
     }
-    bool hasNext() {
+    bool hasNext()
+    {
         return curr_ != end_;
     }
-private:
+
+  private:
     World *world_;
     typename Container::iterator curr_, end_;
 };

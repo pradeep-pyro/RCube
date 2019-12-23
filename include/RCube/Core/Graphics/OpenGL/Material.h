@@ -1,19 +1,22 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <memory>
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
-namespace rcube {
+#include <memory>
+namespace rcube
+{
 
-enum RenderPriority {
+enum RenderPriority
+{
     Opaque = 0,
     Background = 10,
     Transparent = 20,
     Overlay = 30
 };
 
-enum class BlendFunc {
+enum class BlendFunc
+{
     SrcAlpha = GL_SRC_ALPHA,
     OneMinusSrcAlpha = GL_ONE_MINUS_SRC_ALPHA,
     Zero = GL_ZERO,
@@ -24,24 +27,31 @@ enum class BlendFunc {
     OneMinusDstColor = GL_ONE_MINUS_DST_COLOR
 };
 
-enum class Cull {
+enum class Cull
+{
     Back = GL_BACK,
     Front = GL_FRONT,
     Both = GL_FRONT_AND_BACK
 };
 
-enum class DepthFunc {
+enum class DepthFunc
+{
     Less = GL_LESS,   /// Passes if the incoming depth value is less than the stored depth value.
     Equal = GL_EQUAL, /// Passes if the incoming depth value is equal to the stored depth value.
-    LessOrEqual = GL_LEQUAL, ///Passes if the incoming depth value is less than or equal to the stored depth value.
-    Greater = GL_GREATER, /// Passes if the incoming depth value is greater than the stored depth value.
-    NotEqual = GL_NOTEQUAL, ///Passes if the incoming depth value is not equal to the stored depth value.
-    GreaterOrEqual = GL_GEQUAL, /// Passes if the incoming depth value is greater than or equal to the stored depth value.
-    Never = GL_NEVER, /// Never passes
-    Always = GL_ALWAYS, /// Always passes
+    LessOrEqual = GL_LEQUAL, /// Passes if the incoming depth value is less than or equal to the
+                             /// stored depth value.
+    Greater =
+        GL_GREATER, /// Passes if the incoming depth value is greater than the stored depth value.
+    NotEqual =
+        GL_NOTEQUAL, /// Passes if the incoming depth value is not equal to the stored depth value.
+    GreaterOrEqual = GL_GEQUAL, /// Passes if the incoming depth value is greater than or equal to
+                                /// the stored depth value.
+    Never = GL_NEVER,           /// Never passes
+    Always = GL_ALWAYS,         /// Always passes
 };
 
-struct RenderSettings {
+struct RenderSettings
+{
     bool culling = false;
     Cull cull_mode = Cull::Back;
     bool depth_test = true;
@@ -51,11 +61,12 @@ struct RenderSettings {
     DepthFunc depthfunc = DepthFunc::Less;
 };
 
-class Material {
-public:
+class Material
+{
+  public:
     Material();
     Material(const Material &other) = default;
-    Material & operator=(const Material &other) = default;
+    Material &operator=(const Material &other) = default;
     virtual ~Material();
     void initialize();
     std::shared_ptr<ShaderProgram> shader() const;
@@ -69,7 +80,7 @@ public:
 
     RenderSettings render_settings;
 
-protected:
+  protected:
     std::shared_ptr<ShaderProgram> shader_;
     bool init_;
 };

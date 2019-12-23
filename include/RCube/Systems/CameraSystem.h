@@ -3,13 +3,19 @@
 
 #include "RCube/Core/Arch/System.h"
 
-namespace rcube {
+namespace rcube
+{
 
-class CameraSystem : public System {
-public:
+class CameraSystem : public System
+{
+  public:
     CameraSystem();
-    virtual void initialize() override {}
-    virtual void cleanup() override {}
+    virtual void initialize() override
+    {
+    }
+    virtual void cleanup() override
+    {
+    }
     virtual void update(bool force) override;
     virtual unsigned int priority() const override;
 };

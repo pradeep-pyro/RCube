@@ -1,19 +1,19 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include <vector>
 #include "glm/glm.hpp"
-#include "glm/gtx/quaternion.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
 #include "glm/gtx/transform.hpp"
+#include <vector>
 
 #include "RCube/Core/Arch/Component.h"
 #include "RCube/Core/Arch/ComponentManager.h"
 #include "RCube/Core/Arch/System.h"
 #include "RCube/Core/Arch/World.h"
 
-
-namespace rcube {
+namespace rcube
+{
 
 class TransformSystem;
 
@@ -23,15 +23,16 @@ class TransformSystem;
  * It can be used to represent transform hierarchies (scene graphs) by assigning a
  * parent Transforms appropriately. By default, the parent is a nullptr.
  */
-class Transform : public Component<Transform> {
-public:
+class Transform : public Component<Transform>
+{
+  public:
     Transform();
 
     /**
      * Returns the parent
      * @return Pointer to parent or nullptr if there is none
      */
-    Transform * parent() const;
+    Transform *parent() const;
 
     /**
      * Sets the parent Transform to form a transform hierarchy
@@ -51,21 +52,21 @@ public:
      * parent Transform
      * @return 3D local position
      */
-    const glm::vec3 & position() const;
+    const glm::vec3 &position() const;
 
     /**
      * Returns the position in local coordinates with respect to the
      * parent Transform
      * @return 3D local position
      */
-    const glm::quat & orientation() const;
+    const glm::quat &orientation() const;
 
     /**
      * Returns the scale of the object in local coordinates with respect
      * to the parent Transform
      * @return 3D scale of the object
      */
-    const glm::vec3 & scale() const;
+    const glm::vec3 &scale() const;
 
     /**
      * Sets the position of the object in local coordinates with respect
@@ -92,13 +93,13 @@ public:
      * Returns the local transformation matrix
      * @return 4x4 transformation matrix combing rotation and translation
      */
-    const glm::mat4 & localTransform();
+    const glm::mat4 &localTransform();
 
     /**
      * Returns the global transformation matrix in world space
      * @return 4x4 transformation matrix combing rotation and translation
      */
-    const glm::mat4 & worldTransform();
+    const glm::mat4 &worldTransform();
 
     /**
      * Returns the children of the current Transform
@@ -119,7 +120,8 @@ public:
      * @param quaternion Unit quaternion
      */
     void rotate(const glm::quat &quaternion);
-private:
+
+  private:
     friend class TransformSystem;
     glm::vec3 position_, scale_;
     glm::quat orientation_;

@@ -21,6 +21,7 @@ class App : public rcube::Window
     rcube::EntityHandle mGroundPlane;
     rcube::EntityHandle mCamera;
     rcube::EntityHandle mSphere;
+    rcube::EntityHandle mSphereTex;
     rcube::EntityHandle mBox;
     rcube::EntityHandle mPlane;
     rcube::OrbitController mCtrl;
@@ -42,34 +43,56 @@ public:
         mGroundPlane.get<Drawable>()->mesh = gridMesh;
         mGroundPlane.get<Drawable>()->material = flat;
 
-        // Create a sphere
-        std::shared_ptr<Mesh> sphereMesh = Mesh::create();
-        //sphereMesh->data = icoSphere(0.5, 3);
-        std::shared_ptr<BlinnPhongMaterial> blinnPhong = std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-        blinnPhong->show_wireframe = false;
-        blinnPhong->diffuse_texture = Texture2D::create(256, 256, 1);
+        // Create a sphere with texture        
+        {
+            std::shared_ptr<Mesh> sphereMesh = Mesh::create();
+            std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+                std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
+            blinnPhong->show_wireframe = false;
+            blinnPhong->diffuse_texture = Texture2D::create(256, 256, 1);
 
-        Image checker = checkerboard(256, 256, 32, 32, glm::vec3(1, 1, 1), glm::vec3(0, 1, 0));
-        blinnPhong->diffuse_texture->setData(checker);
-        blinnPhong->use_diffuse_texture = true;
-        sphereMesh->data = cubeSphere(0.5, 10);
-        sphereMesh->uploadToGPU();
-        std::shared_ptr<PhysicallyBasedMaterial> pbm = std::make_shared<PhysicallyBasedMaterial>();
-        pbm->roughness = 0.2;
-        mSphere = mScene.createDrawable();
-        mSphere.get<Drawable>()->mesh = sphereMesh;
-        mSphere.get<Drawable>()->material = pbm;
+            Image checker = checkerboard(256, 256, 32, 32, glm::vec3(1, 1, 1), glm::vec3(0, 1, 0));
+            blinnPhong->diffuse_texture->setData(checker);
+            blinnPhong->use_diffuse_texture = true;
+            sphereMesh->data = cubeSphere(0.5, 10);
+            sphereMesh->uploadToGPU();
+            mSphereTex = mScene.createDrawable();
+            mSphereTex.get<Drawable>()->mesh = sphereMesh;
+            mSphereTex.get<Drawable>()->material = blinnPhong;
+        }
+
+
+         // Create a sphere
+        {
+            std::shared_ptr<Mesh> sphereMesh = Mesh::create();
+            sphereMesh->data = icoSphere(0.5, 3);
+            std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+                std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
+            blinnPhong->show_wireframe = true;
+            blinnPhong->diffuse_texture = Texture2D::create(256, 256, 1);           
+            sphereMesh->uploadToGPU();
+            std::shared_ptr<PhysicallyBasedMaterial> pbm =
+                std::make_shared<PhysicallyBasedMaterial>();
+            pbm->roughness = 0.2;
+            mSphere = mScene.createDrawable();
+            mSphere.get<Drawable>()->mesh = sphereMesh;
+            mSphere.get<Drawable>()->material = pbm;
+            mSphere.get<Transform>()->translate(glm::vec3(1, 1, -1));
+        }
 
 
         //create a plane
-        std::shared_ptr<Mesh> planeMesh = Mesh::create();
-        planeMesh->data = plane(2, 2, 10, 10, rcube::Orientation::PositiveY);
-        planeMesh->uploadToGPU();
-        std::shared_ptr<BlinnPhongMaterial> blinnPhong = std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-        blinnPhong->show_wireframe = true;
-        mPlane = mScene.createDrawable();
-        mPlane.get<Drawable>()->mesh = planeMesh;
-        mPlane.get<Drawable>()->material = blinnPhong;
+        {
+            std::shared_ptr<Mesh> planeMesh = Mesh::create();
+            planeMesh->data = plane(2, 2, 10, 10, rcube::Orientation::PositiveY);
+            planeMesh->uploadToGPU();
+            std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+                std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
+            blinnPhong->show_wireframe = true;
+            mPlane = mScene.createDrawable();
+            mPlane.get<Drawable>()->mesh = planeMesh;
+            mPlane.get<Drawable>()->material = blinnPhong;
+        }
 
 
         //create box with texture

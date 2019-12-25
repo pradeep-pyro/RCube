@@ -102,8 +102,7 @@ public:
         std::shared_ptr<BlinnPhongMaterial> tex_blinnPhone = std::make_shared<BlinnPhongMaterial>();
         tex_blinnPhone->diffuse_texture = Texture2D::create(128, 128, 1, rcube::TextureInternalFormat::RGBA8);
         tex_blinnPhone->diffuse_texture->setData(checkerboard(128, 128, 8, 8, glm::vec3(0, 0, 0), glm::vec3(1, 1, 1)));
-        tex_blinnPhone->use_diffuse_texture = true;
-        std::cout << tex_blinnPhone->diffuse_texture->valid() << std::endl;
+        tex_blinnPhone->use_diffuse_texture = true;        
         mBox = mScene.createDrawable();
         mBox.get<Drawable>()->mesh = boxMesh;
         mBox.get<Drawable>()->material = tex_blinnPhone;

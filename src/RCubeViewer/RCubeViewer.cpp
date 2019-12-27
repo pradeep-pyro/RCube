@@ -93,7 +93,15 @@ EntityHandle RCubeViewer::getEntity(std::string name)
     while (it.hasNext())
     {
         EntityHandle ent = it.next();
-        if (ent.get<Name>()->name == name)
+        Name *name_component = nullptr;
+        try
+        {
+            name_component = ent.get<Name>();
+        }
+        catch (const std::exception & /*e*/)
+        {
+        }
+        if (name_component != nullptr && name_component->name == name)
         {
             return ent;
         }

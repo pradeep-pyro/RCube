@@ -71,6 +71,7 @@ class RCubeViewer : public rcube::Window
 
     EntityHandle camera();
 
+  protected:
     virtual void draw() override;
 
     virtual void onResize(int w, int h) override;
@@ -80,12 +81,11 @@ class RCubeViewer : public rcube::Window
     virtual void beforeTerminate() override;
 
     virtual void onMousePress(int key, int mods);
-    
+
     virtual void onMouseRelease(int key, int mods);
-    
+
     virtual void onMouseMove(double xpos, double ypos);
 
-  protected:
     EntityHandle createSurface();
 
     EntityHandle createCamera();

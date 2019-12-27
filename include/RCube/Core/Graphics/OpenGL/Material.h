@@ -61,6 +61,16 @@ struct RenderSettings
     DepthFunc depthfunc = DepthFunc::Less;
 };
 
+/**
+ *
+ */
+enum class Combine
+{
+    Multiply = 0,
+    Add = 1,
+    Mix = 2
+};
+
 class Material
 {
   public:
@@ -68,6 +78,30 @@ class Material
     Material(const Material &other) = default;
     Material &operator=(const Material &other) = default;
     virtual ~Material();
+    void initialize();
+    std::shared_ptr<ShaderProgram> shader() const;
+    virtual std::string vertexShader() = 0;
+    virtual std::string fragmentShader() = 0;
+    virtual std::string geometryShader() = 0;
+    virtual void setUniforms() = 0;
+    virtual int renderPriority() const = 0;
+    virtual void use();
+    virtual void done();
+
+    RenderSettings render_settings;
+
+  protected:
+    std::shared_ptr<ShaderProgram> shader_;
+    bool init_;
+};
+
+class GridMaterial
+{
+  public:
+    GridMaterial();
+    GridMaterial(const GridMaterial &other) = default;
+    GridMaterial &operator=(const GridMaterial &other) = default;
+    virtual ~GridMaterial();
     void initialize();
     std::shared_ptr<ShaderProgram> shader() const;
     virtual std::string vertexShader() = 0;

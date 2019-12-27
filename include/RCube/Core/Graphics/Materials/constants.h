@@ -7,15 +7,6 @@
 namespace rcube
 {
 
-/**
- *
- */
-enum class Combine
-{
-    Multiply = 0,
-    Add = 1,
-    Mix = 2
-};
 
 enum class Medium
 {

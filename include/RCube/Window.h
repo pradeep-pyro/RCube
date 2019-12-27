@@ -25,6 +25,7 @@ class Window
     virtual void onMousePress(int key, int mods);
     virtual void onMouseRelease(int key, int mods);
     virtual void onMouseMove(double xpos, double ypos);
+    virtual void onScroll(double xoffset, double yoffset);
     glm::dvec2 getMousePosition() const;
     void shouldClose(bool flag);
 

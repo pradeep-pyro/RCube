@@ -89,9 +89,9 @@ template <typename T> class ComponentManager : public BaseComponentManager
     {
         if (entity_map_.find(e) == entity_map_.end())
         {
-            // throw std::runtime_error("Entity does not have requested component");
-            std::cerr << "Entity does not have requested component" << std::endl;
-            return nullptr;
+            throw std::runtime_error("Entity does not have requested component");
+            /*std::cerr << "Entity does not have requested component" << std::endl;
+            return nullptr;*/
         }
         return &(component_data_.data[entity_map_[e]]);
     }

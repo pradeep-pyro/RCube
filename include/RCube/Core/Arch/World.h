@@ -2,7 +2,7 @@
 #define WORLD_H
 
 #include <memory>
-
+#include <cassert>
 #include "RCube/Core/Arch/ComponentManager.h"
 #include "RCube/Core/Arch/EntityManager.h"
 #include "RCube/Core/Arch/System.h"
@@ -151,6 +151,7 @@ struct EntityHandle
      */
     template <typename T> void add(T comp = T())
     {
+        assert(valid());
         world->addComponent(entity, comp);
     }
     /**
@@ -158,6 +159,7 @@ struct EntityHandle
      */
     template <typename T> void remove()
     {
+        assert(valid());
         world->removeComponent<T>(entity);
     }
     /**
@@ -167,6 +169,7 @@ struct EntityHandle
      */
     template <typename T> T *get()
     {
+        assert(valid());
         return world->getComponent<T>(entity);
     }
 

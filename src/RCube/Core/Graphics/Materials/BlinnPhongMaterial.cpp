@@ -214,7 +214,7 @@ void main() {
         float att = 1.0; // Light attenuation
 
         if (close(lights[i].position.w, 0.0)) { // is directional?
-            L = -lights[i].position.xyz;
+            L = lights[i].position.xyz;
         }
         else {
             L = lights[i].position.xyz - g_vertex;

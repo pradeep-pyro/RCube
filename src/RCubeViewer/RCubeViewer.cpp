@@ -5,7 +5,7 @@ namespace rcube
 namespace viewer
 {
 
-RCubeViewer::RCubeViewer(ViewerProps props) : Window(props.title)
+RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());

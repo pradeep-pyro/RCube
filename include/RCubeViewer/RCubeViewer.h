@@ -1,6 +1,7 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/Drawable.h"
 #include "RCube/Components/Transform.h"
+#include "RCube/Components/DirectionalLight.h"
 #include "RCube/Controller/OrbitController.h"
 #include "RCube/Core/Arch/World.h"
 #include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
@@ -38,12 +39,13 @@ class Name : public Component<Name>
 /**
  * A set of properties to configure the viewer
  */
-struct ViewerProps
+struct RCubeViewerProps
 {
-    std::string title = "RCubeViewer";
-    glm::ivec2 resolution = glm::ivec2(1280, 720);
-    glm::vec4 background_color = glm::vec4(0.3f, 0.3f, 0.3f, 1.f);
-    glm::vec3 camera_position = glm::vec3(1.f, 1.f, 1.f);
+    std::string title = "RCubeViewer"; // Title of the viewer window
+    glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
+    glm::vec4 background_color = glm::vec4(0.3f, 0.3f, 0.3f, 1.f); // Backround color
+    glm::vec3 camera_position = glm::vec3(1.f, 1.f, 1.f); // Position of the camera
+    float camera_fov = glm::radians(45.f);  // Vertical FOV of the camera in radians
 };
 
 class RCubeViewer : public rcube::Window
@@ -57,7 +59,7 @@ class RCubeViewer : public rcube::Window
     glm::vec3 default_surface_color_ = glm::vec3(0.75, 0.75, 0.75);
 
   public:
-    RCubeViewer(ViewerProps props = ViewerProps());
+    RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
 
     EntityHandle addIcoSphereSurface(const std::string name, float radius, int numSubdivisions);
     EntityHandle addCubeSphereSurface(const std::string name, float radius, int numSegments);
@@ -91,6 +93,8 @@ class RCubeViewer : public rcube::Window
     EntityHandle createCamera();
 
     EntityHandle createGroundPlane();
+
+    EntityHandle createDirLight();
 };
 
 } // namespace viewer

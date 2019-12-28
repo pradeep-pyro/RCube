@@ -12,10 +12,19 @@ RCubeViewer::RCubeViewer(ViewerProps props) : Window(props.title)
     auto rs = std::make_unique<RenderSystem>();
     world_.addSystem(std::move(rs));
 
+    // Create a default camera
     camera_ = createCamera();
     camera_.get<Transform>()->setPosition(props.camera_position);
+    camera_.get<Camera>()->fov = props.camera_fov;
     camera_.get<Camera>()->background_color = props.background_color;
 
+    // Create a directional light along view direction
+    {
+        EntityHandle light = createDirLight();
+        light.get<Transform>()->setParent(camera_.get<Transform>());
+    }
+    
+    // Create a ground plane
     ground_ = createGroundPlane();
 
     ctrl_.resize(props.resolution.x, props.resolution.y);
@@ -31,7 +40,7 @@ EntityHandle RCubeViewer::addIcoSphereSurface(const std::string name, float radi
 
     std::shared_ptr<Mesh> sphereMesh = Mesh::create();
     std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-        std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
+        std::make_shared<BlinnPhongMaterial>(default_surface_color_);
     sphereMesh->data = icoSphere(radius, numSubdivisions);
     sphereMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = sphereMesh;
@@ -188,7 +197,7 @@ EntityHandle RCubeViewer::createCamera()
 EntityHandle RCubeViewer::createGroundPlane()
 {
     std::shared_ptr<Mesh> gridMesh = Mesh::create();
-    gridMesh->data = rcube::grid(2, 2, 10, 10, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
+    gridMesh->data = rcube::grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
                                  glm::vec3(0.0, 0.0, 0.0));
     gridMesh->uploadToGPU();
     std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();
@@ -196,6 +205,14 @@ EntityHandle RCubeViewer::createGroundPlane()
     ground_.get<Drawable>()->mesh = gridMesh;
     ground_.get<Drawable>()->material = flat;
     return ground_;
+}
+
+EntityHandle RCubeViewer::createDirLight()
+{
+    EntityHandle ent = world_.createEntity();
+    ent.add(DirectionalLight());
+    ent.add(Transform());
+    return ent;
 }
 
 } // namespace viewer

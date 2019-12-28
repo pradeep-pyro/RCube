@@ -18,7 +18,7 @@ namespace rcube
 class DirectionalLight : public BaseLight
 {
   public:
-    DirectionalLight(const glm::vec3 &color = glm::vec3(1.f));
+    DirectionalLight(glm::vec3 color = glm::vec3(1.f));
     /**
      * Set the color of the light
      * @param rgb Color

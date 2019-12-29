@@ -17,13 +17,9 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Transform>()->setPosition(props.camera_position);
     camera_.get<Camera>()->fov = props.camera_fov;
     camera_.get<Camera>()->background_color = props.background_color;
+    // Put a directional light on the camera
+    camera_.add<DirectionalLight>();
 
-    // Create a directional light along view direction
-    {
-        EntityHandle light = createDirLight();
-        light.get<Transform>()->setParent(camera_.get<Transform>());
-    }
-    
     // Create a ground plane
     ground_ = createGroundPlane();
 

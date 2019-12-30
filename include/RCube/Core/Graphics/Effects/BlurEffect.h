@@ -11,18 +11,9 @@ namespace rcube
  * BlurEffect is a postprocessing effect that blurs the contents of the screen
  * using a 9-tap Gaussian filter
  * To use, simply add this effect to a Camera component:
- * entity.get<Camera>()->postprocess.push_back(...)
+ * entity.get<Camera>()->postprocess.push_back(makeBlurEffect(...));
  */
-class BlurEffect : public Effect
-{
-  public:
-    BlurEffect(bool horizontal = true);
-    std::string fragmentShader() override;
-    void setUniforms() override;
-
-  private:
-    bool horizontal_ = true;
-};
+std::shared_ptr<ShaderProgram> makeBlurEffect(bool horizonal);
 
 } // namespace rcube
 

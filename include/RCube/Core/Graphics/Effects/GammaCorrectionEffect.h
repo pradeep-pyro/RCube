@@ -9,15 +9,9 @@ namespace rcube
  * GammaCorrectionEffect is a postprocessing effect that converts the contents of the screen
  * from RGB to grayscale while leaving the alpha channel untouched.
  * To use, simply add this effect to a Camera component:
- * entity.get<Camera>()->postprocess.push_back(...)
+ * entity.get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
  */
-class GammaCorrectionEffect : public Effect
-{
-  public:
-    GammaCorrectionEffect() = default;
-    std::string fragmentShader() override;
-    void setUniforms() override;
-};
+std::shared_ptr<ShaderProgram> makeGammaCorrectionEffect();
 
 } // namespace rcube
 

@@ -1,16 +1,27 @@
+#include "RCube/Core/Graphics/Effects/GrayscaleEffect.h"
 #include "RCubeViewer/RCubeViewer.h"
 
 int main()
 {
-    rcube::viewer::RCubeViewer viewer;
+    using namespace rcube;
+
+    viewer::RCubeViewer viewer;
+
+    // Add a subdivided icosahedron surface to viewer
     viewer.addIcoSphereSurface("icoSphere1", 1.0, 4);
-    rcube::EntityHandle icoSphere1 = viewer.getEntity("icoSphere1");
+
+    // Get the added sphere by name
+    EntityHandle icoSphere1 = viewer.getEntity("icoSphere1");
     assert(icoSphere1.valid());
-    {
-        auto phong = std::dynamic_pointer_cast<rcube::BlinnPhongMaterial>(
-            icoSphere1.get<rcube::Drawable>()->material);
-        phong->diffuse_color = glm::vec3(0.0, 0.3, 0.7);
-    }
+
+    // Change its diffuse color
+    const auto& material = icoSphere1.get<Drawable>()->material;
+    material->uniform("material.diffuse").set(glm::vec3(0.0, 0.3, 0.7));
+
+    // Apply grayscale filter to screen
+    // viewer.camera().get<Camera>()->postprocess.push_back(makeGrayscaleEffect());
+
+    // Show viewer
     viewer.execute();
     return 0;
 }

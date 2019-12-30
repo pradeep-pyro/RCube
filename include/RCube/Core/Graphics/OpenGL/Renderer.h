@@ -44,13 +44,13 @@ class GLRenderer
     void setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
                    const glm::mat4 &projection_to_viewport);
 
-    void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
+    void render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world);
 
     void renderSkyBox(std::shared_ptr<TextureCubemap> cubemap);
 
     void renderTextureToScreen(Texture2D *tex);
 
-    void renderEffect(Effect *effect, Framebuffer *input);
+    void renderEffect(ShaderProgram *effect, Framebuffer *input);
 
     /**
      * @brief clearColor Returns the color that is used to clear the screen i.e.,

@@ -49,22 +49,6 @@ void RenderSystem::initialize()
     assert(effect_framebuffer_->isComplete());
     renderer.initialize();
     checkGLError();
-
-    const auto &renderable_entities = registered_entities_[filters_[2]];
-    for (const auto &e : renderable_entities)
-    {
-        Drawable *dr = world_->getComponent<Drawable>(e);
-        dr->material->initialize();
-    }
-    const auto &camera_entities = registered_entities_[filters_[1]];
-    for (const auto &e : camera_entities)
-    {
-        Camera *cam = world_->getComponent<Camera>(e);
-        for (auto item : cam->postprocess)
-        {
-            item->initialize();
-        }
-    }
 }
 
 void RenderSystem::cleanup()
@@ -73,7 +57,8 @@ void RenderSystem::cleanup()
     for (const auto &e : renderable_entities)
     {
         Drawable *dr = world_->getComponent<Drawable>(e);
-        dr->material->shader()->release();
+        //dr->material->shader()->release();
+        dr->material->release();
     }
     const auto &camera_entities = registered_entities_[filters_[1]];
     for (const auto &e : camera_entities)
@@ -81,7 +66,7 @@ void RenderSystem::cleanup()
         Camera *cam = world_->getComponent<Camera>(e);
         for (auto item : cam->postprocess)
         {
-            item->shader()->release();
+            item->release();
         }
     }
 
@@ -158,7 +143,7 @@ void RenderSystem::update(bool /* force */)
         {
             for (size_t i = 0; i < cam->postprocess.size(); ++i)
             {
-                Effect *curr_effect = cam->postprocess[i].get();
+                ShaderProgram *curr_effect = cam->postprocess[i].get();
                 Framebuffer *prev_fbo =
                     (i % 2 == 0) ? framebuffer_.get() : effect_framebuffer_.get();
                 curr_fbo = (i % 2 == 1) ? framebuffer_.get() : effect_framebuffer_.get();

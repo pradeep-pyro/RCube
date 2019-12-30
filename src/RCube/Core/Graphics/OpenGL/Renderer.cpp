@@ -26,7 +26,7 @@ const std::vector<glm::vec3> skybox_vertices = {
     glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, -1.0f),
     glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, 1.0f)};
 
-const std::string skybox_vert_src = R"(
+const static VertexShader skybox_vert({ShaderAttributeDesc("position", GLDataType::Vec3f)}, {}, R"(
 #version 420
 
 layout (location = 0) in vec3 position;
@@ -43,9 +43,10 @@ void main() {
     vec4 pos = projection_matrix * mat4(mat3(view_matrix)) * vec4(position, 1.0);
     gl_Position = pos.xyww;
 }
-)";
+)");
 
-const std::string skybox_frag_src = R"(
+const static FragmentShader skybox_frag({}, {}, {ShaderCubemapDesc{"skybox"}}, "out_color",
+                                        R"(
 #version 420
 
 out vec4 out_color;
@@ -56,9 +57,11 @@ layout(binding = 3) uniform samplerCube skybox;
 void main() {
     out_color = texture(skybox, texcoords);
 }
-)";
+)");
 
-const std::string quad_vert_src = R"(
+const static VertexShader quad_vert({ShaderAttributeDesc("vertex", GLDataType::Vec3f),
+                                     ShaderAttributeDesc("texcoord", GLDataType::Vec2f)},
+                                    {}, R"(
 #version 420
 layout (location = 0) in vec3 vertex;
 layout (location = 2) in vec2 texcoord;
@@ -68,9 +71,10 @@ void main() {
     v_texcoord = texcoord;
     gl_Position = vec4(vertex, 1.0);
 }
-)";
+)");
 
-const std::string quad_frag_src = R"(
+const static FragmentShader quad_frag({}, {ShaderTextureDesc{"fbo_texture", 2}}, {}, "out_color",
+                                      R"(
 #version 420
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -79,7 +83,7 @@ layout (binding=0) uniform sampler2D fbo_texture;
 void main() {
    out_color = texture(fbo_texture, v_texcoord);
 }
-)";
+)");
 
 GLRenderer::GLRenderer()
     : top_(0), left_(0), width_(1280), height_(720), clear_color_(glm::vec4(1.f)), init_(false),
@@ -152,13 +156,13 @@ void GLRenderer::initialize()
     quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1),
                                   glm::vec2(1, 0)};
     quad_mesh_->uploadToGPU();
-    quad_shader_ = ShaderProgram::create(quad_vert_src, quad_frag_src, true);
+    quad_shader_ = ShaderProgram::create(quad_vert, quad_frag, true);
 
     // Skybox
     skybox_mesh_ = Mesh::create();
     skybox_mesh_->data.vertices = skybox_vertices;
     skybox_mesh_->uploadToGPU();
-    skybox_shader_ = ShaderProgram::create(skybox_vert_src, skybox_frag_src, true);
+    skybox_shader_ = ShaderProgram::create(skybox_vert, skybox_frag, true);
 
     init_ = true;
 }
@@ -266,32 +270,35 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     }
 }
 
-void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world)
+void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world)
 {
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
 
-    assert(material != nullptr);
+    assert(program != nullptr);
 
     // Update settings
-    updateSettings(material->render_settings);
+    updateSettings(program->renderState());
 
     // Use shader and set uniforms
-    material->use();
-    std::shared_ptr<ShaderProgram> sh = material->shader();
-    sh->setUniform("model_matrix", model_to_world);
-    sh->setUniform("eye_pos", eye_pos_);
-    sh->setUniform("normal_matrix", normal_matrix);
-    sh->setUniform("num_lights", static_cast<int>(num_lights_));
+    program->use();
+    try
+    {
+        program->uniform("model_matrix").set(model_to_world);
+        program->uniform("eye_pos").set(eye_pos_);
+        program->uniform("normal_matrix").set(normal_matrix);
+        program->uniform("num_lights").set(static_cast<int>(num_lights_));
+    }
+    catch (const std::exception)
+    {
+    }
     mesh->use();
     if (!mesh->indexed())
     {
-        material->shader()->drawArrays(static_cast<GLint>(mesh->data.primitive), 0,
-                                       mesh->numVertices());
+        program->drawArrays(static_cast<GLint>(mesh->data.primitive), 0, mesh->numVertices());
     }
     else
     {
-        material->shader()->drawElements(static_cast<GLint>(mesh->data.primitive), 0,
-                                         mesh->numPrimitives());
+        program->drawElements(static_cast<GLint>(mesh->data.primitive), 0, mesh->numPrimitives());
     }
 }
 
@@ -306,16 +313,20 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
     glDepthFunc(GL_LESS);
 }
 
-void GLRenderer::renderEffect(Effect *effect, Framebuffer *input)
+
+void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
 {
-    effect->input = input;
+    effect->use();
+    // Bind the input framebuffer's texture
+    input->colorAttachment(0)->use(0);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
-    effect->use();
-    effect->shader()->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    // Apply the effect on the input and render in bound framebuffer
+    effect->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
     effect->done();
 }
+
 
 void GLRenderer::renderTextureToScreen(Texture2D *tex)
 {

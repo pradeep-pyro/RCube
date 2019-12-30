@@ -40,6 +40,15 @@ void main() {
 }
 )";
 
+const static VertexShader PBRVertexShader = {{ShaderAttributeDesc("vertex", GLDataType::Vec3f),
+                                              ShaderAttributeDesc("normal", GLDataType::Vec3f),
+                                              ShaderAttributeDesc("texcoord", GLDataType::Vec2f),
+                                              ShaderAttributeDesc("normal", GLDataType::Vec3f),
+                                              ShaderAttributeDesc("tangent", GLDataType::Vec3f)},
+                                             {ShaderUniformDesc{"model_matrix", GLDataType::Mat4f},
+                                              ShaderUniformDesc{"normal_matrix", GLDataType::Mat3f}},
+                                             vert_str}; // namespace rcube
+
 const std::string geom_str =
     R"(
 #version 420
@@ -117,6 +126,8 @@ void main() {
 }
 )";
 
+const static GeometryShader PBRGeometryShader = {{}, {}, geom_str};
+
 const std::string frag_str =
     R"(
 #version 420
@@ -167,7 +178,7 @@ struct Material {
 };
 uniform Material material;
 
-layout (binding = 0) uniform sampler2D diffuse_tex;
+layout (binding = 0) uniform sampler2D albedo_tex;
 layout (binding = 1) uniform sampler2D roughness_tex;
 layout (binding = 2) uniform sampler2D metalness_tex;
 layout (binding = 3) uniform sampler2D normal_tex;
@@ -239,7 +250,7 @@ vec3 diffuseLambertian(vec3 albedo) {
 void main() {
     vec3 result = vec3(0.0);
     // Albedo
-    vec3 albedo = use_albedo_texture ? texture(diffuse_tex, g_texture).rgb * g_color : material.albedo * g_color;
+    vec3 albedo = use_albedo_texture ? texture(albedo_tex, g_texture).rgb * g_color : material.albedo * g_color;
     // Roughness
     float roughness = use_roughness_texture ? texture(roughness_tex, g_texture).r : material.roughness;
     roughness = clamp(roughness, 0.04, 1.0);
@@ -262,7 +273,7 @@ void main() {
         float att = 1.0; // Light attenuation
 
         if (close(lights[i].position.w, 0.0)) { // is directional?
-            L = -lights[i].position.xyz;
+            L = lights[i].position.xyz;
         }
         else {
             L = lights[i].position.xyz - g_vertex;
@@ -316,74 +327,46 @@ void main() {
 }
 )";
 
-PhysicallyBasedMaterial::PhysicallyBasedMaterial(glm::vec3 albedo, float roughness, float metalness)
-    : Material(), albedo(albedo), roughness(roughness), metalness(metalness), show_wireframe(false),
-      wireframe_thickness(1.0), wireframe_color(glm::vec3(0)), use_albedo_texture(false),
-      use_roughness_texture(false), use_metalness_texture(false)
-{
-    render_settings.depth_test = true;
-    render_settings.depth_write = true;
-    render_settings.blending = false;
-    render_settings.culling = false;
-    initialize();
-}
-std::string PhysicallyBasedMaterial::vertexShader()
-{
-    return vert_str;
-}
-std::string PhysicallyBasedMaterial::fragmentShader()
-{
-    return frag_str;
-}
-std::string PhysicallyBasedMaterial::geometryShader()
-{
-    return geom_str;
-}
-void PhysicallyBasedMaterial::use()
-{
-    Material::use();
-    if (albedo_texture != nullptr && use_albedo_texture)
-    {
-        albedo_texture->use(0);
-    }
-    if (roughness_texture != nullptr && use_roughness_texture)
-    {
-        roughness_texture->use(1);
-    }
-    if (metalness_texture != nullptr && use_metalness_texture)
-    {
-        metalness_texture->use(2);
-    }
-    if (normal_texture != nullptr && use_normal_texture)
-    {
-        normal_texture->use(3);
-    }
-    if (irradiance_map != nullptr && use_irradiance_map)
-    {
-        irradiance_map->use(4);
-    }
-}
+const static FragmentShader PBRFragmentShader = {
+    {ShaderUniformDesc{"material.albedo", GLDataType::Vec3f},
+     ShaderUniformDesc{"material.roughness", GLDataType::Float},
+     ShaderUniformDesc{"material.metalness", GLDataType::Float},
+     ShaderUniformDesc{"show_wireframe", GLDataType::Bool},
+     ShaderUniformDesc{"use_albedo_texture", GLDataType::Bool},
+     ShaderUniformDesc{"use_roughness_texture", GLDataType::Bool},
+     ShaderUniformDesc{"use_metalness_texture", GLDataType::Bool},
+     ShaderUniformDesc{"use_normal_texture", GLDataType::Bool},
+     ShaderUniformDesc{"use_irradiance_map", GLDataType::Bool},
+     ShaderUniformDesc{"line_props.color", GLDataType::Vec3f},
+     ShaderUniformDesc{"line_props.thickness", GLDataType::Float},
+     ShaderUniformDesc{"num_lights", GLDataType::Int},
+     ShaderUniformDesc{"eye_pos", GLDataType::Vec3f}},
+    {ShaderTextureDesc{"albedo_tex", 2}, ShaderTextureDesc{"roughness_tex", 2},
+     ShaderTextureDesc{"metalness_tex", 2}, ShaderTextureDesc{"normal_tex", 2}},
+    {ShaderCubemapDesc{"irradiance_map"}},
+    "out_color",
+    frag_str};
 
-void PhysicallyBasedMaterial::setUniforms()
+std::shared_ptr<ShaderProgram> makePhysicallyBasedMaterial(glm::vec3 albedo, float roughness,
+                                                           float metalness, bool wireframe)
 {
-    shader_->setUniform("material.albedo", albedo);
-    shader_->setUniform("material.roughness", roughness);
-    shader_->setUniform("material.metalness", metalness);
-    shader_->setUniform("show_wireframe", show_wireframe);
-    shader_->setUniform("line_props.color", wireframe_color);
-    shader_->setUniform("line_props.thickness", wireframe_thickness);
+    auto prog = ShaderProgram::create(PBRVertexShader, PBRGeometryShader, PBRFragmentShader, true);
+    prog->uniform("material.albedo").set(albedo);
+    prog->uniform("material.roughness").set(roughness);
+    prog->uniform("material.metalness").set(metalness);
+    prog->uniform("show_wireframe").set(wireframe);
+    prog->uniform("use_albedo_texture").set(false);
+    prog->uniform("use_roughness_texture").set(false);
+    prog->uniform("use_metalness_texture").set(false);
+    prog->uniform("use_normal_texture").set(false);
 
-    shader_->setUniform("use_albedo_texture", use_albedo_texture);
-    shader_->setUniform("use_roughness_texture", use_roughness_texture);
-    shader_->setUniform("use_metalness_texture", use_metalness_texture);
-    shader_->setUniform("use_normal_texture", use_normal_texture);
+    prog->renderState().depth_test = true;
+    prog->renderState().depth_write = true;
+    prog->renderState().blending = false;
+    prog->renderState().culling = false;
 
-    shader_->setUniform("use_irradiance_map", use_irradiance_map);
-}
-
-int PhysicallyBasedMaterial::renderPriority() const
-{
-    return RenderPriority::Opaque;
+    prog->renderPriority() = RenderPriority::Opaque;
+    return prog;
 }
 
 } // namespace rcube

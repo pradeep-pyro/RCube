@@ -14,6 +14,8 @@
 #include "RCube/Core/Graphics/MeshGen/Plane.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
+#include "RCube/Components/DirectionalLight.h"
+#include "RCube/Components/PointLight.h"
 
 class App : public rcube::Window
 {
@@ -38,87 +40,79 @@ public:
             glm::vec3(0.0, 1.0, 0.0),
             glm::vec3(0.0, 0.0, 0.0));
         gridMesh->uploadToGPU();
-        std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();
+        std::shared_ptr<ShaderProgram> flat = makeFlatMaterial();
         mGroundPlane = mScene.createDrawable();
         mGroundPlane.get<Drawable>()->mesh = gridMesh;
         mGroundPlane.get<Drawable>()->material = flat;
 
-        // Create a sphere with texture        
+        // Create a sphere with texture
         {
             std::shared_ptr<Mesh> sphereMesh = Mesh::create();
-            std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-                std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-            blinnPhong->show_wireframe = false;
-            blinnPhong->diffuse_texture = Texture2D::create(256, 256, 1);
+            std::shared_ptr<ShaderProgram> blinnPhong =
+                makeBlinnPhongMaterial(glm::vec3(1.0, 0.7, 0.8), glm::vec3(1.0), 4.f, true);
 
             Image checker = checkerboard(256, 256, 32, 32, glm::vec3(1, 1, 1), glm::vec3(0, 1, 0));
-            blinnPhong->diffuse_texture->setData(checker);
-            blinnPhong->use_diffuse_texture = true;
+            blinnPhong->texture("diffuse_tex") = Texture2D::create(256, 256, 1);
+            blinnPhong->texture("diffuse_tex")->setData(checker);
+            blinnPhong->uniform("use_diffuse_texture").set(true);
             sphereMesh->data = cubeSphere(0.5, 10);
             sphereMesh->uploadToGPU();
             mSphereTex = mScene.createDrawable();
             mSphereTex.get<Drawable>()->mesh = sphereMesh;
             mSphereTex.get<Drawable>()->material = blinnPhong;
+            mSphereTex.get<Transform>()->translate(glm::vec3(1, 0, 0));
         }
 
-
-         // Create a sphere
+        // Create a sphere
         {
             std::shared_ptr<Mesh> sphereMesh = Mesh::create();
-            sphereMesh->data = icoSphere(0.5, 3);
-            std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-                std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-            blinnPhong->show_wireframe = true;
-            blinnPhong->diffuse_texture = Texture2D::create(256, 256, 1);           
+            //sphereMesh->data = icoSphere(0.5, 3);
+            sphereMesh->data = cubeSphere(0.5, 10);
             sphereMesh->uploadToGPU();
-            std::shared_ptr<PhysicallyBasedMaterial> pbm =
-                std::make_shared<PhysicallyBasedMaterial>();
-            pbm->roughness = 0.2;
+            std::shared_ptr<ShaderProgram> pbm = makePhysicallyBasedMaterial();
+            //pbm->uniform("material.metalness").set(0.1f);
             mSphere = mScene.createDrawable();
             mSphere.get<Drawable>()->mesh = sphereMesh;
             mSphere.get<Drawable>()->material = pbm;
-            mSphere.get<Transform>()->translate(glm::vec3(1, 1, -1));
         }
 
-
-        //create a plane
+        // Create a plane
         {
             std::shared_ptr<Mesh> planeMesh = Mesh::create();
             planeMesh->data = plane(2, 2, 10, 10, rcube::Orientation::PositiveY);
             planeMesh->uploadToGPU();
-            std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-                std::make_shared<BlinnPhongMaterial>(glm::vec3(1.0, 0.7, 0.8));
-            blinnPhong->show_wireframe = true;
+            std::shared_ptr<ShaderProgram> blinnPhong =
+                makeBlinnPhongMaterial(glm::vec3(1.0, 0.7, 0.8), glm::vec3(1.0), 4.f, true);
             mPlane = mScene.createDrawable();
             mPlane.get<Drawable>()->mesh = planeMesh;
             mPlane.get<Drawable>()->material = blinnPhong;
         }
 
-
-        //create box with texture
+        // Create box with texture
         std::shared_ptr<Mesh> boxMesh = Mesh::create();
         boxMesh->data = box(1, 1, 1, 1, 1, 1);
         boxMesh->uploadToGPU();
-        std::shared_ptr<BlinnPhongMaterial> tex_blinnPhone = std::make_shared<BlinnPhongMaterial>();
-        tex_blinnPhone->diffuse_texture = Texture2D::create(128, 128, 1, rcube::TextureInternalFormat::RGBA8);
-        tex_blinnPhone->diffuse_texture->setData(checkerboard(128, 128, 8, 8, glm::vec3(0, 0, 0), glm::vec3(1, 1, 1)));
-        tex_blinnPhone->use_diffuse_texture = true;        
+        std::shared_ptr<ShaderProgram> tex_blinnPhong = makeBlinnPhongMaterial();
+        tex_blinnPhong->texture("diffuse_tex") =
+        Texture2D::create(128, 128, 1, rcube::TextureInternalFormat::RGBA8);
+        tex_blinnPhong->texture("diffuse_tex")
+            ->setData(
+            checkerboard(128, 128, 8, 8, glm::vec3(0, 0, 0), glm::vec3(1, 1, 1)));
+        tex_blinnPhong->uniform("use_diffuse_texture").set(true);
+
         mBox = mScene.createDrawable();
         mBox.get<Drawable>()->mesh = boxMesh;
-        mBox.get<Drawable>()->material = tex_blinnPhone;
+        mBox.get<Drawable>()->material = tex_blinnPhong;
         mBox.get<Transform>()->translate(glm::vec3(1, 1, 1));
 
-        // Create a camera
+        // Create a camera with a directional light in the view direction
         mCamera = mScene.createCamera();
+        mCamera.add<DirectionalLight>();
+        mCamera.add<PointLight>();
         mCamera.get<Transform>()->setPosition(glm::vec3(0, 0, 1));
         mCamera.get<Camera>()->fov = glm::radians(30.0);
         mCamera.get<Camera>()->near_plane = 0.01f;
         mCamera.get<Camera>()->background_color = glm::vec4(0.3, 0.3, 0.3, 1.0);
-        EntityHandle light1 = mScene.createPointLight();
-        light1.get<Transform>()->setPosition(glm::vec3(1, 1, 0));
-
-        EntityHandle light2 = mScene.createPointLight();
-        light2.get<Transform>()->setParent(mCamera.get<Transform>());
 
         mCtrl.resize(1280, 720);
         mCtrl.setEntity(mCamera);

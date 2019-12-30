@@ -48,7 +48,7 @@ class Camera : public Component<Camera>
         glm::vec4(1); /// Background color for the scene when viewed from this camera
     std::shared_ptr<TextureCubemap> skybox; /// Skybox texture
     bool use_skybox = false;                /// Whether to draw a skybox
-    std::vector<std::shared_ptr<Effect>>
+    std::vector<std::shared_ptr<ShaderProgram>>
         postprocess; /// Postprocessing effects applied to the scene in order
 
     /**

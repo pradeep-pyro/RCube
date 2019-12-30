@@ -5,10 +5,8 @@
 namespace rcube
 {
 
-std::string DiffuseIrradianceShader::vertexShader()
-{
-    return
-        R"(
+const static VertexShader
+    DIFFUSE_IRRADIANCE_VERTEX_SHADER({ShaderAttributeDesc{"position", GLDataType::Vec3f}}, {}, R"(
 #version 420
 layout (location = 0) in vec3 position;
 
@@ -24,13 +22,12 @@ void main() {
     direction = position;
     gl_Position =  projection_matrix * view_matrix * vec4(position, 1);
 }
-)";
-}
+)");
 
-std::string DiffuseIrradianceShader::fragmentShader()
-{
-    return
-        R"(
+const static FragmentShader
+    DIFFUSE_IRRADIANCE_FRAGMENT_SHADER({ShaderUniformDesc{"num_samples", GLDataType::Int}}, {},
+                                       {ShaderCubemapDesc{"env_map"}}, "frag_color",
+                                       R"(
 #version 420
 
 #define IMPORTANCE_SAMPLING
@@ -118,31 +115,12 @@ void main() {
     frag_color = vec4(irradiance, 1.0);
 }
 
-)";
-}
-
-std::string DiffuseIrradianceShader::geometryShader()
-{
-    return "";
-}
-
-void DiffuseIrradianceShader::setUniforms()
-{
-    if (environment_map != nullptr)
-    {
-        environment_map->use(3);
-    }
-    shader_->setUniform("num_samples", num_samples);
-}
-
-int DiffuseIrradianceShader::renderPriority() const
-{
-    return RenderPriority::Opaque;
-}
+)");
 
 ///////////////////////////////////////////////////////////////////////////////
 
-DiffusePrefilter::DiffusePrefilter(unsigned int resolution) : resolution_(resolution)
+DiffusePrefilter::DiffusePrefilter(unsigned int resolution, int num_samples)
+    : resolution_(resolution), num_samples_(num_samples)
 {
     // Create a unit cube in clip space
     cube_ = Mesh::create();
@@ -150,7 +128,8 @@ DiffusePrefilter::DiffusePrefilter(unsigned int resolution) : resolution_(resolu
     cube_->uploadToGPU();
 
     // Compile the irradiance shader
-    shader_.initialize();
+    shader_ = ShaderProgram::create(DIFFUSE_IRRADIANCE_VERTEX_SHADER,
+                                    DIFFUSE_IRRADIANCE_FRAGMENT_SHADER, true);
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create(resolution, resolution);
@@ -178,12 +157,22 @@ DiffusePrefilter::~DiffusePrefilter()
     fbo_->release();
 }
 
+int DiffusePrefilter::numSamples() const
+{
+    return num_samples_;
+}
+
+void DiffusePrefilter::setNumSamples(int num_samples)
+{
+    num_samples_ = num_samples;
+}
+
 std::shared_ptr<TextureCubemap> DiffusePrefilter::prefilter(std::shared_ptr<TextureCubemap> env_map)
 {
     auto irradiance_map =
         TextureCubemap::create(resolution_, resolution_, 1, true, TextureInternalFormat::RGB16F);
-    shader_.environment_map = env_map;
-    shader_.num_samples = num_samples;
+    shader_->cubemap("env_map") = env_map;
+    shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
 
     glm::mat4 eye(1.0);
@@ -192,7 +181,7 @@ std::shared_ptr<TextureCubemap> DiffusePrefilter::prefilter(std::shared_ptr<Text
     {
         rdr_.clear();
         rdr_.setCamera(views_[i], projection_, eye);
-        rdr_.render(cube_.get(), &shader_, eye);
+        rdr_.render(cube_.get(), shader_.get(), eye);
         irradiance_map->use();
         glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0, fbo_->width(),
                             fbo_->height());

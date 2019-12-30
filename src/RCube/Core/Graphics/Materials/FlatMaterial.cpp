@@ -27,6 +27,11 @@ void main() {
 }
 )";
 
+const static VertexShader FlatVertexShader{{ShaderAttributeDesc("vertex", GLDataType::Vec3f),
+                                            ShaderAttributeDesc("colors", GLDataType::Vec3f)},
+                                           {{"model_matrix", GLDataType::Mat4f}},
+                                           vert_src};
+
 const std::string frag_src = R"(
 #version 420
 
@@ -38,33 +43,16 @@ void main() {
 }
 )";
 
-FlatMaterial::FlatMaterial()
-{
-    render_settings.blending = false;
-    render_settings.depth_write = true;
-    render_settings.depth_test = true;
-    render_settings.culling = false;
-    initialize();
-}
-std::string FlatMaterial::vertexShader()
-{
-    return vert_src;
-}
-std::string FlatMaterial::fragmentShader()
-{
-    return frag_src;
-}
-std::string FlatMaterial::geometryShader()
-{
-    return "";
-}
-void FlatMaterial::setUniforms()
-{
-}
+const static FragmentShader FlatFragmentShader{{}, {}, {}, "out_color", frag_src};
 
-int FlatMaterial::renderPriority() const
+std::shared_ptr<ShaderProgram> makeFlatMaterial()
 {
-    return RenderPriority::Opaque;
+    auto prog = ShaderProgram::create(FlatVertexShader, FlatFragmentShader, true);
+    prog->renderState().blending = false;
+    prog->renderState().depth_write = true;
+    prog->renderState().depth_test = true;
+    prog->renderState().culling = false;
+    return prog;
 }
 
 } // namespace rcube

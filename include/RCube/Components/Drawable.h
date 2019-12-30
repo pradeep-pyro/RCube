@@ -21,7 +21,7 @@ class Drawable : public Component<Drawable>
 {
   public:
     std::shared_ptr<Mesh> mesh;         /// OpenGL mesh
-    std::shared_ptr<Material> material; /// Material describing the rendering appearance
+    std::shared_ptr<ShaderProgram> material; /// Material describing the rendering appearance
     bool visible = true;                /// Whether visible when rendered
 };
 

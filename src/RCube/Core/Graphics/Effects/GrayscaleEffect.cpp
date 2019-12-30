@@ -2,14 +2,8 @@
 namespace rcube
 {
 
-GrayscaleEffect::GrayscaleEffect()
-{
-    initialize();
-}
-
-std::string GrayscaleEffect::fragmentShader()
-{
-    return R"(
+const static FragmentShader GRAYSCALE_EFFECT_FRAG({}, {ShaderTextureDesc{"fbo_texture", 2}}, "out_color",
+                                           R"(
 #version 420
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -20,11 +14,11 @@ void main() {
    float avg = 0.2126 * tex.r + 0.7152 * tex.g + 0.0722 * tex.b;
    out_color = vec4(avg, avg, avg, tex.a);
 }
-       )";
-}
+)");
 
-void GrayscaleEffect::setUniforms()
+std::shared_ptr<ShaderProgram> makeGrayscaleEffect()
 {
+    return makeEffect(GRAYSCALE_EFFECT_FRAG);
 }
 
 } // namespace rcube

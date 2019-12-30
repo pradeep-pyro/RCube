@@ -35,8 +35,9 @@ EntityHandle RCubeViewer::addIcoSphereSurface(const std::string name, float radi
     ent.add<Name>(name);
 
     std::shared_ptr<Mesh> sphereMesh = Mesh::create();
-    std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-        std::make_shared<BlinnPhongMaterial>(default_surface_color_);
+    //std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+    //    std::make_shared<BlinnPhongMaterial>(default_surface_color_);
+    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     sphereMesh->data = icoSphere(radius, numSubdivisions);
     sphereMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = sphereMesh;
@@ -51,8 +52,9 @@ EntityHandle RCubeViewer::addCubeSphereSurface(const std::string name, float rad
     ent.add<Name>(name);
 
     std::shared_ptr<Mesh> sphereMesh = Mesh::create();
-    std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-        std::make_shared<BlinnPhongMaterial>(default_surface_color_);
+    /*std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+        std::make_shared<BlinnPhongMaterial>(default_surface_color_);*/
+    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     sphereMesh->data = cubeSphere(radius, numSegments);
     sphereMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = sphereMesh;
@@ -68,8 +70,9 @@ EntityHandle RCubeViewer::addBoxSurface(const std::string name, float width, flo
     ent.add<Name>(name);
 
     std::shared_ptr<Mesh> boxMesh = Mesh::create();
-    std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-        std::make_shared<BlinnPhongMaterial>(default_surface_color_);
+    /*std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+        std::make_shared<BlinnPhongMaterial>(default_surface_color_);*/
+    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     boxMesh->data = box(width, height, depth, width_segments, height_segments, depth_segments);
     boxMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = boxMesh;
@@ -83,8 +86,9 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const MeshData &dat
     ent.add<Name>(name);
 
     std::shared_ptr<Mesh> mesh = Mesh::create();
-    std::shared_ptr<BlinnPhongMaterial> blinnPhong =
-        std::make_shared<BlinnPhongMaterial>(default_surface_color_);
+    /*std::shared_ptr<BlinnPhongMaterial> blinnPhong =
+        std::make_shared<BlinnPhongMaterial>(default_surface_color_);*/
+    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     mesh->data = data;
     mesh->uploadToGPU();
     ent.get<Drawable>()->mesh = mesh;
@@ -196,7 +200,8 @@ EntityHandle RCubeViewer::createGroundPlane()
     gridMesh->data = rcube::grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
                                  glm::vec3(0.0, 0.0, 0.0));
     gridMesh->uploadToGPU();
-    std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();
+    /*std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();*/
+    std::shared_ptr<ShaderProgram> flat = makeFlatMaterial();
     ground_ = createSurface();
     ground_.get<Drawable>()->mesh = gridMesh;
     ground_.get<Drawable>()->material = flat;

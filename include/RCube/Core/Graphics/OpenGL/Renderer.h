@@ -77,6 +77,7 @@ class GLRenderer
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
 
+    // Skybox
     std::shared_ptr<Mesh> skybox_mesh_;
     std::shared_ptr<ShaderProgram> skybox_shader_;
 
@@ -89,11 +90,7 @@ class GLRenderer
     // Dirty flags
     bool init_;
 
-    // Cache
-    int num_lights_;
-    glm::vec3 eye_pos_ = glm::vec3(0, 0, 1);
-
-    // Quad
+    // Fullscreen quad
     std::shared_ptr<Mesh> quad_mesh_;
     std::shared_ptr<ShaderProgram> quad_shader_;
 };

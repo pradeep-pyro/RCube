@@ -13,10 +13,11 @@ layout (location = 2) in vec2 texcoord;
 layout (location = 3) in vec3 color;
 layout (location = 4) in vec3 tangent;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 
 uniform mat4 model_matrix;
@@ -47,10 +48,11 @@ const std::string geom_str =
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 
 in vec3 v_vertex[];
@@ -134,19 +136,19 @@ noperspective in vec3 dist;
 // Fragment shader output
 out vec4 out_color;
 
-// Scene uniforms
-uniform int num_lights;
-uniform vec3 eye_pos;
-
-layout (std140, binding=0) uniform Matrices {
+// --------------------------------
+// Camera Uniform Block
+// --------------------------------
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 in mat3 g_tbn;
 
 // --------------------------------
-// Light uniforms
+// Light Uniform Block
 // --------------------------------
 struct Light {
     vec4 position;
@@ -156,6 +158,7 @@ struct Light {
 
 layout (std140, binding=2) uniform Lights {
     Light lights[MAX_LIGHTS];
+    int num_lights;
 };
 
 // --------------------------------
@@ -274,8 +277,7 @@ const static VertexShader BlinnPhongVertexShader = {
     /*uniforms: */
     {{"model_matrix", GLDataType::Mat4f},
      {"normal_matrix", GLDataType::Mat3f},
-     {"eye_pos", GLDataType::Vec3f},
-     {"num_lights", GLDataType::Int}},
+     /*{"eye_pos", GLDataType::Vec3f}*/},
     vert_str};
 
 const static GeometryShader BlinnPhongGeometryShader = {

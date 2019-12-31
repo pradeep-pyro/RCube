@@ -16,7 +16,7 @@ struct Light
 {
     Light()
         : position(glm::vec3(0)), pos_w(1.f), radius(1.f), direction(glm::vec3(0, 0, 1)),
-          cone_angle(glm::half_pi<float>()), color(glm::vec3(1)), ambient(glm::vec3(0.2f))
+          cone_angle(glm::half_pi<float>()), color(glm::vec3(1))
     {
     }
     glm::vec3 position;
@@ -25,7 +25,6 @@ struct Light
     glm::vec3 direction;
     float cone_angle;
     glm::vec3 color;
-    glm::vec3 ambient;
 };
 
 } // namespace rcube

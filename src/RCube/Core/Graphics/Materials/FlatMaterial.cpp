@@ -10,10 +10,11 @@ const std::string vert_src = R"(
 layout (location = 0) in vec3 vertex;
 layout (location = 3) in vec3 color;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 
 uniform mat4 model_matrix;

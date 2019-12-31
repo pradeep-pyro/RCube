@@ -12,10 +12,11 @@ layout (location = 2) in vec2 texcoord;
 layout (location = 3) in vec3 color;
 layout (location = 4) in vec3 tangent;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 
 uniform mat4 model_matrix;
@@ -55,10 +56,11 @@ const std::string geom_str =
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 
 in vec3 v_vertex[];
@@ -146,12 +148,12 @@ out vec4 out_color;
 
 // Scene uniforms
 uniform int num_lights;
-uniform vec3 eye_pos;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 in mat3 g_tbn;
 
@@ -338,9 +340,7 @@ const static FragmentShader PBRFragmentShader = {
      ShaderUniformDesc{"use_normal_texture", GLDataType::Bool},
      ShaderUniformDesc{"use_irradiance_map", GLDataType::Bool},
      ShaderUniformDesc{"line_props.color", GLDataType::Vec3f},
-     ShaderUniformDesc{"line_props.thickness", GLDataType::Float},
-     ShaderUniformDesc{"num_lights", GLDataType::Int},
-     ShaderUniformDesc{"eye_pos", GLDataType::Vec3f}},
+     ShaderUniformDesc{"line_props.thickness", GLDataType::Float}},
     {ShaderTextureDesc{"albedo_tex", 2}, ShaderTextureDesc{"roughness_tex", 2},
      ShaderTextureDesc{"metalness_tex", 2}, ShaderTextureDesc{"normal_tex", 2}},
     {ShaderCubemapDesc{"irradiance_map"}},

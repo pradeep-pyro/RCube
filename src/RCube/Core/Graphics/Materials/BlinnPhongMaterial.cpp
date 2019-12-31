@@ -319,7 +319,7 @@ std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color,
     prog->uniform("material.specular").set(specular_color);
     prog->uniform("material.shininess").set(shininess);
     prog->uniform("show_wireframe").set(wireframe);
-    prog->uniform("blend_environment_map").set(int(Combine::Multiply));
+    prog->uniform("blend_environment_map").set(1);
     prog->renderState().depth_test = true;
     prog->renderState().depth_write = true;
     prog->renderState().blending = false;

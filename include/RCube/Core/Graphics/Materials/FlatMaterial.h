@@ -1,8 +1,7 @@
 #ifndef FLATMATERIAL_H
 #define FLATMATERIAL_H
 
-#include "RCube/Core/Graphics/OpenGL/Material.h"
-#include "constants.h"
+#include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 
 namespace rcube
 {

@@ -2,8 +2,7 @@
 #define PHYSICALLYBASEDMATERIAL_H
 
 #include "RCube/Core/Graphics/Materials/constants.h"
-#include "RCube/Core/Graphics/OpenGL/Material.h"
-#include "RCube/Core/Graphics/OpenGL/Texture.h"
+#include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 #include "glm/glm.hpp"
 #include <string>
 

@@ -9,8 +9,8 @@
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 #include "RCube/Core/Graphics/OpenGL/Image.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
-#include "RCube/Core/Graphics/OpenGL/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
+#include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 
 namespace rcube
 {

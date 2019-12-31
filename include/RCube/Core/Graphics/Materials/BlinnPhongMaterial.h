@@ -1,11 +1,8 @@
 #ifndef BLINNPHONGMATERIAL_H
 #define BLINNPHONGMATERIAL_H
 
-#include "RCube/Core/Graphics/OpenGL/Material.h"
-#include "RCube/Core/Graphics/OpenGL/Texture.h"
-#include "constants.h"
+#include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 #include "glm/glm.hpp"
-#include <string>
 
 namespace rcube
 {

@@ -5,8 +5,8 @@
 #include <memory>
 
 #include "RCube/Core/Arch/Component.h"
-#include "RCube/Core/Graphics/OpenGL/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
+#include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 namespace rcube
 {
 
@@ -20,9 +20,9 @@ namespace rcube
 class Drawable : public Component<Drawable>
 {
   public:
-    std::shared_ptr<Mesh> mesh;         /// OpenGL mesh
+    std::shared_ptr<Mesh> mesh;              /// OpenGL mesh
     std::shared_ptr<ShaderProgram> material; /// Material describing the rendering appearance
-    bool visible = true;                /// Whether visible when rendered
+    bool visible = true;                     /// Whether visible when rendered
 };
 
 } // namespace rcube

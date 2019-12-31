@@ -9,7 +9,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    auto rs = std::make_unique<RenderSystem>();
+    auto rs = std::make_unique<RenderSystem>(props.resolution, props.MSAA);
     world_.addSystem(std::move(rs));
 
     // Create a default camera

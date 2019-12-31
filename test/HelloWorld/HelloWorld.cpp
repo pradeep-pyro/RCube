@@ -7,6 +7,9 @@ int main()
 {
     using namespace rcube;
 
+    // viewer::RCubeViewerProps props;
+    // props.MSAA = 2; // turn on multisampling
+
     viewer::RCubeViewer viewer;
 
     // Add a subdivided icosahedron surface to viewer

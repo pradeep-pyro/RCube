@@ -146,9 +146,6 @@ noperspective in vec3 dist;
 // Fragment shader output
 out vec4 out_color;
 
-// Scene uniforms
-uniform int num_lights;
-
 layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
@@ -168,6 +165,7 @@ struct Light {
 
 layout (std140, binding=2) uniform Lights {
     Light lights[MAX_LIGHTS];
+    int num_lights;
 };
 
 // --------------------------------

@@ -1,4 +1,6 @@
 #include "RCube/Core/Graphics/Effects/GrayscaleEffect.h"
+#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
+#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCubeViewer/RCubeViewer.h"
 
 int main()
@@ -20,6 +22,9 @@ int main()
 
     // Apply grayscale filter to screen
     // viewer.camera().get<Camera>()->postprocess.push_back(makeGrayscaleEffect());
+
+    // Apply gamma correction filter to screen
+    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
 
     // Show viewer
     viewer.execute();

@@ -1,7 +1,7 @@
 #include "RCube/Components/Camera.h"
+#include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
 #include "RCube/Components/Transform.h"
-#include "RCube/Components/DirectionalLight.h"
 #include "RCube/Controller/OrbitController.h"
 #include "RCube/Core/Arch/World.h"
 #include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
@@ -41,11 +41,11 @@ class Name : public Component<Name>
  */
 struct RCubeViewerProps
 {
-    std::string title = "RCubeViewer"; // Title of the viewer window
+    std::string title = "RCubeViewer";             // Title of the viewer window
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
-    glm::vec4 background_color = glm::vec4(0.3f, 0.3f, 0.3f, 1.f); // Backround color
-    glm::vec3 camera_position = glm::vec3(1.f, 1.f, 1.f); // Position of the camera
-    float camera_fov = glm::radians(45.f);  // Vertical FOV of the camera in radians
+    glm::vec4 background_color = glm::vec4(0.2f, 0.2f, 0.2f, 1.f); // Background color
+    glm::vec3 camera_position = glm::vec3(1.f, 1.f, 1.f);          // Position of the camera
+    float camera_fov = glm::radians(45.f); // Vertical FOV of the camera in radians
 };
 
 class RCubeViewer : public rcube::Window

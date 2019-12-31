@@ -108,7 +108,6 @@ public:
         // Create a camera with a directional light in the view direction
         mCamera = mScene.createCamera();
         mCamera.add<DirectionalLight>();
-        mCamera.add<PointLight>();
         mCamera.get<Transform>()->setPosition(glm::vec3(0, 0, 1));
         mCamera.get<Camera>()->fov = glm::radians(30.0);
         mCamera.get<Camera>()->near_plane = 0.01f;

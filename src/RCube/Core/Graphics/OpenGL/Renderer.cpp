@@ -53,7 +53,7 @@ const static FragmentShader skybox_frag({}, {}, {ShaderCubemapDesc{"skybox"}}, "
 out vec4 out_color;
 in vec3 texcoords;
 
-layout(binding = 3) uniform samplerCube skybox;
+uniform samplerCube skybox;
 
 void main() {
     out_color = texture(skybox, texcoords);
@@ -317,10 +317,12 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
 {
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
-    cubemap->use(3);
-    skybox_shader_->use();
     skybox_mesh_->use();
+    skybox_shader_->cubemap("skybox") = cubemap;
+    skybox_shader_->use();
+    checkGLError();
     skybox_shader_->drawArrays(GL_TRIANGLES, 0, 36);
+    checkGLError();
     glDepthFunc(GL_LESS);
 }
 

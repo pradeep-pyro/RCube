@@ -21,7 +21,8 @@ enum class TextureWrapMode
 enum class TextureFilterMode
 {
     Nearest = GL_NEAREST,
-    Linear = GL_LINEAR
+    Linear = GL_LINEAR,
+    Trilinear = GL_LINEAR_MIPMAP_LINEAR
 };
 
 enum class TextureFormat
@@ -131,7 +132,6 @@ class TextureCubemap
     void setWrapModeS(TextureWrapMode wrap_s);
     void setWrapModeT(TextureWrapMode wrap_t);
     void setWrapModeR(TextureWrapMode mode);
-    void setWrapMode(TextureWrapMode s, TextureWrapMode t);
     void setData(int i, const unsigned char *data, size_t width, size_t height, size_t level,
                  TextureFormat format);
     void setData(int i, const Image &im, size_t level = 0);

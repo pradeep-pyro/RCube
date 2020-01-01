@@ -380,6 +380,26 @@ void TextureCubemap::setData(int i, const Image &im, size_t level)
     setData(i, im.pixels().data(), im.width(), im.height(), level, format);
 }
 
+size_t TextureCubemap::width() const
+{
+    return width_;
+}
+
+size_t TextureCubemap::height() const
+{
+    return height_;
+}
+
+size_t TextureCubemap::levels() const
+{
+    return levels_;
+}
+
+TextureInternalFormat TextureCubemap::internalFormat() const
+{
+    return internal_format_;
+}
+
 void TextureCubemap::use(size_t unit)
 {
     if (seamless_)

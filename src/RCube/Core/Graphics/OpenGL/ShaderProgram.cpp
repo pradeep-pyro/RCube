@@ -462,6 +462,35 @@ void ShaderProgram::addShaderFromFile(GLuint type, const std::string &filename, 
     addShader(type, src, debug);
 }
 
+const std::vector<ShaderAttributeDesc> &ShaderProgram::attributes() const
+{
+    return attributes_;
+}
+const Uniform &ShaderProgram::uniform(std::string name) const
+{
+    return uniforms_.at(name);
+}
+Uniform &ShaderProgram::uniform(std::string name)
+{
+    return uniforms_.at(name);
+}
+const std::shared_ptr<Texture2D> &ShaderProgram::texture(std::string name) const
+{
+    return textures_.at(name);
+}
+std::shared_ptr<Texture2D> &ShaderProgram::texture(std::string name)
+{
+    return textures_.at(name);
+}
+const std::shared_ptr<TextureCubemap> &ShaderProgram::cubemap(std::string name) const
+{
+    return cubemaps_.at(name);
+}
+std::shared_ptr<TextureCubemap> &ShaderProgram::cubemap(std::string name)
+{
+    return cubemaps_.at(name);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void Uniform::set(bool val)

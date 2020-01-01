@@ -241,30 +241,13 @@ class ShaderProgram
                                                  const GeometryShader &geometry_shader,
                                                  const FragmentShader &fragment_shader,
                                                  bool debug = false);
-    const std::vector<ShaderAttributeDesc> &attributes() const
-    {
-        return attributes_;
-    }
-    const Uniform &uniform(std::string name) const
-    {
-        return uniforms_.at(name);
-    }
-    Uniform &uniform(std::string name)
-    {
-        return uniforms_.at(name);
-    }
-    const std::shared_ptr<Texture2D>& texture(std::string name) const
-    {
-        return textures_.at(name);
-    }
-    std::shared_ptr<Texture2D> &texture(std::string name)
-    {
-        return textures_.at(name);
-    }
-    std::shared_ptr<TextureCubemap> &cubemap(std::string name)
-    {
-        return cubemaps_.at(name);
-    }
+    const std::vector<ShaderAttributeDesc> &attributes() const;
+    const Uniform &uniform(std::string name) const;
+    Uniform &uniform(std::string name);
+    const std::shared_ptr<Texture2D> &texture(std::string name) const;
+    std::shared_ptr<Texture2D> &texture(std::string name);
+    const std::shared_ptr<TextureCubemap> &cubemap(std::string name) const;
+    std::shared_ptr<TextureCubemap> &cubemap(std::string name);
     void drawArrays(GLint mode, uint32_t first, uint32_t count) const;
     void drawElements(GLint mode, uint32_t first, uint32_t count) const;
     bool link(bool debug = false);

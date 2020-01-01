@@ -220,7 +220,7 @@ float DGgx(float HdotN, float roughness) {
     float denom = (HdotN2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return nom / max(denom, 0.001);
+    return nom / denom;
 }
 
 float GSchlickGgx(float NdotV, float roughness) {
@@ -230,10 +230,12 @@ float GSchlickGgx(float NdotV, float roughness) {
     float numerator = NdotV;
     float denominator = NdotV * (1.0 - k) + k;
 
-    return numerator / max(denominator, 0.001);
+    return numerator / denominator;
 }
 
 float GSmith(float NdotV, float LdotN, float roughness) {
+    NdotV = max(NdotV, 0.0);
+    LdotN = max(LdotN, 0.0);
     float ggx1 = GSchlickGgx(LdotN, roughness);
     float ggx2 = GSchlickGgx(NdotV, roughness);
     return ggx1 * ggx2;
@@ -249,8 +251,8 @@ vec3 diffuseLambertian(vec3 albedo) {
 
 void main() {
     vec3 result = vec3(0.0);
-    // Albedo
-    vec3 albedo = use_albedo_texture ? texture(albedo_tex, g_texture).rgb * g_color : material.albedo * g_color;
+    // Albedo: convert sRGB albedo texture to linear by pow(x, 2.2)
+    vec3 albedo = use_albedo_texture ? pow(texture(albedo_tex, g_texture).rgb, vec3(2.2)) * g_color : material.albedo * g_color;
     // Roughness
     float roughness = use_roughness_texture ? texture(roughness_tex, g_texture).r : material.roughness;
     roughness = clamp(roughness, 0.04, 1.0);
@@ -286,15 +288,15 @@ void main() {
 
         // Useful values to precompute
         vec3 H = normalize(L + V);  // Halfway vector
-        float LdotN = max(dot(L, N), 0);
-        float HdotV = max(dot(H, V), 0);
-        float HdotN = max(dot(H, N), 0);
+        float LdotN = dot(L, N);
+        float HdotV = dot(H, V);
+        float HdotN = dot(H, N);
 
-        // Cook-Torrance BRDF
+        // Cook-Torrance specular BRDF
         float D = DGgx(HdotN, roughness);
         float G = GSmith(NdotV, LdotN, roughness);
         vec3 F = FSchlick(HdotV, specular_color);
-        vec3 specular_contrib = (D * G * F) / max(4.0 * NdotV * LdotN, 0.001);
+        vec3 specular_contrib = (D * G * F) / max(4.0 * max(NdotV, 0.0) * max(LdotN, 0.0), 0.001);
 
         // Lambertian BRDF
         vec3 diffuse_contrib = vec3(1.0) - F;
@@ -322,6 +324,9 @@ void main() {
         float mix_val = smoothstep(line_props.thickness - 1.0, line_props.thickness + 1.0, d);
         result = mix(line_props.color, result, mix_val);
     }
+
+    // Tone mapping using Reinhard operator
+    result = result / (result + vec3(1.0));
 
     out_color = vec4(result, 1.0);
 }

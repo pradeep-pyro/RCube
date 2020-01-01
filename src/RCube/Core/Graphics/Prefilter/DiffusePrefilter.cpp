@@ -12,36 +12,32 @@ layout (location = 0) in vec3 position;
 
 out vec3 direction;
 
-layout (std140, binding=0) uniform Matrices {
+layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
     mat4 viewport_matrix;
+    vec3 eye_pos;
 };
 
 void main() {
     direction = position;
-    gl_Position =  projection_matrix * view_matrix * vec4(position, 1);
+    gl_Position =  projection_matrix * mat4(mat3(view_matrix)) * vec4(position, 1);
 }
 )");
 
 const static FragmentShader
-    DIFFUSE_IRRADIANCE_FRAGMENT_SHADER({ShaderUniformDesc{"num_samples", GLDataType::Int}}, {},
+    DIFFUSE_IRRADIANCE_FRAGMENT_SHADER({ShaderUniformDesc{"num_samples", GLDataType::Int}},
+                                       {},
                                        {ShaderCubemapDesc{"env_map"}}, "frag_color",
                                        R"(
 #version 420
 
-#define IMPORTANCE_SAMPLING
-
 out vec4 frag_color;
 in vec3 direction;
 
-#ifdef IMPORTANCE_SAMPLING
 uniform int num_samples;
-#else
-uniform float sample_spacing = 0.002;
-#endif
 
-layout (binding = 3) uniform samplerCube env_map;
+uniform samplerCube env_map;
 
 const float PI = 3.14159265358979323846;
 
@@ -61,7 +57,7 @@ float radicalInverse(uint n) {
 }
 
 // Generate low-discrepancy sequence using the Hammersley method
-vec2 hammersleySample(int i, int N) {
+vec2 hammersleySample(uint i, int N) {
     return vec2(float(i) / float(N), radicalInverse(i));
 }
 
@@ -89,32 +85,17 @@ void main() {
     vec3 right = cross(up, N);
     up = cross(N, right);
 
-    int count = 0;
     vec3 irradiance = vec3(0.0);
 
-#ifdef IMPORTANCE_SAMPLING
     for (int i = 0; i < num_samples; ++i) {
         vec2 u = hammersleySample(i, num_samples);
         vec3 tangent_sample = cosineSampleCartesian(u);
         vec3 radiance = tangent_sample.x * right + tangent_sample.y * up + tangent_sample.z * N;
         irradiance += texture(env_map, radiance).rgb;
-        count++;
     }
-#else
-    for(float phi = 0.0; phi < 2.0 * PI; phi += sample_spacing) {
-        for(float theta = 0.0; theta < 0.5 * PI; theta += sample_spacing) {
-            vec3 tangent_sample = vec3(sin(theta) * cos(phi),  sin(theta) * sin(phi), cos(theta));
-            vec3 radiance = tangent_sample.x * right + tangent_sample.y * up + tangent_sample.z * N;
-            irradiance += texture(env_map, radiance).rgb * cos(theta) * sin(theta);
-            count++;
-        }
-    }
-    irradiance *= PI;
-#endif
-    irradiance *= (1.0 / float(count));
+    irradiance *= (1.0 / float(num_samples));
     frag_color = vec4(irradiance, 1.0);
 }
-
 )");
 
 ///////////////////////////////////////////////////////////////////////////////

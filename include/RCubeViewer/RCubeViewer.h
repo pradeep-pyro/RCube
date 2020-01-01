@@ -1,6 +1,7 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
+#include "RCube/Components/PointLight.h"
 #include "RCube/Components/Transform.h"
 #include "RCube/Controller/OrbitController.h"
 #include "RCube/Core/Arch/World.h"
@@ -69,6 +70,9 @@ class RCubeViewer : public rcube::Window
                                int width_segments, int height_segments, int depth_segments,
                                int numSegments);
     EntityHandle addSurface(const std::string name, const MeshData &data);
+
+    EntityHandle addPointLight(const std::string name, glm::vec3 position, float radius,
+                               glm::vec3 color);
 
     EntityHandle getEntity(std::string name);
 

@@ -88,6 +88,17 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const MeshData &dat
     return ent;
 }
 
+EntityHandle RCubeViewer::addPointLight(const std::string name, glm::vec3 position, float radius, glm::vec3 color)
+{
+    EntityHandle ent = world_.createEntity();
+    ent.add(Name(name));
+    ent.add(PointLight(radius, color));
+    Transform tr;
+    tr.setPosition(position);
+    ent.add(tr);
+    return ent;
+}
+
 EntityHandle RCubeViewer::getEntity(std::string name)
 {
     auto it = world_.entities();

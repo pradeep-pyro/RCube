@@ -339,6 +339,18 @@ void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
     effect->done();
 }
 
+void GLRenderer::renderFullscreenQuad(ShaderProgram *prog, Framebuffer* output)
+{
+    prog->use();
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    quad_mesh_->use();
+    output->use();
+    prog->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    output->done();
+    prog->done();
+}
+
 void GLRenderer::renderTextureToScreen(Texture2D *tex)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

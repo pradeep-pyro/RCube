@@ -52,6 +52,8 @@ class GLRenderer
 
     void renderEffect(ShaderProgram *effect, Framebuffer *input);
 
+    void renderFullscreenQuad(ShaderProgram *prog, Framebuffer *output);
+
     /**
      * @brief clearColor Returns the color that is used to clear the screen i.e.,
      * passed to glClearColor()

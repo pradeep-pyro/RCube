@@ -55,6 +55,8 @@ class Framebuffer
      */
     void addColorAttachment(TextureInternalFormat format, size_t levels = 1, size_t samples = 0);
 
+    void addColorAttachment(std::shared_ptr<Texture2D> tex, int index);
+
     void clearColorAttachments();
 
     void clearDepthAttachment();
@@ -102,7 +104,7 @@ class Framebuffer
      * Returns whether the framebuffer is completely defined
      * @return Whether complete
      */
-    bool isComplete() const;
+    bool isComplete();
 
     /**
      * Returns an image representing the color attachment

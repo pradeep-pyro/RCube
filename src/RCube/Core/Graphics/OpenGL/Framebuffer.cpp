@@ -79,15 +79,18 @@ void Framebuffer::done() const
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-bool Framebuffer::isComplete() const
+bool Framebuffer::isComplete()
 {
-    return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    glBindFramebuffer(GL_FRAMEBUFFER, id_);
+    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
 void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size_t levels,
                                      size_t samples)
 {
-    use();
+    glBindFramebuffer(GL_FRAMEBUFFER, id_);
     std::shared_ptr<Texture2D> tex;
     levels = std::max(static_cast<size_t>(1), levels);
     if (samples == 0)
@@ -104,7 +107,18 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size
                            colors_[colors_.size() - 1]->id(), 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
     glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
-    done();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::addColorAttachment(std::shared_ptr<Texture2D> tex, int index)
+{
+    assert(tex->valid());
+    glBindFramebuffer(GL_FRAMEBUFFER, id_);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(), tex->id(),
+                           0);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Framebuffer::clearColorAttachments()

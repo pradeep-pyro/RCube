@@ -41,14 +41,15 @@ void main() {
 }
 )";
 
-const static VertexShader PBRVertexShader = {{ShaderAttributeDesc("vertex", GLDataType::Vec3f),
-                                              ShaderAttributeDesc("normal", GLDataType::Vec3f),
-                                              ShaderAttributeDesc("texcoord", GLDataType::Vec2f),
-                                              ShaderAttributeDesc("normal", GLDataType::Vec3f),
-                                              ShaderAttributeDesc("tangent", GLDataType::Vec3f)},
-                                             {ShaderUniformDesc{"model_matrix", GLDataType::Mat4f},
-                                              ShaderUniformDesc{"normal_matrix", GLDataType::Mat3f}},
-                                             vert_str}; // namespace rcube
+const static VertexShader PBRVertexShader = {
+    {ShaderAttributeDesc("vertex", GLDataType::Vec3f),
+     ShaderAttributeDesc("normal", GLDataType::Vec3f),
+     ShaderAttributeDesc("texcoord", GLDataType::Vec2f),
+     ShaderAttributeDesc("normal", GLDataType::Vec3f),
+     ShaderAttributeDesc("tangent", GLDataType::Vec3f)},
+    {ShaderUniformDesc{"model_matrix", GLDataType::Mat4f},
+     ShaderUniformDesc{"normal_matrix", GLDataType::Mat3f}},
+    vert_str}; // namespace rcube
 
 const std::string geom_str =
     R"(
@@ -178,11 +179,14 @@ struct Material {
 };
 uniform Material material;
 
-layout (binding = 0) uniform sampler2D albedo_tex;
-layout (binding = 1) uniform sampler2D roughness_tex;
-layout (binding = 2) uniform sampler2D metalness_tex;
-layout (binding = 3) uniform sampler2D normal_tex;
-layout (binding = 4) uniform samplerCube irradiance_map;
+uniform sampler2D albedo_tex;
+uniform sampler2D roughness_tex;
+uniform sampler2D metalness_tex;
+uniform sampler2D normal_tex;
+
+uniform sampler2D brdf_lut;
+uniform samplerCube irradiance_map;
+uniform samplerCube prefilter_map;
 
 uniform bool show_wireframe;
 uniform bool use_albedo_texture, use_roughness_texture, use_metalness_texture, use_normal_texture, use_irradiance_map;
@@ -211,9 +215,10 @@ bool close(float a, float b) {
     return abs(a - b) < 0.00001;
 }
 
-float DGgx(float HdotN, float roughness) {
+float DGgx(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
+    float HdotN = max(dot(H, N), 0.0);
     float HdotN2 = HdotN * HdotN;
 
     float nom   = a2;
@@ -233,9 +238,9 @@ float GSchlickGgx(float NdotV, float roughness) {
     return numerator / denominator;
 }
 
-float GSmith(float NdotV, float LdotN, float roughness) {
-    NdotV = max(NdotV, 0.0);
-    LdotN = max(LdotN, 0.0);
+float GSmith(vec3 N, vec3 V, vec3 L, float roughness) {
+    float NdotV = max(dot(N, V), 0.0);
+    float LdotN = max(dot(L, N), 0.0);
     float ggx1 = GSchlickGgx(LdotN, roughness);
     float ggx2 = GSchlickGgx(NdotV, roughness);
     return ggx1 * ggx2;
@@ -245,17 +250,23 @@ vec3 FSchlick(float cos_grazing_angle, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cos_grazing_angle, 0.0, 1.0), 5.0);
 }
 
+vec3 FSchlickRoughness(float cos_grazing_angle, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cos_grazing_angle, 5.0);
+}
+
 vec3 diffuseLambertian(vec3 albedo) {
     return albedo / PI;
 }
 
 void main() {
     vec3 result = vec3(0.0);
+
     // Albedo: convert sRGB albedo texture to linear by pow(x, 2.2)
     vec3 albedo = use_albedo_texture ? pow(texture(albedo_tex, g_texture).rgb, vec3(2.2)) * g_color : material.albedo * g_color;
     // Roughness
     float roughness = use_roughness_texture ? texture(roughness_tex, g_texture).r : material.roughness;
-    roughness = clamp(roughness, 0.04, 1.0);
+    //roughness = clamp(roughness, 0.04, 1.0);
     // metalness
     float metalness = use_metalness_texture ? texture(metalness_tex, g_texture).r : material.metalness;
     metalness = clamp(metalness, 0.0, 1.0);
@@ -267,8 +278,9 @@ void main() {
     float NdotV = max(dot(N, V), 0);
     // Specular color
     vec3 specular_color = vec3(0.04);
-    specular_color = mix(specular_color, albedo, material.metalness);
+    specular_color = mix(specular_color, albedo, metalness);
 
+    vec3 direct_result = vec3(0.0);
     for (int i = 0; i < min(num_lights, MAX_LIGHTS); ++i)
     {
         vec3 L;          // Surface to light
@@ -288,32 +300,46 @@ void main() {
 
         // Useful values to precompute
         vec3 H = normalize(L + V);  // Halfway vector
-        float LdotN = dot(L, N);
-        float HdotV = dot(H, V);
-        float HdotN = dot(H, N);
 
         // Cook-Torrance specular BRDF
-        float D = DGgx(HdotN, roughness);
-        float G = GSmith(NdotV, LdotN, roughness);
-        vec3 F = FSchlick(HdotV, specular_color);
-        vec3 specular_contrib = (D * G * F) / max(4.0 * max(NdotV, 0.0) * max(LdotN, 0.0), 0.001);
+        float D = DGgx(N, H, roughness);
+        float G = GSmith(N, V, L, roughness);
+        vec3 F = FSchlick(max(dot(H, V), 0.0), specular_color);
+        vec3 numer = D * G * F;
+        float denom = 4 * max(dot(N, V), 0.0) * max(dot(L, N), 0.0) + 0.001;
+        vec3 specular = numer / denom;
+        vec3 kS = F;
 
         // Lambertian BRDF
-        vec3 diffuse_contrib = vec3(1.0) - F;
-        diffuse_contrib *= 1.0 - metalness; // Metallic materials have ~0 diffuse contribution
-        diffuse_contrib *= diffuseLambertian(albedo);
-        result += (diffuse_contrib + specular_contrib) * radiance * LdotN;
+        vec3 diffuse = diffuseLambertian(albedo);
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metalness; // Metallic materials have ~0 diffuse contribution
+        direct_result += (kD * diffuse + specular) * radiance * dot(L, N);
     }
-    // Indirect image-based lighting
+
+    // Indirect image-based lighting for ambient term
     if (use_irradiance_map) {
-        vec3 irradiance = texture(irradiance_map, N).rgb;
-        vec3 kS = FSchlick(NdotV, specular_color);
+        vec3 F = FSchlickRoughness(max(dot(N, V), 0.0), specular_color, roughness);
+        vec3 kS = F;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metalness;
+
+        vec3 irradiance = texture(irradiance_map, N).rgb;
         vec3 diffuse = irradiance * albedo;
-        vec3 ambient = (kD * diffuse) * 1.0;
-        //vec3 ambient = vec3(0.03) * albedo * 1.0;
-        result += ambient;
+        
+        const float MAX_REFLECTION_LOD = 4.0;
+        vec3 R = reflect(-V, N);
+        vec3 prefiltered_color = textureLod(prefilter_map, R,  roughness * MAX_REFLECTION_LOD).rgb;
+        vec2 brdf  = texture(brdf_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
+        vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
+
+        vec3 ambient = (kD * diffuse + specular) * 1.0;
+        result = direct_result + ambient;
+    }
+    else
+    {
+        vec3 ambient = vec3(0.03) * albedo;
+        result = direct_result + ambient;
     }
 
     // Wireframe
@@ -327,7 +353,6 @@ void main() {
 
     // Tone mapping using Reinhard operator
     result = result / (result + vec3(1.0));
-
     out_color = vec4(result, 1.0);
 }
 )";
@@ -345,8 +370,9 @@ const static FragmentShader PBRFragmentShader = {
      ShaderUniformDesc{"line_props.color", GLDataType::Vec3f},
      ShaderUniformDesc{"line_props.thickness", GLDataType::Float}},
     {ShaderTextureDesc{"albedo_tex", 2}, ShaderTextureDesc{"roughness_tex", 2},
-     ShaderTextureDesc{"metalness_tex", 2}, ShaderTextureDesc{"normal_tex", 2}},
-    {ShaderCubemapDesc{"irradiance_map"}},
+     ShaderTextureDesc{"metalness_tex", 2}, ShaderTextureDesc{"normal_tex", 2},
+     ShaderTextureDesc{"brdf_lut", 2}},
+    {ShaderCubemapDesc{"irradiance_map"}, ShaderCubemapDesc{"prefilter_map"}},
     "out_color",
     frag_str};
 

@@ -353,6 +353,8 @@ void main() {
 
     // Tone mapping using Reinhard operator
     result = result / (result + vec3(1.0));
+
+    // Output
     out_color = vec4(result, 1.0);
 }
 )";

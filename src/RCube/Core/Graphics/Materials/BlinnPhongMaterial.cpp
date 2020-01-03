@@ -263,6 +263,7 @@ void main() {
         }
     }
 
+    // Output
     out_color = vec4(result, 1.0);
 }
 )";

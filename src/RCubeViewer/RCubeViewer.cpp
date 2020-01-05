@@ -1,9 +1,30 @@
 #include "RCubeViewer/RCubeViewer.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 namespace rcube
 {
 namespace viewer
 {
+
+void initImGUI(GLFWwindow *window)
+{
+
+    ImGui::CreateContext();
+
+    // Set up ImGUI glfw bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    const char *glsl_version = "#version 420";
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    ImGuiIO &io = ImGui::GetIO();
+    ImFontConfig config;
+    config.OversampleH = 5;
+    config.OversampleV = 5;
+
+    ImGui::StyleColorsDark();
+}
 
 RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
@@ -26,6 +47,9 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     ctrl_.resize(props.resolution.x, props.resolution.y);
     ctrl_.setEntity(camera_);
     world_.initialize();
+
+    IMGUI_CHECKVERSION();
+    initImGUI(window_);
 }
 
 EntityHandle RCubeViewer::addIcoSphereSurface(const std::string name, float radius,
@@ -88,7 +112,8 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const MeshData &dat
     return ent;
 }
 
-EntityHandle RCubeViewer::addPointLight(const std::string name, glm::vec3 position, float radius, glm::vec3 color)
+EntityHandle RCubeViewer::addPointLight(const std::string name, glm::vec3 position, float radius,
+                                        glm::vec3 color)
 {
     EntityHandle ent = world_.createEntity();
     ent.add(Name(name));
@@ -128,7 +153,24 @@ EntityHandle RCubeViewer::camera()
 
 void RCubeViewer::draw()
 {
+    // Initialize ImGui
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Create GUI
+    drawGUI();
+
+    // Render everything in the scene
+    ImGui::Render();
     world_.update();
+
+    // Draw GUI
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void RCubeViewer::drawGUI()
+{
 }
 
 void RCubeViewer::onResize(int w, int h)
@@ -145,6 +187,9 @@ void RCubeViewer::onScroll(double xoffset, double yoffset)
 void RCubeViewer::beforeTerminate()
 {
     world_.cleanup();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void RCubeViewer::onMousePress(int key, int mods)
@@ -200,8 +245,8 @@ EntityHandle RCubeViewer::createCamera()
 EntityHandle RCubeViewer::createGroundPlane()
 {
     std::shared_ptr<Mesh> gridMesh = Mesh::create();
-    gridMesh->data = rcube::grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
-                                 glm::vec3(0.0, 0.0, 0.0));
+    gridMesh->data = rcube::grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0),
+                                 glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0));
     gridMesh->uploadToGPU();
     /*std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();*/
     std::shared_ptr<ShaderProgram> flat = makeFlatMaterial();

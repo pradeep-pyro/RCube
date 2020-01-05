@@ -81,6 +81,8 @@ class RCubeViewer : public rcube::Window
   protected:
     virtual void draw() override;
 
+    virtual void drawGUI();
+
     virtual void onResize(int w, int h) override;
 
     virtual void onScroll(double xoffset, double yoffset) override;

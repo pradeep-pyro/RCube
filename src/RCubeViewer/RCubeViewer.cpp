@@ -1,4 +1,5 @@
 #include "RCubeViewer/RCubeViewer.h"
+#include "glm/gtx/euler_angles.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -169,8 +170,176 @@ void RCubeViewer::draw()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void drawGUIForTransformComponent(EntityHandle ent)
+{
+    // TODO: think of a way to handle transform hierarchy
+    Transform *tr = ent.get<Transform>();
+    auto pos = tr->position();
+    static float xyz[3];
+    if (ImGui::InputFloat3("Position", xyz, 2))
+    {
+        tr->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
+    }
+
+    static glm::vec3 euler = glm::eulerAngles(tr->orientation());
+    if (ImGui::InputFloat3("Orientation", glm::value_ptr(euler), 2))
+    {
+        tr->setOrientation(glm::quat(euler));
+    }
+
+    static glm::vec3 scale = tr->scale();
+    if (ImGui::InputFloat3("Scale", glm::value_ptr(scale), 2))
+    {
+        tr->setScale(scale);
+    }
+}
+
+void drawGUIForDrawableComponent(EntityHandle ent)
+{
+    Drawable *dr = ent.get<Drawable>();
+
+    ImGui::Checkbox("Visible", &(dr->visible));
+    ImGui::Separator();
+
+    ImGui::LabelText("#vertices", std::to_string(dr->mesh->data.vertices.size()).c_str());
+    ImGui::LabelText("#faces", std::to_string(dr->mesh->data.indices.size()).c_str());
+    ImGui::LabelText(
+        "Has texcoords",
+        (dr->mesh->data.vertices.size() == dr->mesh->data.texcoords.size()) ? "True" : "False");
+    ImGui::Separator();
+}
+
+void drawGUIForCameraComponent(EntityHandle ent)
+{
+    Camera *camera = ent.get<Camera>();
+
+    ImGui::Checkbox("Orthographic", &camera->orthographic);
+    if (camera->orthographic)
+    {
+        ImGui::InputFloat("Orthographic Width", &camera->orthographic_size);
+    }
+    else
+    {
+        ImGui::SliderAngle("FOV (deg.)", &camera->fov, 5.f, 89.f);
+    }
+    ImGui::Separator();
+    ImGui::InputFloat("Near Plane", &camera->near_plane);
+    ImGui::InputFloat("Far Plane", &camera->far_plane);
+    ImGui::Separator();
+    ImGui::ColorEdit4("Background Color", glm::value_ptr(camera->background_color));
+}
+
 void RCubeViewer::drawGUI()
 {
+    ///////////////////////////////////////////////////////////////////////////
+    // Default camera
+    ImGui::Begin("Camera");
+    auto pos = camera_.get<Transform>()->position();
+    static float xyz[3];
+    if (ImGui::InputFloat3("Position", xyz, 2))
+    {
+        camera_.get<Transform>()->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
+        xyz[0] = pos[0];
+        xyz[1] = pos[1];
+        xyz[2] = pos[2];
+    }
+
+    drawGUIForCameraComponent(camera_);
+
+    ImGui::End();
+    ///////////////////////////////////////////////////////////////////////////
+
+    ImGui::Begin("Objects");
+    auto it = world_.entities();
+
+    std::vector<const char *> entity_names;
+    entity_names.reserve(world_.numEntities());
+    entity_names.push_back("(None)");
+    while (it.hasNext())
+    {
+        EntityHandle ent = it.next();
+        if (ent.entity == ground_.entity || ent.entity == camera_.entity)
+        {
+            continue;
+        }
+        entity_names.push_back(ent.get<Name>()->name.c_str());
+    }
+
+    static const char *current_item = entity_names[0];
+    if (ImGui::BeginCombo("", current_item))
+    {
+        for (int i = 0; i < entity_names.size(); ++i)
+        {
+            bool is_selected = (current_item == entity_names[i]);
+            if (ImGui::Selectable(entity_names[i], is_selected))
+            {
+                current_item = entity_names[i];
+            }
+            if (is_selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (current_item != "(None)")
+    {
+        EntityHandle ent = getEntity(std::string(current_item));
+        if (ImGui::BeginTabBar("Components"))
+        {
+            Drawable *dr = nullptr;
+            Transform *tr = nullptr;
+            Camera *cam = nullptr;
+
+            try
+            {
+                dr = ent.get<Drawable>();
+            }
+            catch (const std::exception &)
+            {
+            }
+            try
+            {
+                tr = ent.get<Transform>();
+            }
+            catch (const std::exception &)
+            {
+            }
+            try
+            {
+                cam = ent.get<Camera>();
+            }
+            catch (const std::exception &)
+            {
+            }
+
+            if (dr != nullptr)
+            {
+                if (ImGui::BeginTabItem("Drawable"))
+                {
+                    drawGUIForDrawableComponent(ent);
+                    ImGui::EndTabItem();
+                }
+            }
+            if (tr != nullptr)
+            {
+                if (ImGui::BeginTabItem("Transform"))
+                {
+                    drawGUIForTransformComponent(ent);
+                    ImGui::EndTabItem();
+                }
+            }
+            if (cam != nullptr)
+            {
+                if (ImGui::BeginTabItem("Camera"))
+                {
+                    drawGUIForCameraComponent(ent);
+                    ImGui::EndTabItem();
+                }
+            }
+            ImGui::EndTabBar();
+        }
+    }
 }
 
 void RCubeViewer::onResize(int w, int h)

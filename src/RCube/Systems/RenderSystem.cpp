@@ -57,7 +57,7 @@ void RenderSystem::cleanup()
     for (const auto &e : renderable_entities)
     {
         Drawable *dr = world_->getComponent<Drawable>(e);
-        //dr->material->shader()->release();
+        // dr->material->shader()->release();
         dr->material->release();
     }
     const auto &camera_entities = registered_entities_[filters_[1]];
@@ -117,6 +117,10 @@ void RenderSystem::update(bool /* force */)
         for (const auto &render_entity : renderable_entities)
         {
             Drawable *dr = world_->getComponent<Drawable>(render_entity);
+            if (!dr->visible)
+            {
+                continue;
+            }
             assert(dr->material != nullptr && dr->mesh != nullptr);
             Transform *tr = world_->getComponent<Transform>(render_entity);
             if (dr->material->renderPriority() == RenderPriority::Opaque)

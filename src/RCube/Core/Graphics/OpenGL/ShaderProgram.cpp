@@ -43,6 +43,13 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     }
 
     // Get all uniforms
+    prog->available_uniforms_.reserve(vertex_shader.uniforms.size() +
+                                      fragment_shader.uniforms.size());
+    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
+                                     vertex_shader.uniforms.begin(), vertex_shader.uniforms.end());
+    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
+                                     fragment_shader.uniforms.begin(),
+                                     fragment_shader.uniforms.end());
     for (const ShaderUniformDesc &uniform : vertex_shader.uniforms)
     {
         GLint id = prog->uniformLocation(uniform.name);
@@ -59,14 +66,21 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     {
         if (texture.dim == 2)
         {
-            prog->textures_[texture.name] = nullptr;
+            glGetUniformiv(prog->location_,
+                           glGetUniformLocation(prog->location_, texture.name.c_str()),
+                           &(prog->textures_[texture.name].unit));
+            prog->textures_[texture.name].texture = nullptr;
+            std::cout << texture.name << " : " << prog->textures_[texture.name].unit << std::endl;
         }
     }
 
     // Get all cubemaps
     for (const ShaderCubemapDesc &cubemap : fragment_shader.cubemaps)
     {
-        prog->cubemaps_[cubemap.name] = nullptr;
+        glGetUniformiv(prog->location_, glGetUniformLocation(prog->location_, cubemap.name.c_str()),
+                       &(prog->cubemaps_[cubemap.name].unit));
+        prog->cubemaps_[cubemap.name].cubemap = nullptr;
+        std::cout << cubemap.name << " : " << prog->textures_[cubemap.name].unit << std::endl;
     }
 
     return prog;
@@ -94,6 +108,17 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     }
 
     // Get all uniforms
+    prog->available_uniforms_.reserve(vertex_shader.uniforms.size() +
+                                      geometry_shader.uniforms.size() +
+                                      fragment_shader.uniforms.size());
+    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
+                                     vertex_shader.uniforms.begin(), vertex_shader.uniforms.end());
+    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
+                                     geometry_shader.uniforms.begin(),
+                                     geometry_shader.uniforms.end());
+    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
+                                     fragment_shader.uniforms.begin(),
+                                     fragment_shader.uniforms.end());
     for (const ShaderUniformDesc &uniform_desc : vertex_shader.uniforms)
     {
         GLint id = prog->uniformLocation(uniform_desc.name);
@@ -118,12 +143,19 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     {
         if (texture.dim == 2)
         {
-            prog->textures_[texture.name] = nullptr;
+            glGetUniformiv(prog->location_,
+                           glGetUniformLocation(prog->location_, texture.name.c_str()),
+                           &(prog->textures_[texture.name].unit));
+            prog->textures_[texture.name].texture = nullptr;
+            std::cout << texture.name << " : " << prog->textures_[texture.name].unit << std::endl;
         }
     }
     for (const ShaderCubemapDesc &cubemap : fragment_shader.cubemaps)
     {
-        prog->cubemaps_[cubemap.name] = nullptr;
+        glGetUniformiv(prog->location_, glGetUniformLocation(prog->location_, cubemap.name.c_str()),
+                       &(prog->cubemaps_[cubemap.name].unit));
+        prog->cubemaps_[cubemap.name].cubemap = nullptr;
+        std::cout << cubemap.name << " : " << prog->textures_[cubemap.name].unit << std::endl;
     }
 
     return prog;
@@ -193,19 +225,21 @@ bool ShaderProgram::link(bool debug)
 void ShaderProgram::use() const
 {
     glUseProgram(location_);
-    size_t texture_unit = 0;
-    for (const auto &keyval : textures_)
+    for (auto &keyval : textures_)
     {
-        if (keyval.second != nullptr)
+        if (keyval.second.texture != nullptr)
         {
-            keyval.second->use(texture_unit++);
+            keyval.second.texture->use(keyval.second.unit);
+            // glUniform1i(keyval.second.sampler, texture_unit);
         }
     }
-    for (const auto &keyval : cubemaps_)
+    for (auto &keyval : cubemaps_)
     {
-        if (keyval.second != nullptr)
+        if (keyval.second.cubemap != nullptr)
         {
-            keyval.second->use(texture_unit++);
+            volatile GLint unittest = keyval.second.unit;
+            keyval.second.cubemap->use(keyval.second.unit);
+            // glUniform1i(keyval.second.sampler, texture_unit);
         }
     }
 }
@@ -258,6 +292,11 @@ void ShaderProgram::setUniform(const std::string &name, const glm::vec2 &vec)
 void ShaderProgram::showWarnings(bool flag)
 {
     warn_ = flag;
+}
+
+const std::vector<ShaderUniformDesc> &ShaderProgram::availableUniforms() const
+{
+    return available_uniforms_;
 }
 
 RenderSettings &ShaderProgram::renderState()
@@ -476,19 +515,19 @@ Uniform &ShaderProgram::uniform(std::string name)
 }
 const std::shared_ptr<Texture2D> &ShaderProgram::texture(std::string name) const
 {
-    return textures_.at(name);
+    return textures_.at(name).texture;
 }
 std::shared_ptr<Texture2D> &ShaderProgram::texture(std::string name)
 {
-    return textures_.at(name);
+    return textures_.at(name).texture;
 }
 const std::shared_ptr<TextureCubemap> &ShaderProgram::cubemap(std::string name) const
 {
-    return cubemaps_.at(name);
+    return cubemaps_.at(name).cubemap;
 }
 std::shared_ptr<TextureCubemap> &ShaderProgram::cubemap(std::string name)
 {
-    return cubemaps_.at(name);
+    return cubemaps_.at(name).cubemap;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -584,6 +623,36 @@ void Uniform::get(float &val)
     GLfloat ret;
     glGetUniformfv(program_id_, location_, &ret);
     val = static_cast<float>(ret);
+}
+
+void Uniform::get(glm::vec2 &val)
+{
+    glGetUniformfv(program_id_, location_, glm::value_ptr(val));
+}
+
+void Uniform::get(glm::ivec2 &val)
+{
+    glGetUniformiv(program_id_, location_, glm::value_ptr(val));
+}
+
+void Uniform::get(glm::vec3 &val)
+{
+    glGetUniformfv(program_id_, location_, glm::value_ptr(val));
+}
+
+void Uniform::get(glm::ivec3 &val)
+{
+    glGetUniformiv(program_id_, location_, glm::value_ptr(val));
+}
+
+void Uniform::get(glm::vec4 &val)
+{
+    glGetUniformfv(program_id_, location_, glm::value_ptr(val));
+}
+
+void Uniform::get(glm::ivec4 &val)
+{
+    glGetUniformiv(program_id_, location_, glm::value_ptr(val));
 }
 
 } // namespace rcube

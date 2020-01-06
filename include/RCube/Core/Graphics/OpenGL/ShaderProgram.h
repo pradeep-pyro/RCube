@@ -43,8 +43,8 @@ struct ShaderAttributeDesc
 
 struct ShaderUniformDesc
 {
-    const std::string name;
-    const GLDataType type;
+    /*const*/ std::string name;
+    /*const*/ GLDataType type;
 };
 
 struct ShaderTextureDesc
@@ -101,11 +101,9 @@ struct FragmentShader
     {
     }
     FragmentShader(const std::vector<ShaderUniformDesc> uniforms,
-                   const std::vector<ShaderTextureDesc> textures,
-                   std::string output_name,
+                   const std::vector<ShaderTextureDesc> textures, std::string output_name,
                    std::string source)
-        : uniforms(uniforms), textures(textures), output_name(output_name),
-          source(source)
+        : uniforms(uniforms), textures(textures), output_name(output_name), source(source)
     {
     }
     FragmentShader(const std::vector<ShaderUniformDesc> uniforms,
@@ -148,6 +146,12 @@ class Uniform
     void get(bool &val);
     void get(int &val);
     void get(float &val);
+    void get(glm::vec2 &val);
+    void get(glm::vec3 &val);
+    void get(glm::vec4 &val);
+    void get(glm::ivec2 &val);
+    void get(glm::ivec3 &val);
+    void get(glm::ivec4 &val);
     void set(bool val);
     void set(int val);
     void set(float val);
@@ -223,9 +227,20 @@ class ShaderProgram
     std::vector<GLint> shaders_;
     bool warn_ = true;
     std::vector<ShaderAttributeDesc> attributes_;
+    std::vector<ShaderUniformDesc> available_uniforms_;
     std::unordered_map<std::string, Uniform> uniforms_;
-    std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures_;
-    std::unordered_map<std::string, std::shared_ptr<TextureCubemap>> cubemaps_;
+    struct TextureSampler
+    {
+        GLint unit;
+        std::shared_ptr<Texture2D> texture;
+    };
+    struct CubemapSampler
+    {
+        GLint unit;
+        std::shared_ptr<TextureCubemap> cubemap;
+    };
+    std::unordered_map<std::string, TextureSampler> textures_;
+    std::unordered_map<std::string, CubemapSampler> cubemaps_;
     RenderSettings render_state_;
     RenderPriority render_priority_ = RenderPriority::Opaque;
 
@@ -268,6 +283,7 @@ class ShaderProgram
     void setUniform(const std::string &name, const glm::mat3 &mat);
     void setUniform(const std::string &name, const glm::mat4 &mat);
     void showWarnings(bool flag);
+    const std::vector<ShaderUniformDesc> &availableUniforms() const;
     RenderSettings &renderState();
     RenderPriority &renderPriority();
 

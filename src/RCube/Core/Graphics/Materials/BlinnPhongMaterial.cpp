@@ -172,10 +172,10 @@ struct Material {
 };
 uniform Material material;
 
-uniform sampler2D diffuse_tex;
-uniform sampler2D specular_tex;
-uniform sampler2D normal_tex;
-uniform samplerCube env_map;
+layout(binding=0) uniform sampler2D diffuse_tex;
+layout(binding=1) uniform sampler2D specular_tex;
+layout(binding=2) uniform sampler2D normal_tex;
+layout(binding=3) uniform samplerCube env_map;
 
 uniform bool show_wireframe;
 uniform bool show_backface;

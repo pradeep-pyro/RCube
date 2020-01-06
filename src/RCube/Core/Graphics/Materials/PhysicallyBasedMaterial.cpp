@@ -179,17 +179,18 @@ struct Material {
 };
 uniform Material material;
 
-uniform sampler2D albedo_tex;
-uniform sampler2D roughness_tex;
-uniform sampler2D metalness_tex;
-uniform sampler2D normal_tex;
+layout(binding=0) uniform sampler2D albedo_tex;
+layout(binding=1) uniform sampler2D roughness_tex;
+layout(binding=2) uniform sampler2D metalness_tex;
+layout(binding=3) uniform sampler2D normal_tex;
 
-uniform sampler2D brdf_lut;
-uniform samplerCube irradiance_map;
-uniform samplerCube prefilter_map;
+layout(binding=4) uniform sampler2D brdf_lut;
+layout(binding=5) uniform samplerCube prefilter_map;
+layout(binding=6) uniform samplerCube irradiance_map;
 
 uniform bool show_wireframe;
-uniform bool use_albedo_texture, use_roughness_texture, use_metalness_texture, use_normal_texture, use_irradiance_map;
+uniform bool use_albedo_texture, use_roughness_texture, use_metalness_texture, use_normal_texture;
+uniform bool use_image_based_lighting;
 
 struct Line {
     vec3 color;
@@ -260,8 +261,6 @@ vec3 diffuseLambertian(vec3 albedo) {
 }
 
 void main() {
-    vec3 result = vec3(0.0);
-
     // Albedo: convert sRGB albedo texture to linear by pow(x, 2.2)
     vec3 albedo = use_albedo_texture ? pow(texture(albedo_tex, g_texture).rgb, vec3(2.2)) * g_color : material.albedo * g_color;
     // Roughness
@@ -318,7 +317,8 @@ void main() {
     }
 
     // Indirect image-based lighting for ambient term
-    if (use_irradiance_map) {
+    vec3 ambient = vec3(0.03) * albedo; // default ambient color for non-IBL setting
+    if (use_image_based_lighting) {
         vec3 F = FSchlickRoughness(max(dot(N, V), 0.0), specular_color, roughness);
         vec3 kS = F;
         vec3 kD = 1.0 - kS;
@@ -333,14 +333,9 @@ void main() {
         vec2 brdf  = texture(brdf_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
         vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
 
-        vec3 ambient = (kD * diffuse + specular) * 1.0;
-        result = direct_result + ambient;
+        ambient = (kD * diffuse + specular) * 1.0;
     }
-    else
-    {
-        vec3 ambient = vec3(0.03) * albedo;
-        result = direct_result + ambient;
-    }
+    vec3 result = direct_result + ambient;
 
     // Wireframe
     if (show_wireframe) {
@@ -356,6 +351,7 @@ void main() {
 
     // Output
     out_color = vec4(result, 1.0);
+    
 }
 )";
 
@@ -368,7 +364,7 @@ const static FragmentShader PBRFragmentShader = {
      ShaderUniformDesc{"use_roughness_texture", GLDataType::Bool},
      ShaderUniformDesc{"use_metalness_texture", GLDataType::Bool},
      ShaderUniformDesc{"use_normal_texture", GLDataType::Bool},
-     ShaderUniformDesc{"use_irradiance_map", GLDataType::Bool},
+     ShaderUniformDesc{"use_image_based_lighting", GLDataType::Bool},
      ShaderUniformDesc{"line_props.color", GLDataType::Vec3f},
      ShaderUniformDesc{"line_props.thickness", GLDataType::Float}},
     {ShaderTextureDesc{"albedo_tex", 2}, ShaderTextureDesc{"roughness_tex", 2},

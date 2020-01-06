@@ -8,7 +8,7 @@
 namespace rcube
 {
 
-class IBLSpecularPrefilter
+class IBLSpecularSplitSum
 {
     int num_samples_ = 512;
     unsigned int resolution_;
@@ -21,8 +21,8 @@ class IBLSpecularPrefilter
     std::vector<glm::mat4> views_;
 
   public:
-    IBLSpecularPrefilter(unsigned int resolution = 128, int num_samples = 512);
-    ~IBLSpecularPrefilter();
+    IBLSpecularSplitSum(unsigned int resolution = 128, int num_samples = 512);
+    ~IBLSpecularSplitSum();
     int numSamples() const;
     void setNumSamples(int num_samples);
     std::shared_ptr<TextureCubemap> prefilter(std::shared_ptr<TextureCubemap> env_map);

@@ -1,5 +1,4 @@
-#ifndef DIFFUSE_H
-#define DIFFUSE_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCube/Core/Graphics/OpenGL/Renderer.h"
@@ -9,7 +8,7 @@
 namespace rcube
 {
 
-class DiffusePrefilter
+class IBLDiffuse
 {
     int num_samples_ = 512;
     unsigned int resolution_ = 32;
@@ -21,13 +20,11 @@ class DiffusePrefilter
     std::vector<glm::mat4> views_;
 
   public:
-    DiffusePrefilter(unsigned int resolution = 32, int num_samples = 512);
-    ~DiffusePrefilter();
+    IBLDiffuse(unsigned int resolution = 32, int num_samples = 512);
+    ~IBLDiffuse();
     int numSamples() const;
     void setNumSamples(int num_samples);
-    std::shared_ptr<TextureCubemap> prefilter(std::shared_ptr<TextureCubemap> env_map);
+    std::shared_ptr<TextureCubemap> irradiance(std::shared_ptr<TextureCubemap> env_map);
 };
 
 } // namespace rcube
-
-#endif // DIFFUSE_IRRADIANCE_H

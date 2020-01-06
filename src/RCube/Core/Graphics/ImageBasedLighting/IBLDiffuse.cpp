@@ -1,4 +1,4 @@
-#include "RCube/Core/Graphics/Prefilter/DiffusePrefilter.h"
+#include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 
@@ -100,7 +100,7 @@ void main() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-DiffusePrefilter::DiffusePrefilter(unsigned int resolution, int num_samples)
+IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
     : resolution_(resolution), num_samples_(num_samples)
 {
     // Create a unit cube in clip space
@@ -131,24 +131,25 @@ DiffusePrefilter::DiffusePrefilter(unsigned int resolution, int num_samples)
     rdr_.initialize();
 }
 
-DiffusePrefilter::~DiffusePrefilter()
+IBLDiffuse::~IBLDiffuse()
 {
     cube_->release();
     rdr_.cleanup();
     fbo_->release();
+    shader_->release();
 }
 
-int DiffusePrefilter::numSamples() const
+int IBLDiffuse::numSamples() const
 {
     return num_samples_;
 }
 
-void DiffusePrefilter::setNumSamples(int num_samples)
+void IBLDiffuse::setNumSamples(int num_samples)
 {
     num_samples_ = num_samples;
 }
 
-std::shared_ptr<TextureCubemap> DiffusePrefilter::prefilter(std::shared_ptr<TextureCubemap> env_map)
+std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCubemap> env_map)
 {
     auto irradiance_map =
         TextureCubemap::create(resolution_, resolution_, 1, true, TextureInternalFormat::RGB16F);

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "RCube/Core/Graphics/Prefilter/SpecularPrefilter.h"
+#include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 
@@ -243,7 +243,7 @@ const static FragmentShader SPECULAR_BRDF_FRAGMENT_SHADER({}, {}, {}, "out_color
 
 ///////////////////////////////////////////////////////////////////////////////
 
-IBLSpecularPrefilter::IBLSpecularPrefilter(unsigned int resolution, int num_samples)
+IBLSpecularSplitSum::IBLSpecularSplitSum(unsigned int resolution, int num_samples)
     : resolution_(resolution), num_samples_(num_samples)
 {
     // Create a unit cube in clip space
@@ -278,25 +278,27 @@ IBLSpecularPrefilter::IBLSpecularPrefilter(unsigned int resolution, int num_samp
     rdr_.initialize();
 }
 
-IBLSpecularPrefilter::~IBLSpecularPrefilter()
+IBLSpecularSplitSum::~IBLSpecularSplitSum()
 {
     cube_->release();
     rdr_.cleanup();
     fbo_->release();
+    shader_->release();
+    shader_brdf_->release();
 }
 
-int IBLSpecularPrefilter::numSamples() const
+int IBLSpecularSplitSum::numSamples() const
 {
     return num_samples_;
 }
 
-void IBLSpecularPrefilter::setNumSamples(int num_samples)
+void IBLSpecularSplitSum::setNumSamples(int num_samples)
 {
     num_samples_ = num_samples;
 }
 
 std::shared_ptr<TextureCubemap>
-IBLSpecularPrefilter::prefilter(std::shared_ptr<TextureCubemap> env_map)
+IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
 {
     const int num_mipmaps = 5;
     auto prefiltered_map = TextureCubemap::create(resolution_, resolution_, num_mipmaps, true,
@@ -335,7 +337,7 @@ IBLSpecularPrefilter::prefilter(std::shared_ptr<TextureCubemap> env_map)
     return prefiltered_map;
 }
 
-std::shared_ptr<Texture2D> IBLSpecularPrefilter::integrateBRDF(unsigned int resolution)
+std::shared_ptr<Texture2D> IBLSpecularSplitSum::integrateBRDF(unsigned int resolution)
 {
     auto brdf_lut = Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RG16F);
     brdf_lut->setWrapMode(TextureWrapMode::ClampToEdge);

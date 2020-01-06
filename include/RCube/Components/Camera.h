@@ -34,8 +34,8 @@ class Camera : public Component<Camera>
     }
     bool orthographic = false;      /// Whether the camera uses orthographic projection
     float fov = glm::radians(60.f); /// Field of view when using perspective projection
-    float near_plane = 0.1f; /// The closest point relative to the camera which will be be drawn
-    float far_plane = 300.f; /// The farthest point relative to the camera which will be be drawn
+    float near_plane = 0.01f; /// The closest point relative to the camera which will be be drawn
+    float far_plane = 1000.f; /// The farthest point relative to the camera which will be be drawn
     float orthographic_size =
         2; /// Used to control field of view indirectly when using orthographic projection
     glm::vec3 target = glm::vec3(0);            /// Target where the camera points to

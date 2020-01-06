@@ -23,39 +23,37 @@ int main()
     viewer::RCubeViewer viewer(props);
 
     // Load environment cubemap and set as skybox
-    std::shared_ptr<TextureCubemap> env_map = TextureCubemap::create(2000, 2000); //, 1, true, TextureInternalFormat::sRGBA8);
+    std::shared_ptr<TextureCubemap> env_map =
+        TextureCubemap::create(2000, 2000); //, 1, true, TextureInternalFormat::sRGBA8);
     env_map->setData(0, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "px.jpg", 3));
     env_map->setData(1, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "nx.jpg", 3));
     env_map->setData(2, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "py.jpg", 3));
     env_map->setData(3, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "ny.jpg", 3));
     env_map->setData(4, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "pz.jpg", 3));
     env_map->setData(5, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "nz.jpg", 3));
-    
+    viewer.camera().get<Camera>()->skybox = env_map;
+    viewer.camera().get<Camera>()->use_skybox = true;
+
     // Precompute image-based lighting cubemaps for indirect lighting in PBR shader
     // Compute the diffuse irradiance cubemap by importance sampling
     std::shared_ptr<TextureCubemap> irradiance_map;
     std::shared_ptr<TextureCubemap> prefilter_map;
     std::shared_ptr<Texture2D> brdf_lut;
-    
-        IBLDiffuse ibl_diffuse;
-        irradiance_map = ibl_diffuse.irradiance(env_map);
-        // Compute the specular prefilter and integrated BRDF using Epic Games split-sum
-        // approximation
-        IBLSpecularSplitSum ibl_specular;
-        prefilter_map = ibl_specular.prefilter(env_map);
-        brdf_lut = ibl_specular.integrateBRDF();
-    
-        viewer.camera().get<Camera>()->skybox = prefilter_map;
-        viewer.camera().get<Camera>()->use_skybox = true;
 
+    IBLDiffuse ibl_diffuse;
+    irradiance_map = ibl_diffuse.irradiance(env_map);
+    // Compute the specular prefilter and integrated BRDF using Epic Games split-sum
+    // approximation
+    IBLSpecularSplitSum ibl_specular;
+    prefilter_map = ibl_specular.prefilter(env_map);
+    brdf_lut = ibl_specular.integrateBRDF();
 
     // Add a fancy supershape
     // The returned entity has 2 components in it: (1) a Drawable component holding the mesh and
     // material (a Blinn-Phong material is used by default), (2) a Transform component holding the
     // local position, and local orientation with respect to a parent transform
-    /*EntityHandle s = viewer.addSurface(
-        "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 7.f, 7.f, 0.2f, 1.7f, 1.7f));*/
-    EntityHandle s = viewer.addIcoSphereSurface("sphere", 1.0, 4);
+    EntityHandle s = viewer.addSurface(
+        "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 3.f, 6.f, 1.f, 1.f, 1.f));
     s.get<Drawable>()->material = makePhysicallyBasedMaterial(glm::vec3(1.f));
 
     // Assign image based lighting textures to supershape's material

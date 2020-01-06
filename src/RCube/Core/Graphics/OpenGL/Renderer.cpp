@@ -53,7 +53,7 @@ const static FragmentShader skybox_frag({}, {}, {ShaderCubemapDesc{"skybox"}}, "
 out vec4 out_color;
 in vec3 texcoords;
 
-uniform samplerCube skybox;
+layout (binding = 2) uniform samplerCube skybox;
 
 void main() {
     out_color = texture(skybox, texcoords);

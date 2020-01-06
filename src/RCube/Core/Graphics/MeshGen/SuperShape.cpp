@@ -38,12 +38,12 @@ MeshData superShape(float radius, unsigned int rows, unsigned int cols, float a,
     data.indexed = true;
     data.primitive = MeshPrimitive::Triangles;
     float lat_inc = glm::pi<float>() / (rows - 1);
-    float lon_inc = glm::two_pi<float>() / cols;
+    float lon_inc = glm::two_pi<float>() / (cols - 1);
     data.vertices.reserve(rows * cols + 2);
     float max_dist = -100.f;
 
-    const float pi = glm::pi<float>();
-    const float half_pi = glm::half_pi<float>();
+    constexpr float pi = glm::pi<float>();
+    constexpr float half_pi = glm::half_pi<float>();
     for (unsigned int i = 0; i < rows - 2; ++i)
     {
         float lat = -half_pi + (i + 1) * lat_inc;
@@ -60,8 +60,12 @@ MeshData superShape(float radius, unsigned int rows, unsigned int cols, float a,
             data.vertices.push_back(pt);
         }
     }
-    data.vertices.push_back(glm::vec3(0, 1, 0));
-    data.vertices.push_back(glm::vec3(0, -1, 0));
+    // North pole
+    data.vertices.push_back(
+        superSphericalCoordinates(-half_pi, -pi, a, b, m1, n1, n2, n3, a, b, m2, n1, n2, n3));
+    // South pole
+    data.vertices.push_back(
+        superSphericalCoordinates(half_pi, -pi, a, b, m1, n1, n2, n3, a, b, m2, n1, n2, n3));
 
     for (auto &v : data.vertices)
     {

@@ -1,6 +1,4 @@
 #include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
-#include "RCube/Core/Graphics/Effects/GrayscaleEffect.h"
-#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCubeViewer/RCubeViewer.h"
 
 int main()

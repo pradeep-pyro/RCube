@@ -39,11 +39,13 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Transform>()->setPosition(props.camera_position);
     camera_.get<Camera>()->fov = props.camera_fov;
     camera_.get<Camera>()->background_color = props.background_color;
+    camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Put a directional light on the camera
     camera_.add<DirectionalLight>();
 
     // Create a ground plane
     ground_ = createGroundPlane();
+    ground_.get<Drawable>()->visible = props.ground_plane;
 
     ctrl_.resize(props.resolution.x, props.resolution.y);
     ctrl_.setEntity(camera_);
@@ -176,6 +178,9 @@ void drawGUIForTransformComponent(EntityHandle ent)
     Transform *tr = ent.get<Transform>();
     auto pos = tr->position();
     static float xyz[3];
+    xyz[0] = pos[0];
+    xyz[1] = pos[1];
+    xyz[2] = pos[2];
     if (ImGui::InputFloat3("Position", xyz, 2))
     {
         tr->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
@@ -192,21 +197,75 @@ void drawGUIForTransformComponent(EntityHandle ent)
     {
         tr->setScale(scale);
     }
-}
+} // namespace viewer
 
 void drawGUIForDrawableComponent(EntityHandle ent)
 {
     Drawable *dr = ent.get<Drawable>();
 
+    // Visibility
     ImGui::Checkbox("Visible", &(dr->visible));
     ImGui::Separator();
 
+    // Mesh
     ImGui::LabelText("#vertices", std::to_string(dr->mesh->data.vertices.size()).c_str());
     ImGui::LabelText("#faces", std::to_string(dr->mesh->data.indices.size()).c_str());
-    ImGui::LabelText(
-        "Has texcoords",
-        (dr->mesh->data.vertices.size() == dr->mesh->data.texcoords.size()) ? "True" : "False");
+    ImGui::LabelText("Has texcoords",
+                     (dr->mesh->data.vertices.size() == dr->mesh->data.texcoords.size()) ? "True"
+                                                                                         : "False");
+    const bool has_colors = dr->mesh->data.vertices.size() == dr->mesh->data.colors.size();
+    ImGui::LabelText("Has colors", has_colors ? "True" : "False");
+    ImGui::LabelText("Indexed", dr->mesh->data.indexed ? "True" : "False");
     ImGui::Separator();
+
+    // Material
+    const auto &uniforms = dr->material->availableUniforms();
+    for (const ShaderUniformDesc &uni : uniforms)
+    {
+        switch (uni.type)
+        {
+        case GLDataType::Bool:
+            bool uni_bool;
+            dr->material->uniform(uni.name).get(uni_bool);
+            if (ImGui::Checkbox(uni.name.c_str(), &uni_bool))
+            {
+                dr->material->uniform(uni.name).set(uni_bool);
+            }
+            break;
+        case GLDataType::Int:
+            int uni_int;
+            dr->material->uniform(uni.name).get(uni_int);
+            if (ImGui::InputInt(uni.name.c_str(), &uni_int))
+            {
+                dr->material->uniform(uni.name).set(uni_int);
+            }
+            break;
+        case GLDataType::Float:
+            float uni_float;
+            dr->material->uniform(uni.name).get(uni_float);
+            if (ImGui::InputFloat(uni.name.c_str(), &uni_float))
+            {
+                dr->material->uniform(uni.name).set(uni_float);
+            }
+            break;
+        case GLDataType::Vec2f:
+            glm::vec2 uni_vec2f;
+            dr->material->uniform(uni.name).get(uni_vec2f);
+            if (ImGui::InputFloat2(uni.name.c_str(), glm::value_ptr(uni_vec2f)))
+            {
+                dr->material->uniform(uni.name).set(uni_vec2f);
+            }
+            break;
+        case GLDataType::Vec3f:
+            glm::vec3 uni_vec3f;
+            dr->material->uniform(uni.name).get(uni_vec3f);
+            if (ImGui::InputFloat3(uni.name.c_str(), glm::value_ptr(uni_vec3f)))
+            {
+                dr->material->uniform(uni.name).set(uni_vec3f);
+            }
+            break;
+        }
+    }
 }
 
 void drawGUIForCameraComponent(EntityHandle ent)
@@ -231,115 +290,123 @@ void drawGUIForCameraComponent(EntityHandle ent)
 
 void RCubeViewer::drawGUI()
 {
+    ImGui::Begin("RCubeViewer");
     ///////////////////////////////////////////////////////////////////////////
     // Default camera
-    ImGui::Begin("Camera");
-    auto pos = camera_.get<Transform>()->position();
-    static float xyz[3];
-    if (ImGui::InputFloat3("Position", xyz, 2))
+    if (ImGui::CollapsingHeader("Camera"))
     {
-        camera_.get<Transform>()->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
+        auto pos = camera_.get<Transform>()->position();
+        static float xyz[3];
         xyz[0] = pos[0];
         xyz[1] = pos[1];
         xyz[2] = pos[2];
+        if (ImGui::InputFloat3("Position", xyz, 2))
+        {
+            camera_.get<Transform>()->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
+            xyz[0] = pos[0];
+            xyz[1] = pos[1];
+            xyz[2] = pos[2];
+        }
+
+        drawGUIForCameraComponent(camera_);
     }
 
-    drawGUIForCameraComponent(camera_);
-
-    ImGui::End();
     ///////////////////////////////////////////////////////////////////////////
 
-    ImGui::Begin("Objects");
-    auto it = world_.entities();
-
-    std::vector<const char *> entity_names;
-    entity_names.reserve(world_.numEntities());
-    entity_names.push_back("(None)");
-    while (it.hasNext())
+    if (ImGui::CollapsingHeader("Objects"))
     {
-        EntityHandle ent = it.next();
-        if (ent.entity == ground_.entity || ent.entity == camera_.entity)
+        auto it = world_.entities();
+
+        std::vector<const char *> entity_names;
+        entity_names.reserve(world_.numEntities());
+        entity_names.push_back("(None)");
+        while (it.hasNext())
         {
-            continue;
+            EntityHandle ent = it.next();
+            if (ent.entity == ground_.entity || ent.entity == camera_.entity)
+            {
+                continue;
+            }
+            entity_names.push_back(ent.get<Name>()->name.c_str());
         }
-        entity_names.push_back(ent.get<Name>()->name.c_str());
-    }
 
-    static const char *current_item = entity_names[0];
-    if (ImGui::BeginCombo("", current_item))
-    {
-        for (int i = 0; i < entity_names.size(); ++i)
+        static const char *current_item = entity_names[0];
+        if (ImGui::BeginCombo("", current_item))
         {
-            bool is_selected = (current_item == entity_names[i]);
-            if (ImGui::Selectable(entity_names[i], is_selected))
+            for (int i = 0; i < entity_names.size(); ++i)
             {
-                current_item = entity_names[i];
-            }
-            if (is_selected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-    if (current_item != "(None)")
-    {
-        EntityHandle ent = getEntity(std::string(current_item));
-        if (ImGui::BeginTabBar("Components"))
-        {
-            Drawable *dr = nullptr;
-            Transform *tr = nullptr;
-            Camera *cam = nullptr;
-
-            try
-            {
-                dr = ent.get<Drawable>();
-            }
-            catch (const std::exception &)
-            {
-            }
-            try
-            {
-                tr = ent.get<Transform>();
-            }
-            catch (const std::exception &)
-            {
-            }
-            try
-            {
-                cam = ent.get<Camera>();
-            }
-            catch (const std::exception &)
-            {
-            }
-
-            if (dr != nullptr)
-            {
-                if (ImGui::BeginTabItem("Drawable"))
+                bool is_selected = (current_item == entity_names[i]);
+                if (ImGui::Selectable(entity_names[i], is_selected))
                 {
-                    drawGUIForDrawableComponent(ent);
-                    ImGui::EndTabItem();
+                    current_item = entity_names[i];
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
                 }
             }
-            if (tr != nullptr)
+            ImGui::EndCombo();
+        }
+        if (current_item != "(None)")
+        {
+            EntityHandle ent = getEntity(std::string(current_item));
+            if (ImGui::BeginTabBar("Components"))
             {
-                if (ImGui::BeginTabItem("Transform"))
+                Drawable *dr = nullptr;
+                Transform *tr = nullptr;
+                Camera *cam = nullptr;
+
+                try
                 {
-                    drawGUIForTransformComponent(ent);
-                    ImGui::EndTabItem();
+                    dr = ent.get<Drawable>();
                 }
-            }
-            if (cam != nullptr)
-            {
-                if (ImGui::BeginTabItem("Camera"))
+                catch (const std::exception &)
                 {
-                    drawGUIForCameraComponent(ent);
-                    ImGui::EndTabItem();
                 }
+                try
+                {
+                    tr = ent.get<Transform>();
+                }
+                catch (const std::exception &)
+                {
+                }
+                try
+                {
+                    cam = ent.get<Camera>();
+                }
+                catch (const std::exception &)
+                {
+                }
+
+                if (dr != nullptr)
+                {
+                    if (ImGui::BeginTabItem("Drawable"))
+                    {
+                        drawGUIForDrawableComponent(ent);
+                        ImGui::EndTabItem();
+                    }
+                }
+                if (tr != nullptr)
+                {
+                    if (ImGui::BeginTabItem("Transform"))
+                    {
+                        drawGUIForTransformComponent(ent);
+                        ImGui::EndTabItem();
+                    }
+                }
+                if (cam != nullptr)
+                {
+                    if (ImGui::BeginTabItem("Camera"))
+                    {
+                        drawGUIForCameraComponent(ent);
+                        ImGui::EndTabItem();
+                    }
+                }
+                ImGui::EndTabBar();
             }
-            ImGui::EndTabBar();
         }
     }
+    ImGui::End();
 }
 
 void RCubeViewer::onResize(int w, int h)

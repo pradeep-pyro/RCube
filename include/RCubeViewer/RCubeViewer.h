@@ -48,6 +48,8 @@ struct RCubeViewerProps
     glm::vec4 background_color = glm::vec4(0.2f, 0.2f, 0.2f, 1.f); // Background color
     glm::vec3 camera_position = glm::vec3(1.f, 1.f, 1.f);          // Position of the camera
     float camera_fov = glm::radians(45.f); // Vertical FOV of the camera in radians
+    bool camera_orthographic = false;
+    bool ground_plane = true;
 };
 
 class RCubeViewer : public rcube::Window

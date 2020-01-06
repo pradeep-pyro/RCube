@@ -130,7 +130,8 @@ void RenderSystem::update(bool /* force */)
         }
 
         // Draw skybox if in use
-        if (cam->use_skybox)
+        // TODO: find way to display skybox in orthographic projection
+        if (cam->use_skybox && !cam->orthographic)
         {
             renderer.renderSkyBox(cam->skybox);
         }

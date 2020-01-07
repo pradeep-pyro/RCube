@@ -176,8 +176,8 @@ void drawGUIForTransformComponent(EntityHandle ent)
 {
     // TODO: think of a way to handle transform hierarchy
     Transform *tr = ent.get<Transform>();
-    auto pos = tr->position();
     static float xyz[3];
+    const glm::vec3 &pos = tr->position();
     xyz[0] = pos[0];
     xyz[1] = pos[1];
     xyz[2] = pos[2];
@@ -187,7 +187,15 @@ void drawGUIForTransformComponent(EntityHandle ent)
     }
 
     static glm::vec3 euler = glm::eulerAngles(tr->orientation());
-    if (ImGui::InputFloat3("Orientation", glm::value_ptr(euler), 2))
+    if (ImGui::SliderAngle("Orientation X", glm::value_ptr(euler)))
+    {
+        tr->setOrientation(glm::quat(euler));
+    }
+    if (ImGui::SliderAngle("Orientation Y", glm::value_ptr(euler) + 2))
+    {
+        tr->setOrientation(glm::quat(euler));
+    }
+    if (ImGui::SliderAngle("Orientation Z", glm::value_ptr(euler) + 1))
     {
         tr->setOrientation(glm::quat(euler));
     }
@@ -197,7 +205,7 @@ void drawGUIForTransformComponent(EntityHandle ent)
     {
         tr->setScale(scale);
     }
-} // namespace viewer
+}
 
 void drawGUIForDrawableComponent(EntityHandle ent)
 {
@@ -281,11 +289,10 @@ void drawGUIForCameraComponent(EntityHandle ent)
     {
         ImGui::SliderAngle("FOV (deg.)", &camera->fov, 5.f, 89.f);
     }
-    ImGui::Separator();
     ImGui::InputFloat("Near Plane", &camera->near_plane);
     ImGui::InputFloat("Far Plane", &camera->far_plane);
-    ImGui::Separator();
     ImGui::ColorEdit4("Background Color", glm::value_ptr(camera->background_color));
+    ImGui::Checkbox("Skybox", &camera->use_skybox);
 }
 
 void RCubeViewer::drawGUI()

@@ -24,7 +24,7 @@ void initImGUI(GLFWwindow *window)
     config.OversampleH = 5;
     config.OversampleV = 5;
 
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
 }
 
 RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
@@ -357,59 +357,62 @@ void RCubeViewer::drawGUI()
         if (current_item != "(None)")
         {
             EntityHandle ent = getEntity(std::string(current_item));
-            if (ImGui::BeginTabBar("Components"))
+            if (ent.valid())
             {
-                Drawable *dr = nullptr;
-                Transform *tr = nullptr;
-                Camera *cam = nullptr;
+                if (ImGui::BeginTabBar("Components"))
+                {
+                    Drawable *dr = nullptr;
+                    Transform *tr = nullptr;
+                    Camera *cam = nullptr;
 
-                try
-                {
-                    dr = ent.get<Drawable>();
-                }
-                catch (const std::exception &)
-                {
-                }
-                try
-                {
-                    tr = ent.get<Transform>();
-                }
-                catch (const std::exception &)
-                {
-                }
-                try
-                {
-                    cam = ent.get<Camera>();
-                }
-                catch (const std::exception &)
-                {
-                }
+                    try
+                    {
+                        dr = ent.get<Drawable>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
+                    try
+                    {
+                        tr = ent.get<Transform>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
+                    try
+                    {
+                        cam = ent.get<Camera>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
 
-                if (dr != nullptr)
-                {
-                    if (ImGui::BeginTabItem("Drawable"))
+                    if (dr != nullptr)
                     {
-                        drawGUIForDrawableComponent(ent);
-                        ImGui::EndTabItem();
+                        if (ImGui::BeginTabItem("Drawable"))
+                        {
+                            drawGUIForDrawableComponent(ent);
+                            ImGui::EndTabItem();
+                        }
                     }
-                }
-                if (tr != nullptr)
-                {
-                    if (ImGui::BeginTabItem("Transform"))
+                    if (tr != nullptr)
                     {
-                        drawGUIForTransformComponent(ent);
-                        ImGui::EndTabItem();
+                        if (ImGui::BeginTabItem("Transform"))
+                        {
+                            drawGUIForTransformComponent(ent);
+                            ImGui::EndTabItem();
+                        }
                     }
-                }
-                if (cam != nullptr)
-                {
-                    if (ImGui::BeginTabItem("Camera"))
+                    if (cam != nullptr)
                     {
-                        drawGUIForCameraComponent(ent);
-                        ImGui::EndTabItem();
+                        if (ImGui::BeginTabItem("Camera"))
+                        {
+                            drawGUIForCameraComponent(ent);
+                            ImGui::EndTabItem();
+                        }
                     }
+                    ImGui::EndTabBar();
                 }
-                ImGui::EndTabBar();
             }
         }
     }

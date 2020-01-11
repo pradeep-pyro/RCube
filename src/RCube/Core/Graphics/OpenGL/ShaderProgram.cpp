@@ -50,15 +50,17 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     prog->available_uniforms_.insert(prog->available_uniforms_.end(),
                                      fragment_shader.uniforms.begin(),
                                      fragment_shader.uniforms.end());
-    for (const ShaderUniformDesc &uniform : vertex_shader.uniforms)
+    for (const ShaderUniformDesc &uniform_desc : vertex_shader.uniforms)
     {
-        GLint id = prog->uniformLocation(uniform.name);
-        prog->uniforms_[uniform.name] = Uniform(uniform.name, uniform.type, prog->location_);
+        GLint id = prog->uniformLocation(uniform_desc.name);
+        prog->uniforms_[uniform_desc.name] =
+            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
     }
-    for (const ShaderUniformDesc &uniform : fragment_shader.uniforms)
+    for (const ShaderUniformDesc &uniform_desc : fragment_shader.uniforms)
     {
-        GLint id = prog->uniformLocation(uniform.name);
-        prog->uniforms_[uniform.name] = Uniform(uniform.name, uniform.type, prog->location_);
+        GLint id = prog->uniformLocation(uniform_desc.name);
+        prog->uniforms_[uniform_desc.name] =
+            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
     }
 
     // Get all textures
@@ -70,17 +72,13 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
                            glGetUniformLocation(prog->location_, texture.name.c_str()),
                            &(prog->textures_[texture.name].unit));
             prog->textures_[texture.name].texture = nullptr;
-            std::cout << texture.name << " : " << prog->textures_[texture.name].unit << std::endl;
         }
     }
-
-    // Get all cubemaps
     for (const ShaderCubemapDesc &cubemap : fragment_shader.cubemaps)
     {
         glGetUniformiv(prog->location_, glGetUniformLocation(prog->location_, cubemap.name.c_str()),
                        &(prog->cubemaps_[cubemap.name].unit));
         prog->cubemaps_[cubemap.name].cubemap = nullptr;
-        std::cout << cubemap.name << " : " << prog->textures_[cubemap.name].unit << std::endl;
     }
 
     return prog;
@@ -147,7 +145,6 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
                            glGetUniformLocation(prog->location_, texture.name.c_str()),
                            &(prog->textures_[texture.name].unit));
             prog->textures_[texture.name].texture = nullptr;
-            std::cout << texture.name << " : " << prog->textures_[texture.name].unit << std::endl;
         }
     }
     for (const ShaderCubemapDesc &cubemap : fragment_shader.cubemaps)
@@ -155,7 +152,6 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
         glGetUniformiv(prog->location_, glGetUniformLocation(prog->location_, cubemap.name.c_str()),
                        &(prog->cubemaps_[cubemap.name].unit));
         prog->cubemaps_[cubemap.name].cubemap = nullptr;
-        std::cout << cubemap.name << " : " << prog->textures_[cubemap.name].unit << std::endl;
     }
 
     return prog;
@@ -219,6 +215,11 @@ bool ShaderProgram::link(bool debug)
         glDetachShader(location_, shader);
     }
     return true;
+}
+
+GLuint ShaderProgram::id() const
+{
+    return location_;
 }
 
 // Use the shader (glUseProgram(my id))

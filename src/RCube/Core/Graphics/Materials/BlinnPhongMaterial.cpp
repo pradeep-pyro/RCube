@@ -276,8 +276,7 @@ const static VertexShader BlinnPhongVertexShader = {
      ShaderAttributeDesc("texcoord", GLDataType::Vec2f),
      ShaderAttributeDesc("tangent", GLDataType::Vec3f)},
     /*uniforms: */
-    {{"model_matrix", GLDataType::Mat4f},
-     {"normal_matrix", GLDataType::Mat3f},
+    {{"model_matrix", GLDataType::Mat4f}, {"normal_matrix", GLDataType::Mat3f},
      /*{"eye_pos", GLDataType::Vec3f}*/},
     vert_str};
 
@@ -296,8 +295,8 @@ const static FragmentShader BlinnPhongFragmentShader = {
      {"material.reflectivity", GLDataType::Float},
      {"show_wireframe", GLDataType::Bool},
      {"show_backface", GLDataType::Bool},
-     {"line.color", GLDataType::Vec3f},
-     {"line.thickness", GLDataType::Float},
+     {"line_props.color", GLDataType::Vec3f},
+     {"line_props.thickness", GLDataType::Float},
      {"use_diffuse_texture", GLDataType::Bool},
      {"use_specular_texture", GLDataType::Bool},
      {"use_normal_texture", GLDataType::Bool},
@@ -313,7 +312,7 @@ const static FragmentShader BlinnPhongFragmentShader = {
 
 std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color,
                                                       glm::vec3 specular_color, float shininess,
-    bool wireframe)
+                                                      bool wireframe)
 {
     auto prog = ShaderProgram::create(BlinnPhongVertexShader, BlinnPhongGeometryShader,
                                       BlinnPhongFragmentShader, true);

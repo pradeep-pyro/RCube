@@ -95,6 +95,19 @@ template <typename T> class ComponentManager : public BaseComponentManager
         }
         return &(component_data_.data[entity_map_[e]]);
     }
+    /**
+     * Get a pointer to the component of type T in the given entity
+     * @param e Entity
+     * @return Pointer to component of type T
+     */
+    T *getUnsafe(Entity e)
+    {
+        if (entity_map_.find(e) == entity_map_.end())
+        {
+            return nullptr;
+        }
+        return &(component_data_.data[entity_map_[e]]);
+    }
 
   private:
     struct ComponentData

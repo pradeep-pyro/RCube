@@ -1,9 +1,13 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include "RCube/Core/Graphics/OpenGL/Buffer.h"
+#include "RCube/Core/Graphics/OpenGL/GLDataType.h"
 #include "glad/glad.h"
 #include "glm/glm.hpp"
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace rcube
@@ -40,6 +44,14 @@ struct MeshData
     bool valid() const;
 };
 
+struct Attribute
+{
+    std::string name;
+    GLuint location;
+    GLDataType type;
+    std::shared_ptr<Buffer> data;
+};
+
 // Represents a 3D triangle/line Mesh with vertex positions, normals,
 // texcoords, colors using OpenGL buffers
 class Mesh
@@ -69,6 +81,10 @@ class Mesh
     void done() const;
 
     bool hasAttribute(MeshAttributes attr) const;
+
+    void addCustomAttribute(const std::string &name, GLuint attribute_location, GLDataType attribute_type);
+
+    Attribute& customAttribute(const std::string &name);
 
     bool indexed() const;
 
@@ -116,6 +132,8 @@ class Mesh
     bool has_tangents_ = false;
     bool indexed_ = false;
     bool init_ = false;
+
+    std::vector<Attribute> custom_attributes_;
 };
 
 } // namespace rcube

@@ -6,6 +6,9 @@ include_directories("include")
 file(GLOB_RECURSE INC_FILES "include/*.h")							
 file(GLOB_RECURSE SRC_FILES "src/*.cpp")
 
+set(RC_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+source_group(TREE ${RC_ROOT} FILES ${INC_FILES})
+source_group(TREE ${RC_ROOT} FILES ${SRC_FILES})
 
 add_library(RCube STATIC ${INC_FILES} ${SRC_FILES})
 set_property(TARGET RCube PROPERTY CXX_STANDARD 14)

@@ -16,6 +16,7 @@ int main()
     // Properties to configure the viewer
     viewer::RCubeViewerProps props;
     props.resolution = glm::vec2(1280 /*4096*/, 720 /*2160*/); // 720p
+    props.resolution = glm::vec2(4096, 2160);                  // 4K
     props.MSAA = 2;                                            // turn on 2x multisampling
     props.ground_plane = false;                                // hide the ground plane
 
@@ -23,8 +24,7 @@ int main()
     viewer::RCubeViewer viewer(props);
 
     // Load environment cubemap and set as skybox
-    std::shared_ptr<TextureCubemap> env_map =
-        TextureCubemap::create(2000, 2000); //, 1, true, TextureInternalFormat::sRGBA8);
+    std::shared_ptr<TextureCubemap> env_map = TextureCubemap::create(2000, 2000, 1, true, TextureInternalFormat::sRGBA8);
     env_map->setData(0, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "px.jpg", 3));
     env_map->setData(1, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "nx.jpg", 3));
     env_map->setData(2, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "py.jpg", 3));
@@ -54,7 +54,8 @@ int main()
     // local position, and local orientation with respect to a parent transform
     EntityHandle s = viewer.addSurface(
         "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 3.f, 6.f, 1.f, 1.f, 1.f));
-    s.get<Drawable>()->material = makePhysicallyBasedMaterial(glm::vec3(1.f));
+    s.get<Drawable>()->material =
+        makePhysicallyBasedMaterial(glm::vec3(0.953, 0.788, 0.408), 0.1f, 1.f);
 
     // Assign image based lighting textures to supershape's material
     std::shared_ptr<ShaderProgram> &material = s.get<Drawable>()->material;

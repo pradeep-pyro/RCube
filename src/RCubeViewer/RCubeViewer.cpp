@@ -183,12 +183,7 @@ void drawGUIForScalarFieldComponent(EntityHandle ent)
     ImGui::InputFloat("vmax", &sf->vmax);
     const char *colormap_names[5] = {"Viridis", "Plasma", "Magma", "Inferno", "Jet"};
     int curr_colormap = sf->colormap;
-    const char *curr_colormap_name =
-        (curr_colormap >= 0 && curr_colormap < IM_ARRAYSIZE(colormap_names))
-            ? colormap_names[curr_colormap]
-            : "Unknown";
-    if (ImGui::SliderInt("Colormap", &curr_colormap, 0, (IM_ARRAYSIZE(colormap_names) - 1),
-                         curr_colormap_name))
+    if (ImGui::Combo("Colormap", &curr_colormap, colormap_names, IM_ARRAYSIZE(colormap_names)))
     {
         sf->colormap = static_cast<ScalarField::Colormap>(curr_colormap);
     }

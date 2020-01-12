@@ -1,4 +1,6 @@
 #include "RCubeViewer/RCubeViewer.h"
+#include "RCubeViewer/Components/Name.h"
+#include "RCubeViewer/Components/ScalarField.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -24,14 +26,15 @@ void initImGUI(GLFWwindow *window)
     config.OversampleH = 5;
     config.OversampleV = 5;
 
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
 }
 
 RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    auto rs = std::make_unique<RenderSystem>(props.resolution, props.MSAA);
+    // auto rs = std::make_unique<RenderSystem>(props.resolution, props.MSAA);
+    auto rs = std::make_unique<ViewerRenderSystem>(props.resolution, props.MSAA);
     world_.addSystem(std::move(rs));
 
     // Create a default camera
@@ -172,12 +175,31 @@ void RCubeViewer::draw()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void drawGUIForScalarFieldComponent(EntityHandle ent)
+{
+    ScalarField *sf = ent.get<ScalarField>();
+    ImGui::Checkbox("Show", &sf->show);
+    ImGui::InputFloat("vmin", &sf->vmin);
+    ImGui::InputFloat("vmax", &sf->vmax);
+    const char *colormap_names[5] = {"Viridis", "Plasma", "Magma", "Inferno", "Jet"};
+    int curr_colormap = sf->colormap;
+    const char *curr_colormap_name =
+        (curr_colormap >= 0 && curr_colormap < IM_ARRAYSIZE(colormap_names))
+            ? colormap_names[curr_colormap]
+            : "Unknown";
+    if (ImGui::SliderInt("Colormap", &curr_colormap, 0, (IM_ARRAYSIZE(colormap_names) - 1),
+                         curr_colormap_name))
+    {
+        sf->colormap = static_cast<ScalarField::Colormap>(curr_colormap);
+    }
+}
+
 void drawGUIForTransformComponent(EntityHandle ent)
 {
     // TODO: think of a way to handle transform hierarchy
     Transform *tr = ent.get<Transform>();
-    auto pos = tr->position();
     static float xyz[3];
+    const glm::vec3 &pos = tr->position();
     xyz[0] = pos[0];
     xyz[1] = pos[1];
     xyz[2] = pos[2];
@@ -187,7 +209,15 @@ void drawGUIForTransformComponent(EntityHandle ent)
     }
 
     static glm::vec3 euler = glm::eulerAngles(tr->orientation());
-    if (ImGui::InputFloat3("Orientation", glm::value_ptr(euler), 2))
+    if (ImGui::SliderAngle("Orientation X", glm::value_ptr(euler)))
+    {
+        tr->setOrientation(glm::quat(euler));
+    }
+    if (ImGui::SliderAngle("Orientation Y", glm::value_ptr(euler) + 2))
+    {
+        tr->setOrientation(glm::quat(euler));
+    }
+    if (ImGui::SliderAngle("Orientation Z", glm::value_ptr(euler) + 1))
     {
         tr->setOrientation(glm::quat(euler));
     }
@@ -197,7 +227,7 @@ void drawGUIForTransformComponent(EntityHandle ent)
     {
         tr->setScale(scale);
     }
-} // namespace viewer
+}
 
 void drawGUIForDrawableComponent(EntityHandle ent)
 {
@@ -281,11 +311,10 @@ void drawGUIForCameraComponent(EntityHandle ent)
     {
         ImGui::SliderAngle("FOV (deg.)", &camera->fov, 5.f, 89.f);
     }
-    ImGui::Separator();
     ImGui::InputFloat("Near Plane", &camera->near_plane);
     ImGui::InputFloat("Far Plane", &camera->far_plane);
-    ImGui::Separator();
     ImGui::ColorEdit4("Background Color", glm::value_ptr(camera->background_color));
+    ImGui::Checkbox("Skybox", &camera->use_skybox);
 }
 
 void RCubeViewer::drawGUI()
@@ -293,7 +322,7 @@ void RCubeViewer::drawGUI()
     ImGui::Begin("RCubeViewer");
     ///////////////////////////////////////////////////////////////////////////
     // Default camera
-    if (ImGui::CollapsingHeader("Camera"))
+    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto pos = camera_.get<Transform>()->position();
         static float xyz[3];
@@ -313,7 +342,7 @@ void RCubeViewer::drawGUI()
 
     ///////////////////////////////////////////////////////////////////////////
 
-    if (ImGui::CollapsingHeader("Objects"))
+    if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto it = world_.entities();
 
@@ -350,59 +379,77 @@ void RCubeViewer::drawGUI()
         if (current_item != "(None)")
         {
             EntityHandle ent = getEntity(std::string(current_item));
-            if (ImGui::BeginTabBar("Components"))
+            if (ent.valid())
             {
-                Drawable *dr = nullptr;
-                Transform *tr = nullptr;
-                Camera *cam = nullptr;
+                if (ImGui::BeginTabBar("Components"))
+                {
+                    Drawable *dr = nullptr;
+                    Transform *tr = nullptr;
+                    Camera *cam = nullptr;
+                    ScalarField *sf = nullptr;
+                    try
+                    {
+                        dr = ent.get<Drawable>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
+                    try
+                    {
+                        tr = ent.get<Transform>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
+                    try
+                    {
+                        cam = ent.get<Camera>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
+                    try
+                    {
+                        sf = ent.get<ScalarField>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
 
-                try
-                {
-                    dr = ent.get<Drawable>();
-                }
-                catch (const std::exception &)
-                {
-                }
-                try
-                {
-                    tr = ent.get<Transform>();
-                }
-                catch (const std::exception &)
-                {
-                }
-                try
-                {
-                    cam = ent.get<Camera>();
-                }
-                catch (const std::exception &)
-                {
-                }
-
-                if (dr != nullptr)
-                {
-                    if (ImGui::BeginTabItem("Drawable"))
+                    if (dr != nullptr)
                     {
-                        drawGUIForDrawableComponent(ent);
-                        ImGui::EndTabItem();
+                        if (ImGui::BeginTabItem("Drawable"))
+                        {
+                            drawGUIForDrawableComponent(ent);
+                            ImGui::EndTabItem();
+                        }
                     }
-                }
-                if (tr != nullptr)
-                {
-                    if (ImGui::BeginTabItem("Transform"))
+                    if (tr != nullptr)
                     {
-                        drawGUIForTransformComponent(ent);
-                        ImGui::EndTabItem();
+                        if (ImGui::BeginTabItem("Transform"))
+                        {
+                            drawGUIForTransformComponent(ent);
+                            ImGui::EndTabItem();
+                        }
                     }
-                }
-                if (cam != nullptr)
-                {
-                    if (ImGui::BeginTabItem("Camera"))
+                    if (cam != nullptr)
                     {
-                        drawGUIForCameraComponent(ent);
-                        ImGui::EndTabItem();
+                        if (ImGui::BeginTabItem("Camera"))
+                        {
+                            drawGUIForCameraComponent(ent);
+                            ImGui::EndTabItem();
+                        }
                     }
+                    if (sf != nullptr)
+                    {
+                        if (ImGui::BeginTabItem("Scalar Field"))
+                        {
+                            drawGUIForScalarFieldComponent(ent);
+                            ImGui::EndTabItem();
+                        }
+                    }
+                    ImGui::EndTabBar();
                 }
-                ImGui::EndTabBar();
             }
         }
     }

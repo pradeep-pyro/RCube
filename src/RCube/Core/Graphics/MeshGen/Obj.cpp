@@ -8,9 +8,7 @@
 #include <sstream>
 #include <string>
 
-#ifndef MAX_LINE_LENGTH
-#define MAX_LINE_LENGTH 2048
-#endif
+constexpr int MAX_LINE_LENGTH = 2048;
 
 namespace rcube
 {

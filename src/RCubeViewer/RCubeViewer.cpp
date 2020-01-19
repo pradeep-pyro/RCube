@@ -118,20 +118,6 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const MeshData &dat
     return ent;
 }
 
-EntityHandle RCubeViewer::addOBJ(const std::string name, const MeshData &data)
-{
-    EntityHandle ent = createSurface();
-    ent.add<Name>(name);
-
-    std::shared_ptr<Mesh> mesh = Mesh::create();
-    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    mesh->data = data;
-    mesh->uploadToGPU();
-    ent.get<Drawable>()->mesh = mesh;
-    ent.get<Drawable>()->material = blinnPhong;
-    return ent;
-}
-
 EntityHandle RCubeViewer::addPointLight(const std::string name, glm::vec3 position, float radius,
                                         glm::vec3 color)
 {

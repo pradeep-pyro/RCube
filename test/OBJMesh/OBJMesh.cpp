@@ -23,7 +23,7 @@ int main()
     //assert(mesh.valid());
 
     //Add the loaded obj to the viewer
-    EntityHandle mesh_handle = viewer.addOBJ("OBJMesh", mesh);
+    EntityHandle mesh_handle = viewer.addSurface("OBJMesh", rcube::loadOBJ(input_obj_file));
 
     //This is such a huge mesh. Gotta scale down a bit
     mesh_handle.get<Transform>()->setScale(glm::vec3(0.01, 0.01, 0.01));

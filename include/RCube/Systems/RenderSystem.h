@@ -26,7 +26,8 @@ class RenderSystem : public System
     virtual void update(bool force = false) override;
     virtual unsigned int priority() const override;
 
-  private:
+  protected:
+    virtual void drawEntity(Entity ent);
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
     GLRenderer renderer;
     std::shared_ptr<Framebuffer> framebufferms_;

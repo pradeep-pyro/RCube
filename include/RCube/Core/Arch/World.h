@@ -1,11 +1,11 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <memory>
-#include <cassert>
 #include "RCube/Core/Arch/ComponentManager.h"
 #include "RCube/Core/Arch/EntityManager.h"
 #include "RCube/Core/Arch/System.h"
+#include <cassert>
+#include <memory>
 
 namespace rcube
 {
@@ -74,6 +74,17 @@ class World
     {
         ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
         return manager->get(entity);
+    }
+
+    /**
+     * Gets the component of type ComponentType from the entity
+     * An easier approach is to get an EntityHandle from create entity and
+     * call entity_handle.get<ComponentType>();
+     */
+    template <typename ComponentType> ComponentType *getComponentUnsafe(Entity entity)
+    {
+        ComponentManager<ComponentType> *manager = getComponentManager<ComponentType>();
+        return manager->getUnsafe(entity);
     }
 
     /**

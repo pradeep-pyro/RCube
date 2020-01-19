@@ -2,6 +2,7 @@
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "glad/glad.h"
 #include "glm/gtc/type_ptr.hpp"
+#include <algorithm>
 #include <stdexcept>
 
 namespace rcube
@@ -264,6 +265,53 @@ bool Mesh::hasAttribute(MeshAttributes attr) const
     {
         return has_tangents_;
     }
+}
+
+void Mesh::addCustomAttribute(const std::string &name, GLuint attribute_location, GLDataType attribute_type)
+{
+    assert(valid());
+    size_t num_elements = data.vertices.size();
+    int dim = 1;
+    switch (attribute_type)
+    {
+    case GLDataType::Float:
+        break;
+    case GLDataType::Vec2f:
+        num_elements *= 2;
+        dim = 2;
+        break;
+    case GLDataType::Vec3f:
+        num_elements *= 3;
+        dim = 3;
+        break;
+    case GLDataType::Vec4f:
+        num_elements *= 4;
+        dim = 4;
+        break;
+    default:
+        throw std::runtime_error(
+            "Unsupported attribute type. Only 1D, 2D, 3D and 4D floats are supported for now.");
+    }
+
+    std::shared_ptr<Buffer> buf = Buffer::create(num_elements);
+    buf->use();
+    use();
+    glVertexAttribPointer(attribute_location, dim, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(attribute_location);
+    done();
+    buf->done();
+    custom_attributes_.push_back({name, attribute_location, attribute_type, buf});
+}
+
+Attribute& Mesh::customAttribute(const std::string &name)
+{
+    auto it = std::find_if(custom_attributes_.begin(), custom_attributes_.end(),
+                           [&](Attribute &attr) { return attr.name == name; });
+    if (it == custom_attributes_.end())
+    {
+        throw std::runtime_error("Attribute named " + name + " not found.");
+    }
+    return *it;
 }
 
 void Mesh::uploadToGPU(bool clear_cpu_data)

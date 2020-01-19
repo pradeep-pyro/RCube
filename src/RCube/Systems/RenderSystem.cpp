@@ -34,6 +34,21 @@ unsigned int RenderSystem::priority() const
     return 300;
 }
 
+void RenderSystem::drawEntity(Entity ent)
+{
+    Drawable *dr = world_->getComponent<Drawable>(ent);
+    if (!dr->visible)
+    {
+        return;
+    }
+    assert(dr->material != nullptr && dr->mesh != nullptr);
+    Transform *tr = world_->getComponent<Transform>(ent);
+    if (dr->material->renderPriority() == RenderPriority::Opaque)
+    {
+        renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
+    }
+}
+
 void RenderSystem::initialize()
 {
     framebufferms_ = Framebuffer::create(resolution_[0], resolution_[1]);
@@ -58,7 +73,7 @@ void RenderSystem::cleanup()
     {
         Drawable *dr = world_->getComponent<Drawable>(e);
         // dr->material->shader()->release();
-        dr->material->release();
+        //dr->material->release();
     }
     const auto &camera_entities = registered_entities_[filters_[1]];
     for (const auto &e : camera_entities)
@@ -66,7 +81,7 @@ void RenderSystem::cleanup()
         Camera *cam = world_->getComponent<Camera>(e);
         for (auto item : cam->postprocess)
         {
-            item->release();
+            //item->release();
         }
     }
 
@@ -116,17 +131,7 @@ void RenderSystem::update(bool /* force */)
         // Draw all opaque
         for (const auto &render_entity : renderable_entities)
         {
-            Drawable *dr = world_->getComponent<Drawable>(render_entity);
-            if (!dr->visible)
-            {
-                continue;
-            }
-            assert(dr->material != nullptr && dr->mesh != nullptr);
-            Transform *tr = world_->getComponent<Transform>(render_entity);
-            if (dr->material->renderPriority() == RenderPriority::Opaque)
-            {
-                renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
-            }
+            drawEntity(render_entity);
         }
 
         // Draw skybox if in use

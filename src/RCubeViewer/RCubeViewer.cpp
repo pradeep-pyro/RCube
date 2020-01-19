@@ -1,4 +1,6 @@
 #include "RCubeViewer/RCubeViewer.h"
+#include "RCubeViewer/Components/Name.h"
+#include "RCubeViewer/Components/ScalarField.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -31,7 +33,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    auto rs = std::make_unique<RenderSystem>(props.resolution, props.MSAA);
+    // auto rs = std::make_unique<RenderSystem>(props.resolution, props.MSAA);
+    auto rs = std::make_unique<ViewerRenderSystem>(props.resolution, props.MSAA);
     world_.addSystem(std::move(rs));
 
     // Create a default camera
@@ -186,6 +189,20 @@ void RCubeViewer::draw()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void drawGUIForScalarFieldComponent(EntityHandle ent)
+{
+    ScalarField *sf = ent.get<ScalarField>();
+    ImGui::Checkbox("Show", &sf->show);
+    ImGui::InputFloat("vmin", &sf->vmin);
+    ImGui::InputFloat("vmax", &sf->vmax);
+    const char *colormap_names[5] = {"Viridis", "Plasma", "Magma", "Inferno", "Jet"};
+    int curr_colormap = sf->colormap;
+    if (ImGui::Combo("Colormap", &curr_colormap, colormap_names, IM_ARRAYSIZE(colormap_names)))
+    {
+        sf->colormap = static_cast<ScalarField::Colormap>(curr_colormap);
+    }
+}
+
 void drawGUIForTransformComponent(EntityHandle ent)
 {
     // TODO: think of a way to handle transform hierarchy
@@ -314,7 +331,7 @@ void RCubeViewer::drawGUI()
     ImGui::Begin("RCubeViewer");
     ///////////////////////////////////////////////////////////////////////////
     // Default camera
-    if (ImGui::CollapsingHeader("Camera"))
+    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto pos = camera_.get<Transform>()->position();
         static float xyz[3];
@@ -334,7 +351,7 @@ void RCubeViewer::drawGUI()
 
     ///////////////////////////////////////////////////////////////////////////
 
-    if (ImGui::CollapsingHeader("Objects"))
+    if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto it = world_.entities();
 
@@ -378,7 +395,7 @@ void RCubeViewer::drawGUI()
                     Drawable *dr = nullptr;
                     Transform *tr = nullptr;
                     Camera *cam = nullptr;
-
+                    ScalarField *sf = nullptr;
                     try
                     {
                         dr = ent.get<Drawable>();
@@ -396,6 +413,13 @@ void RCubeViewer::drawGUI()
                     try
                     {
                         cam = ent.get<Camera>();
+                    }
+                    catch (const std::exception &)
+                    {
+                    }
+                    try
+                    {
+                        sf = ent.get<ScalarField>();
                     }
                     catch (const std::exception &)
                     {
@@ -422,6 +446,14 @@ void RCubeViewer::drawGUI()
                         if (ImGui::BeginTabItem("Camera"))
                         {
                             drawGUIForCameraComponent(ent);
+                            ImGui::EndTabItem();
+                        }
+                    }
+                    if (sf != nullptr)
+                    {
+                        if (ImGui::BeginTabItem("Scalar Field"))
+                        {
+                            drawGUIForScalarFieldComponent(ent);
                             ImGui::EndTabItem();
                         }
                     }

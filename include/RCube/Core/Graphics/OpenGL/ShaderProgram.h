@@ -1,6 +1,7 @@
 #ifndef SHADERPROGRAM_H
 #define SHADERPROGRAM_H
 
+#include "RCube/Core/Graphics/OpenGL/GLDataType.h"
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -13,22 +14,6 @@
 
 namespace rcube
 {
-
-enum class GLDataType
-{
-    Vec2i,
-    Vec3i,
-    Vec4i,
-    Vec2f,
-    Vec3f,
-    Vec4f,
-    Mat2f,
-    Mat3f,
-    Mat4f,
-    Float,
-    Int,
-    Bool
-};
 
 struct ShaderAttributeDesc
 {
@@ -266,6 +251,7 @@ class ShaderProgram
     void drawArrays(GLint mode, uint32_t first, uint32_t count) const;
     void drawElements(GLint mode, uint32_t first, uint32_t count) const;
     bool link(bool debug = false);
+    GLuint id() const;
     void use() const;
     void done() const;
     GLint attributeLocation(const std::string &name) const;

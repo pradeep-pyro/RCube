@@ -10,10 +10,12 @@
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/MeshGen/Grid.h"
 #include "RCube/Core/Graphics/MeshGen/Sphere.h"
+#include "RCube/Core/Graphics/OpenGL/Buffer.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/RenderSystem.h"
+#include "RCubeViewer/Systems/ViewerRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
 #include <memory>
@@ -22,20 +24,6 @@ namespace rcube
 {
 namespace viewer
 {
-
-/**
- * A component to store a name for each entity
- */
-class Name : public Component<Name>
-{
-  public:
-    std::string name;
-
-    Name() = default;
-    Name(std::string val) : name(val)
-    {
-    }
-};
 
 /**
  * A set of properties to configure the viewer

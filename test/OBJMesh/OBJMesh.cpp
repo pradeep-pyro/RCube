@@ -21,8 +21,8 @@ int main()
     // Make sure the mesh is OK
     assert(mesh.valid() && "Input OBJ file is not valid");
 
-    // Scale the mesh into a unit cube at origin
-    mesh.scaleToUnitCube();
+    // Scale the mesh into a unit cube and translate to origin
+    mesh.scaleAndCenter();
 
     // Add the loaded obj to the viewer
     EntityHandle mesh_handle = viewer.addSurface("OBJMesh", mesh);

@@ -42,7 +42,7 @@ struct MeshData
 
     bool valid() const;
 
-    void scaleToUnitCube();
+    void scaleAndCenter();
 };
 
 struct Attribute

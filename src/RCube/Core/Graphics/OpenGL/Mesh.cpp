@@ -40,7 +40,7 @@ void MeshData::append(MeshData &other)
     indices.insert(indices.end(), tmp.begin(), tmp.end());
 }
 
-void MeshData::scaleToUnitCube()
+void MeshData::scaleAndCenter()
 {
     glm::vec3 min = vertices[0];
     glm::vec3 max = vertices[0];
@@ -72,11 +72,11 @@ void MeshData::scaleToUnitCube()
         }
     }
     const glm::vec3 centroid = 0.5f * (max + min);
-    const glm::vec3 size = max - min;
+    const glm::vec3 size = glm::abs(max - min);
     const float scale = std::max(size.x, std::max(size.y, size.z));
     for (glm::vec3 &v : vertices)
     {
-        v = (v - centroid) / scale;
+        v = 2.0f * (v - centroid) / scale;
     }
 }
 

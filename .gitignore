@@ -34,3 +34,5 @@
 *.user
 
 build
+!test/OBJMesh/armadillo.obj
+!test/OBJMesh/sphere1.obj

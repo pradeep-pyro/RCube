@@ -13,5 +13,6 @@ enum class GLDataType
     Mat4f,
     Float,
     Int,
-    Bool
+    Bool,
+    Uint
 };

@@ -63,7 +63,6 @@ void RenderSystem::initialize()
     effect_framebuffer_->addColorAttachment(TextureInternalFormat::RGBA16);
     assert(effect_framebuffer_->isComplete());
     renderer.initialize();
-    checkGLError();
 }
 
 void RenderSystem::cleanup()
@@ -73,7 +72,7 @@ void RenderSystem::cleanup()
     {
         Drawable *dr = world_->getComponent<Drawable>(e);
         // dr->material->shader()->release();
-        //dr->material->release();
+        // dr->material->release();
     }
     const auto &camera_entities = registered_entities_[filters_[1]];
     for (const auto &e : camera_entities)
@@ -81,7 +80,7 @@ void RenderSystem::cleanup()
         Camera *cam = world_->getComponent<Camera>(e);
         for (auto item : cam->postprocess)
         {
-            //item->release();
+            // item->release();
         }
     }
 

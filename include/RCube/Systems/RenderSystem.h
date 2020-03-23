@@ -22,17 +22,6 @@ class RenderSystem : public System
     {
         return "RenderSystem";
     }
-    int pick(int x, int y)
-    {
-        GLint pixel;
-        checkGLError();
-        picking_framebuffer_->use();
-        checkGLError();
-        glReadPixels(x, picking_framebuffer_->height() - y, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &pixel);
-        checkGLError();
-        picking_framebuffer_->done();
-        return pixel;
-    }
 
   protected:
     virtual void drawEntity(Entity ent);
@@ -41,7 +30,6 @@ class RenderSystem : public System
     std::shared_ptr<Framebuffer> framebufferms_;
     std::shared_ptr<Framebuffer> framebuffer_;
     std::shared_ptr<Framebuffer> effect_framebuffer_;
-    std::shared_ptr<Framebuffer> picking_framebuffer_;
     unsigned int msaa_;
 };
 

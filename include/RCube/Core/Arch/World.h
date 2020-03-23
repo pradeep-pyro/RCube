@@ -121,6 +121,18 @@ class World
      */
     size_t numEntities() const;
 
+    System *getSystem(const std::string& name) const
+    {
+        for (auto &sys : systems_)
+        {
+            if (sys->name() == name)
+            {
+                return sys.get();
+            }
+        }
+        return nullptr;
+    }
+
     /**
      * Update the world (usually called in the game loop)
      */
@@ -182,6 +194,17 @@ struct EntityHandle
     {
         assert(valid());
         return world->getComponent<T>(entity);
+    }
+
+    /**
+     * Check if the component of type T exists in the entity
+     * @return Pointer to the component which is actually stored in
+     * the world's component manager
+     */
+    template <typename T> bool has()
+    {
+        assert(valid());
+        return world->getComponentUnsafe<T>(entity) != nullptr;
     }
 
     /**

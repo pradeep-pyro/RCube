@@ -57,6 +57,21 @@ class Camera : public Component<Camera>
      */
     Frustum frustum();
 
+    const glm::mat4 &worldToView() const
+    {
+        return world_to_view;
+    }
+
+    const glm::mat4 &viewToProjection() const
+    {
+        return view_to_projection;
+    }
+
+    const glm::mat4 &projectionToViewport() const
+    {
+        return projection_to_viewport;
+    }
+
   private:
     friend class CameraSystem;        // This will update the camera matrices
     friend class RenderSystem;        // This will make use of the matrices

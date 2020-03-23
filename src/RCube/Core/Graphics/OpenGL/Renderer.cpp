@@ -142,7 +142,8 @@ void GLRenderer::initialize()
     }
     glGenBuffers(1, &ubo_matrices_);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices_);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 3 + sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 3 + sizeof(glm::vec3), nullptr,
+                 GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glGenBuffers(1, &ubo_lights_);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_lights_);
@@ -205,7 +206,6 @@ void GLRenderer::setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view
                     glm::value_ptr(eye_pos));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
-    
 }
 
 void GLRenderer::setLights(const std::vector<Light> &lights)
@@ -235,7 +235,6 @@ void GLRenderer::setLights(const std::vector<Light> &lights)
         light_data.push_back(l.color.b);
         light_data.push_back(l.cone_angle);
     }
-    //const int num_lights[4] = {static_cast<int>(lights.size()), 0, 0, 0};
     const int num_lights = static_cast<int>(lights.size());
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_lights_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, light_data.size() * sizeof(float), light_data.data());
@@ -271,6 +270,15 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
         glDisable(GL_BLEND);
     }
 
+    // Dithering
+    if (settings.dither)
+    {
+        glEnable(GL_DITHER);
+    }
+    else
+    {
+        glDisable(GL_DITHER);
+    }
     // Face Culling
     if (settings.culling)
     {
@@ -339,7 +347,7 @@ void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
     effect->done();
 }
 
-void GLRenderer::renderFullscreenQuad(ShaderProgram *prog, Framebuffer* output)
+void GLRenderer::renderFullscreenQuad(ShaderProgram *prog, Framebuffer *output)
 {
     prog->use();
     glDisable(GL_DEPTH_TEST);

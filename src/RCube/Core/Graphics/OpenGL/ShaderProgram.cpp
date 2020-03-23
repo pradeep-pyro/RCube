@@ -34,7 +34,7 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     auto prog = std::make_shared<ShaderProgram>();
     prog->addShader(GL_VERTEX_SHADER, vertex_shader.source, debug);
     prog->addShader(GL_FRAGMENT_SHADER, fragment_shader.source, debug);
-    prog->link();
+    prog->link(debug);
 
     // Get all attributes
     for (const ShaderAttributeDesc &attr : vertex_shader.attributes)
@@ -545,6 +545,12 @@ void Uniform::set(int val)
     glProgramUniform1i(program_id_, location_, val);
 }
 
+void Uniform::set(unsigned int val)
+{
+    assert(type_ == GLDataType::Uint && "Invalid type for uniform");
+    glProgramUniform1ui(program_id_, location_, val);
+}
+
 void Uniform::set(float val)
 {
     assert(type_ == GLDataType::Float && "Invalid type for uniform");
@@ -617,6 +623,13 @@ void Uniform::get(int &val)
     GLint ret;
     glGetUniformiv(program_id_, location_, &ret);
     val = static_cast<int>(ret);
+}
+
+void Uniform::get(unsigned int &val)
+{
+    GLuint ret;
+    glGetUniformuiv(program_id_, location_, &ret);
+    val = static_cast<unsigned int>(ret);
 }
 
 void Uniform::get(float &val)

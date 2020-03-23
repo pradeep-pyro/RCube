@@ -129,6 +129,7 @@ class Uniform
         return type_;
     }
     void get(bool &val);
+    void get(unsigned int &val);
     void get(int &val);
     void get(float &val);
     void get(glm::vec2 &val);
@@ -139,6 +140,7 @@ class Uniform
     void get(glm::ivec4 &val);
     void set(bool val);
     void set(int val);
+    void set(unsigned int val);
     void set(float val);
     void set(glm::mat2 val);
     void set(glm::mat3 val);
@@ -201,6 +203,7 @@ struct RenderSettings
     bool depth_test = true;
     bool depth_write = true;
     bool blending = false;
+    bool dither = false;
     BlendFunc blendfunc_src, blendfunc_dst;
     DepthFunc depthfunc = DepthFunc::Less;
 };

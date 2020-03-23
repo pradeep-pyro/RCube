@@ -3,6 +3,7 @@
 
 #include "RCube/Core/Graphics/OpenGL/Buffer.h"
 #include "RCube/Core/Graphics/OpenGL/GLDataType.h"
+#include "RCube/Core/Accel/BVH.h"
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include <map>
@@ -94,6 +95,10 @@ class Mesh
 
     size_t numPrimitives() const;
 
+    void updateBVH();
+
+    bool rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id);
+
   private:
     void enableAttribute(MeshAttributes attr);
 
@@ -134,6 +139,9 @@ class Mesh
     bool init_ = false;
 
     std::vector<Attribute> custom_attributes_;
+
+    // BVH
+    BVHNodePtr bvh_;
 };
 
 } // namespace rcube

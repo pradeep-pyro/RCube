@@ -3,6 +3,7 @@
 #include "glad/glad.h"
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 
 namespace rcube
@@ -267,7 +268,8 @@ bool Mesh::hasAttribute(MeshAttributes attr) const
     }
 }
 
-void Mesh::addCustomAttribute(const std::string &name, GLuint attribute_location, GLDataType attribute_type)
+void Mesh::addCustomAttribute(const std::string &name, GLuint attribute_location,
+                              GLDataType attribute_type)
 {
     assert(valid());
     size_t num_elements = data.vertices.size();
@@ -303,7 +305,7 @@ void Mesh::addCustomAttribute(const std::string &name, GLuint attribute_location
     custom_attributes_.push_back({name, attribute_location, attribute_type, buf});
 }
 
-Attribute& Mesh::customAttribute(const std::string &name)
+Attribute &Mesh::customAttribute(const std::string &name)
 {
     auto it = std::find_if(custom_attributes_.begin(), custom_attributes_.end(),
                            [&](Attribute &attr) { return attr.name == name; });
@@ -416,6 +418,50 @@ void Mesh::setDefaultValue(GLuint id, const glm::vec3 &val)
 void Mesh::setDefaultValue(GLuint id, const glm::vec2 &val)
 {
     glVertexAttrib2f(id, val[0], val[1]);
+}
+
+void Mesh::updateBVH()
+{
+    // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
+    std::vector<PrimitivePtr> prims;
+    if (indexed())
+    {
+        prims.reserve(data.indices.size() / 3);
+        size_t face_id = 0;
+        for (size_t i = 0; i < data.indices.size(); i += 3)
+        {
+            prims.push_back(std::make_shared<Triangle>(
+                face_id++, data.vertices[data.indices[i + 0]], data.vertices[data.indices[i + 1]],
+                data.vertices[data.indices[i + 2]]));
+        }
+    }
+    else
+    {
+        prims.reserve(data.vertices.size() / 3);
+        size_t face_id = 0;
+        for (size_t i = 0; i < data.vertices.size(); i += 3)
+        {
+            prims.push_back(std::make_shared<Triangle>(face_id++, data.vertices[i + 0],
+                                                       data.vertices[i + 1], data.vertices[i + 2]));
+        }
+    }
+    bvh_ = buildBVH(prims);
+}
+
+bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id)
+{
+    if (bvh_ == nullptr)
+    {
+        return false;
+    }
+    PrimitivePtr prim;
+    bool hit = bvh_->rayIntersect(ray, pt, prim);
+    if (!hit)
+    {
+        return false;
+    }
+    id = prim->id();
+    return true;
 }
 
 } // namespace rcube

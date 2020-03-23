@@ -79,6 +79,10 @@ class RCubeViewer : public rcube::Window
 
     virtual void beforeTerminate() override;
 
+    glm::vec2 screenToNDC(int xpos, int ypos);
+
+    bool pick(int xpos, int ypos, EntityHandle &ent, size_t id);
+
     virtual void onMousePress(int key, int mods);
 
     virtual void onMouseRelease(int key, int mods);

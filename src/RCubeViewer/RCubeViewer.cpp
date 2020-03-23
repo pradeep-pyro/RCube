@@ -1,4 +1,5 @@
 #include "RCubeViewer/RCubeViewer.h"
+#include "RCube/Core/Arch/World.h"
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Components/ScalarField.h"
 #include "glm/gtx/euler_angles.hpp"
@@ -470,6 +471,71 @@ void RCubeViewer::beforeTerminate()
     ImGui::DestroyContext();
 }
 
+glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
+{
+    const float x(xpos);
+    const float y(ypos);
+    const glm::vec2 size(this->size());
+    float ndc_x = (2.0f * xpos) / (float)size[0] - 1.0f;
+    float ndc_y = 1.0f - (2.0f * ypos) / (float)size[1];
+    return glm::vec2(ndc_x, ndc_y);
+}
+
+bool RCubeViewer::pick(int xpos, int ypos, EntityHandle &ent, size_t id)
+{
+    Camera *cam = camera_.get<Camera>();
+    Transform *cam_tr = camera_.get<Transform>();
+    const glm::vec2 ndc = screenToNDC(xpos, ypos);
+    const glm::vec4 ray_clip(ndc.x, ndc.y, -1.0, 1.0);
+    glm::vec4 ray_eye = glm::inverse(cam->viewToProjection()) * ray_clip;
+    ray_eye.z = -1.f;
+    ray_eye.w = 0.f;
+    glm::vec3 ray_wor(glm::inverse(cam->worldToView()) * ray_eye);
+    ray_wor = glm::normalize(ray_wor);
+
+    // Closest hit info
+    float min_dist = std::numeric_limits<float>::infinity();
+    EntityHandle closest;
+    size_t closest_id = 0;
+    glm::vec3 closest_point;
+    bool hit = false;
+    for (auto iter = world_.entities(); iter.hasNext();)
+    {
+        EntityHandle e = iter.next();
+        if (!e.has<Drawable>() || !e.has<Transform>())
+        {
+            continue;
+        }
+        Drawable *dr = e.get<Drawable>();
+        if (!dr->visible)
+        {
+            continue;
+        }
+        Transform *tr = e.get<Transform>();
+        const glm::mat4 model_inv = glm::inverse(tr->worldTransform());
+        glm::vec3 ray_origin_model = glm::vec3(model_inv * glm::vec4(cam_tr->worldPosition(), 1.0));
+        glm::vec3 ray_dir_model = glm::normalize(model_inv * glm::vec4(ray_wor, 0.0));
+        Ray ray_model(ray_origin_model, ray_dir_model);
+        glm::vec3 pt;
+        size_t id;
+        if (dr->mesh->rayIntersect(ray_model, pt, id))
+        {
+            hit = true;
+            min_dist = std::min(glm::length(pt - ray_model.origin()), min_dist);
+            closest_point = pt;
+            closest_id = id;
+            closest = e;
+        }
+    }
+    if (hit)
+    {
+        ent = closest;
+        id = closest_id;
+        return true;
+    }
+    return false;
+}
+
 void RCubeViewer::onMousePress(int key, int mods)
 {
     glm::dvec2 pos = getMousePosition();
@@ -480,6 +546,12 @@ void RCubeViewer::onMousePress(int key, int mods)
     else if (key == GLFW_MOUSE_BUTTON_RIGHT)
     {
         ctrl_.startOrbiting(pos.x, pos.y);
+    }
+    else if (key == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        EntityHandle ent;
+        size_t id = 0;
+        pick(pos[0], pos[1], ent, id);
     }
 }
 void RCubeViewer::onMouseRelease(int key, int mods)

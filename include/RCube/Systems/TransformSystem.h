@@ -21,6 +21,10 @@ class TransformSystem : public System
     virtual void cleanup() override;
     virtual void update(bool force = false) override;
     virtual unsigned int priority() const override;
+    virtual const std::string name() const override
+    {
+        return "TransformSystem";
+    }
 
   private:
     void updateHierarchy(Transform *comp, bool force = false);

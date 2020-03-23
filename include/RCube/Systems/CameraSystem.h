@@ -18,6 +18,10 @@ class CameraSystem : public System
     }
     virtual void update(bool force) override;
     virtual unsigned int priority() const override;
+    virtual const std::string name() const override
+    {
+        return "CameraSystem";
+    }
 };
 
 } // namespace rcube

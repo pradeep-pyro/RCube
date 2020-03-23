@@ -78,6 +78,7 @@ class System
     virtual void initialize() = 0;
     virtual void update(bool force) = 0;
     virtual void cleanup() = 0;
+    virtual const std::string name() const = 0;
     /**
      * Register the world
      * @param world

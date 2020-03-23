@@ -29,7 +29,6 @@ enum class MeshAttributes
     Colors = 3,
     Tangents = 4
 };
-
 struct MeshData
 {
     std::vector<glm::vec3> vertices, normals, colors, tangents;
@@ -43,6 +42,8 @@ struct MeshData
     void append(MeshData &other);
 
     bool valid() const;
+
+    void scaleAndCenter();
 };
 
 struct Attribute
@@ -83,9 +84,10 @@ class Mesh
 
     bool hasAttribute(MeshAttributes attr) const;
 
-    void addCustomAttribute(const std::string &name, GLuint attribute_location, GLDataType attribute_type);
+    void addCustomAttribute(const std::string &name, GLuint attribute_location,
+                            GLDataType attribute_type);
 
-    Attribute& customAttribute(const std::string &name);
+    Attribute &customAttribute(const std::string &name);
 
     bool indexed() const;
 

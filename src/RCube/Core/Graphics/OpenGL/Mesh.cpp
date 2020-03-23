@@ -41,9 +41,65 @@ void MeshData::append(MeshData &other)
     indices.insert(indices.end(), tmp.begin(), tmp.end());
 }
 
+void MeshData::scaleAndCenter()
+{
+    glm::vec3 min = vertices[0];
+    glm::vec3 max = vertices[0];
+    for (const glm::vec3 &v : vertices)
+    {
+        if (v.x < min.x)
+        {
+            min.x = v.x;
+        }
+        if (v.y < min.y)
+        {
+            min.y = v.y;
+        }
+        if (v.z < min.z)
+        {
+            min.z = v.z;
+        }
+        if (v.x > max.x)
+        {
+            max.x = v.x;
+        }
+        if (v.y > max.y)
+        {
+            max.y = v.y;
+        }
+        if (v.z > max.z)
+        {
+            max.z = v.z;
+        }
+    }
+    const glm::vec3 centroid = 0.5f * (max + min);
+    const glm::vec3 size = glm::abs(max - min);
+    const float scale = std::max(size.x, std::max(size.y, size.z));
+    for (glm::vec3 &v : vertices)
+    {
+        v = 2.0f * (v - centroid) / scale;
+    }
+}
+
 bool MeshData::valid() const
 {
-    return vertices.size() == colors.size() == normals.size() == texcoords.size();
+    if (vertices.empty())
+    {
+        return false;
+    }
+    if ((!colors.empty()) && (colors.size() != vertices.size()))
+    {
+        return false;
+    }
+    if ((!normals.empty()) && (normals.size() != vertices.size()))
+    {
+        return false;
+    }
+    if ((!texcoords.empty()) && (texcoords.size() != vertices.size()))
+    {
+        return false;
+    }
+    return true;
 }
 
 //-----------------------------------------------------------------------------

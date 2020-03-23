@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 project(RCube)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 include_directories("include")
 
 file(GLOB_RECURSE INC_FILES "include/*.h")							

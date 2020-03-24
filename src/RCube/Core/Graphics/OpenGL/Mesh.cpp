@@ -36,7 +36,7 @@ void MeshData::append(MeshData &other)
     auto tmp = other.indices;
     for (auto &val : tmp)
     {
-        val += offset;
+        val += static_cast<unsigned int>(offset);
     }
     indices.insert(indices.end(), tmp.begin(), tmp.end());
 }
@@ -322,6 +322,7 @@ bool Mesh::hasAttribute(MeshAttributes attr) const
     {
         return has_tangents_;
     }
+    return false;
 }
 
 void Mesh::addCustomAttribute(const std::string &name, GLuint attribute_location,
@@ -374,13 +375,13 @@ Attribute &Mesh::customAttribute(const std::string &name)
 
 void Mesh::uploadToGPU(bool clear_cpu_data)
 {
-    setArrayBuffer(glbuf_.vertices, glm::value_ptr(data.vertices[0]), 3 * data.vertices.size());
+    setArrayBuffer(glbuf_.vertices, glm::value_ptr(data.vertices[0]), 3 * static_cast<unsigned int>(data.vertices.size()));
     num_vertices_ = 3 * data.vertices.size();
 
     if (data.normals.size() > 0 && data.normals.size() == data.vertices.size())
     {
         enableAttribute(MeshAttributes::Normals);
-        setArrayBuffer(glbuf_.normals, glm::value_ptr(data.normals[0]), 3 * data.normals.size());
+        setArrayBuffer(glbuf_.normals, glm::value_ptr(data.normals[0]), 3 * static_cast<unsigned int>(data.normals.size()));
     }
     else
     {
@@ -392,7 +393,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data)
     {
         enableAttribute(MeshAttributes::TexCoords);
         setArrayBuffer(glbuf_.texcoords, glm::value_ptr(data.texcoords[0]),
-                       2 * data.texcoords.size());
+                       2 * static_cast<unsigned int>(data.texcoords.size()));
     }
     else
     {
@@ -403,7 +404,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data)
     if (data.colors.size() > 0 && data.colors.size() == data.vertices.size())
     {
         enableAttribute(MeshAttributes::Colors);
-        setArrayBuffer(glbuf_.colors, glm::value_ptr(data.colors[0]), 3 * data.colors.size());
+        setArrayBuffer(glbuf_.colors, glm::value_ptr(data.colors[0]), 3 * static_cast<unsigned int>(data.colors.size()));
     }
     else
     {
@@ -414,7 +415,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data)
     if (data.tangents.size() > 0 && data.tangents.size() == data.vertices.size())
     {
         enableAttribute(MeshAttributes::Tangents);
-        setArrayBuffer(glbuf_.tangents, glm::value_ptr(data.tangents[0]), 3 * data.tangents.size());
+        setArrayBuffer(glbuf_.tangents, glm::value_ptr(data.tangents[0]), 3 * static_cast<unsigned int>(data.tangents.size()));
     }
     else
     {
@@ -438,7 +439,7 @@ void Mesh::uploadToGPU(bool clear_cpu_data)
             throw std::runtime_error(ERROR_MESH_PRIMITIVE_INDICES_MISMATCH);
         }
         setIndexed(true);
-        setElementBuffer(data.indices.data(), data.indices.size());
+        setElementBuffer(data.indices.data(), static_cast<unsigned int>(data.indices.size()));
         num_primitives_ = data.indices.size();
     }
     else

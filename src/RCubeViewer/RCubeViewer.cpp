@@ -51,7 +51,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     ground_ = createGroundPlane();
     ground_.get<Drawable>()->visible = props.ground_plane;
 
-    ctrl_.resize(props.resolution.x, props.resolution.y);
+    ctrl_.resize(static_cast<float>(props.resolution.x), static_cast<float>(props.resolution.y));
     ctrl_.setEntity(camera_);
     world_.initialize();
 
@@ -454,13 +454,13 @@ void RCubeViewer::drawGUI()
 
 void RCubeViewer::onResize(int w, int h)
 {
-    ctrl_.resize(w, h);
+    ctrl_.resize(static_cast<float>(w), static_cast<float>(h));
     camera_.get<rcube::Camera>()->viewport_size = glm::ivec2(w, h);
 }
 
 void RCubeViewer::onScroll(double xoffset, double yoffset)
 {
-    ctrl_.zoom(yoffset);
+    ctrl_.zoom(static_cast<float>(yoffset));
 }
 
 void RCubeViewer::beforeTerminate()
@@ -473,8 +473,8 @@ void RCubeViewer::beforeTerminate()
 
 glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
 {
-    const float x(xpos);
-    const float y(ypos);
+    const float x = static_cast<float>(xpos);
+    const float y = static_cast<float>(ypos);
     const glm::vec2 size(this->size());
     float ndc_x = (2.0f * xpos) / (float)size[0] - 1.0f;
     float ndc_y = 1.0f - (2.0f * ypos) / (float)size[1];
@@ -541,17 +541,17 @@ void RCubeViewer::onMousePress(int key, int mods)
     glm::dvec2 pos = getMousePosition();
     if (key == GLFW_MOUSE_BUTTON_MIDDLE)
     {
-        ctrl_.startPanning(pos.x, pos.y);
+        ctrl_.startPanning(static_cast<int>(pos.x), static_cast<int>(pos.y));
     }
     else if (key == GLFW_MOUSE_BUTTON_RIGHT)
     {
-        ctrl_.startOrbiting(pos.x, pos.y);
+        ctrl_.startOrbiting(static_cast<int>(pos.x), static_cast<int>(pos.y));
     }
     else if (key == GLFW_MOUSE_BUTTON_LEFT)
     {
         EntityHandle ent;
         size_t id = 0;
-        pick(pos[0], pos[1], ent, id);
+        pick(static_cast<int>(pos.x), static_cast<int>(pos.y), ent, id);
     }
 }
 void RCubeViewer::onMouseRelease(int key, int mods)
@@ -559,18 +559,18 @@ void RCubeViewer::onMouseRelease(int key, int mods)
     glm::dvec2 pos = getMousePosition();
     if (key == GLFW_MOUSE_BUTTON_MIDDLE)
     {
-        ctrl_.stopPanning(pos.x, pos.y);
+        ctrl_.stopPanning(static_cast<int>(pos.x), static_cast<int>(pos.y));
     }
     else if (key == GLFW_MOUSE_BUTTON_RIGHT)
     {
-        ctrl_.stopOrbiting(pos.x, pos.y);
+        ctrl_.stopOrbiting(static_cast<int>(pos.x), static_cast<int>(pos.y));
     }
 }
 void RCubeViewer::onMouseMove(double xpos, double ypos)
 {
     glm::dvec2 pos = getMousePosition();
-    ctrl_.orbit(pos.x, pos.y);
-    ctrl_.pan(pos.x, pos.y);
+    ctrl_.orbit(static_cast<int>(pos.x), static_cast<int>(pos.y));
+    ctrl_.pan(static_cast<int>(pos.x), static_cast<int>(pos.y));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

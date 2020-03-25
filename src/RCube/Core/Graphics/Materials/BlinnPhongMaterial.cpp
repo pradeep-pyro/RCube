@@ -164,13 +164,10 @@ layout (std140, binding=2) uniform Lights {
 // --------------------------------
 // Material properties
 // --------------------------------
-struct Material {
-    vec3 diffuse;
-    vec3 specular;
-    float shininess;
-    float reflectivity;
-};
-uniform Material material;
+uniform vec3 diffuse;
+uniform vec3 specular;
+uniform float shininess;
+uniform float reflectivity;
 
 layout(binding=0) uniform sampler2D diffuse_tex;
 layout(binding=1) uniform sampler2D specular_tex;
@@ -182,11 +179,8 @@ uniform bool show_backface;
 uniform bool use_diffuse_texture, use_specular_texture, use_normal_texture, use_environment_map;
 uniform int blend_environment_map;
 
-struct Line {
-    vec3 color;
-    float thickness;
-};
-uniform Line line_props;
+uniform vec3 wireframe_color;
+uniform float wireframe_thickness;
 
 // Returns the attenuation factor that is multiplied with the light's color
 float attenuation(float dist, float radius) {
@@ -202,7 +196,7 @@ bool close(float a, float b) {
 void main() {
     vec3 result = vec3(0.0);
     // Diffuse component
-    vec3 material_diffuse = use_diffuse_texture ? texture(diffuse_tex, g_texture).rgb * g_color : material.diffuse * g_color;
+    vec3 material_diffuse = use_diffuse_texture ? texture(diffuse_tex, g_texture).rgb * g_color : diffuse * g_color;
     // Specular component
     float specular_tex_val = use_specular_texture ? texture(specular_tex, g_texture).r : 1.0;
     // Surface normal
@@ -232,10 +226,10 @@ void main() {
         float diff_contrib = show_backface ? abs(LdotN) : max(LdotN, 0.0);
         float spec_contrib = 0.0;
         if (LdotN > 0.0) {
-            spec_contrib = specular_tex_val * pow(max(0, dot(N, H)), material.shininess);
+            spec_contrib = specular_tex_val * pow(max(0, dot(N, H)), shininess);
         }
         vec3 light_color = att * lights[i].color_coneangle.xyz;
-        result += light_color * (diff_contrib * material_diffuse + spec_contrib * material.specular);
+        result += light_color * (diff_contrib * material_diffuse + spec_contrib * specular);
     }
 
     // Wireframe
@@ -243,8 +237,8 @@ void main() {
         // Find the smallest distance
         float d = min(dist.x, dist.y);
         d = min(d, dist.z);
-        float mix_val = smoothstep(line_props.thickness - 1.0, line_props.thickness + 1.0, d);
-        result = mix(line_props.color, result, mix_val);
+        float mix_val = smoothstep(wireframe_thickness - 1.0, wireframe_thickness + 1.0, d);
+        result = mix(wireframe_color, result, mix_val);
     }
     // Environment map
     if (use_environment_map) {
@@ -259,7 +253,7 @@ void main() {
             result += em;
         }
         else if (blend_environment_map == 2) {
-            result = mix(em, result, material.reflectivity);
+            result = mix(em, result, reflectivity);
         }
     }
 
@@ -289,14 +283,14 @@ const static GeometryShader BlinnPhongGeometryShader = {
 
 const static FragmentShader BlinnPhongFragmentShader = {
     /*uniforms: */
-    {{"material.diffuse", GLDataType::Vec3f},
-     {"material.specular", GLDataType::Vec3f},
-     {"material.shininess", GLDataType::Float},
-     {"material.reflectivity", GLDataType::Float},
+    {{"diffuse", GLDataType::Color3f},
+     {"specular", GLDataType::Color3f},
+     {"shininess", GLDataType::Float},
+     {"reflectivity", GLDataType::Float},
      {"show_wireframe", GLDataType::Bool},
      {"show_backface", GLDataType::Bool},
-     {"line_props.color", GLDataType::Vec3f},
-     {"line_props.thickness", GLDataType::Float},
+     {"wireframe_color", GLDataType::Color3f},
+     {"wireframe_thickness", GLDataType::Float},
      {"use_diffuse_texture", GLDataType::Bool},
      {"use_specular_texture", GLDataType::Bool},
      {"use_normal_texture", GLDataType::Bool},
@@ -317,10 +311,11 @@ std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color,
     auto prog = ShaderProgram::create(BlinnPhongVertexShader, BlinnPhongGeometryShader,
                                       BlinnPhongFragmentShader, true);
     prog->renderPriority() = RenderPriority::Opaque;
-    prog->uniform("material.diffuse").set(diffuse_color);
-    prog->uniform("material.specular").set(specular_color);
-    prog->uniform("material.shininess").set(shininess);
+    prog->uniform("diffuse").set(diffuse_color);
+    prog->uniform("specular").set(specular_color);
+    prog->uniform("shininess").set(shininess);
     prog->uniform("show_wireframe").set(wireframe);
+    prog->uniform("wireframe_thickness").set(1.f);
     prog->uniform("blend_environment_map").set(1);
     prog->renderState().depth_test = true;
     prog->renderState().depth_write = true;

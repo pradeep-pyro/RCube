@@ -25,7 +25,7 @@ int main()
 
     // Change its diffuse color by getting the Drawable component
     const auto &material = icoSphere1.get<Drawable>()->material;
-    material->uniform("material.diffuse").set(glm::vec3(0.0, 0.3, 0.7));
+    material->uniform("diffuse").set(glm::vec3(0.0, 0.3, 0.7));
     material->uniform("show_wireframe").set(true);
 
     // Apply gamma correction to the screen

@@ -46,7 +46,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Put a directional light on the camera
     camera_.add<DirectionalLight>();
-
     // Create a ground plane
     ground_ = createGroundPlane();
     ground_.get<Drawable>()->visible = props.ground_plane;
@@ -251,6 +250,7 @@ void drawGUIForDrawableComponent(EntityHandle ent)
         switch (uni.type)
         {
         case GLDataType::Bool:
+        {
             bool uni_bool;
             dr->material->uniform(uni.name).get(uni_bool);
             if (ImGui::Checkbox(uni.name.c_str(), &uni_bool))
@@ -258,7 +258,9 @@ void drawGUIForDrawableComponent(EntityHandle ent)
                 dr->material->uniform(uni.name).set(uni_bool);
             }
             break;
+        }
         case GLDataType::Int:
+        {
             int uni_int;
             dr->material->uniform(uni.name).get(uni_int);
             if (ImGui::InputInt(uni.name.c_str(), &uni_int))
@@ -266,7 +268,9 @@ void drawGUIForDrawableComponent(EntityHandle ent)
                 dr->material->uniform(uni.name).set(uni_int);
             }
             break;
+        }
         case GLDataType::Float:
+        {
             float uni_float;
             dr->material->uniform(uni.name).get(uni_float);
             if (ImGui::InputFloat(uni.name.c_str(), &uni_float))
@@ -274,7 +278,9 @@ void drawGUIForDrawableComponent(EntityHandle ent)
                 dr->material->uniform(uni.name).set(uni_float);
             }
             break;
+        }
         case GLDataType::Vec2f:
+        {
             glm::vec2 uni_vec2f;
             dr->material->uniform(uni.name).get(uni_vec2f);
             if (ImGui::InputFloat2(uni.name.c_str(), glm::value_ptr(uni_vec2f)))
@@ -282,7 +288,9 @@ void drawGUIForDrawableComponent(EntityHandle ent)
                 dr->material->uniform(uni.name).set(uni_vec2f);
             }
             break;
+        }
         case GLDataType::Vec3f:
+        {
             glm::vec3 uni_vec3f;
             dr->material->uniform(uni.name).get(uni_vec3f);
             if (ImGui::InputFloat3(uni.name.c_str(), glm::value_ptr(uni_vec3f)))
@@ -290,6 +298,17 @@ void drawGUIForDrawableComponent(EntityHandle ent)
                 dr->material->uniform(uni.name).set(uni_vec3f);
             }
             break;
+        }
+        case GLDataType::Color3f:
+        {
+            glm::vec3 uni_vec3f;
+            dr->material->uniform(uni.name).get(uni_vec3f);
+            if (ImGui::ColorEdit3(uni.name.c_str(), glm::value_ptr(uni_vec3f)))
+            {
+                dr->material->uniform(uni.name).set(uni_vec3f);
+            }
+            break;
+        }
         }
     }
 }
@@ -320,17 +339,49 @@ void RCubeViewer::drawGUI()
     // Default camera
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        auto pos = camera_.get<Transform>()->position();
+        Transform *cam_tr = camera_.get<Transform>();
+        auto pos = cam_tr->position();
         static float xyz[3];
         xyz[0] = pos[0];
         xyz[1] = pos[1];
         xyz[2] = pos[2];
         if (ImGui::InputFloat3("Position", xyz, 2))
         {
-            camera_.get<Transform>()->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
+            cam_tr->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
             xyz[0] = pos[0];
             xyz[1] = pos[1];
             xyz[2] = pos[2];
+        }
+
+        // Default camera viewpoints
+        if (ImGui::Button("+X"))
+        {
+            camera_.get<Transform>()->setPosition(glm::vec3(+glm::length(pos), 0, 0));
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("-X"))
+        {
+            cam_tr->setPosition(glm::vec3(-glm::length(pos), 0, 0));
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+Y"))
+        {
+            cam_tr->setPosition(glm::vec3(0, +glm::length(pos), 0));
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("-Y"))
+        {
+            cam_tr->setPosition(glm::vec3(0, -glm::length(pos), 0));
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+Z"))
+        {
+            cam_tr->setPosition(glm::vec3(0, 0, +glm::length(pos)));
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("-Z"))
+        {
+            cam_tr->setPosition(glm::vec3(0, 0, -glm::length(pos)));
         }
 
         drawGUIForCameraComponent(camera_);

@@ -7,6 +7,7 @@ enum class GLDataType
     Vec4i,
     Vec2f,
     Vec3f,
+    Color3f,
     Vec4f,
     Mat2f,
     Mat3f,

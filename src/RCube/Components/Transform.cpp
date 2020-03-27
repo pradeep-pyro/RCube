@@ -88,7 +88,7 @@ void Transform::rotate(const glm::quat &quaternion)
 void Transform::lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up)
 {
     setPosition(position);
-    setOrientation(glm::quatLookAt(glm::normalize(target - position), up));
+    setOrientation(glm::normalize(glm::quatLookAt(glm::normalize(target - position), glm::normalize(up))));
     dirty_ = true;
 }
 

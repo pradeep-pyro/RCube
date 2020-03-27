@@ -41,7 +41,10 @@ class Transform : public Component<Transform>
     void setParent(Transform *p);
 
     /**
-     * Returns the position in world coordinates after resolving the
+     * Returns the position in world coordinates.
+     * NOTE: the transform hierarchy is only resolved during the next iteration of the
+     * game loop. Accessing worldPosition() immediately after updating the transform
+     * will give results from the previous computation.
      * transform hierarchy
      * @return 3D world position
      */
@@ -91,13 +94,13 @@ class Transform : public Component<Transform>
 
     /**
      * Returns the local transformation matrix
-     * @return 4x4 transformation matrix combing rotation and translation
+     * @return 4x4 transformation matrix combining rotation and translation
      */
     const glm::mat4 &localTransform();
 
     /**
      * Returns the global transformation matrix in world space
-     * @return 4x4 transformation matrix combing rotation and translation
+     * @return 4x4 transformation matrix combining rotation and translation
      */
     const glm::mat4 &worldTransform();
 
@@ -120,6 +123,14 @@ class Transform : public Component<Transform>
      * @param quaternion Unit quaternion
      */
     void rotate(const glm::quat &quaternion);
+
+    /**
+     * Transform such that the object is in given the lookAt configuration
+     * @param position Position of the transform
+     * @param target Target to look at
+     * @param up Up orientation of the object
+     */
+    void lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up);
 
   private:
     friend class TransformSystem;

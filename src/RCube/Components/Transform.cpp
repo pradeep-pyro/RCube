@@ -85,4 +85,11 @@ void Transform::rotate(const glm::quat &quaternion)
     dirty_ = true;
 }
 
+void Transform::lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up)
+{
+    setPosition(position);
+    setOrientation(glm::quatLookAt(glm::normalize(target - position), up));
+    dirty_ = true;
+}
+
 } // namespace rcube

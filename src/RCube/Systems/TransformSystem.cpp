@@ -14,10 +14,10 @@ void TransformSystem::updateHierarchy(Transform *comp, bool force)
 {
     if (comp->dirty_ || force)
     {
-        glm::mat4 loc_tr = glm::toMat4(comp->orientation());
-        loc_tr = glm::scale(loc_tr, comp->scale());
-        loc_tr = glm::translate(loc_tr, comp->position());
-        comp->local_transform_ = loc_tr;
+        const glm::mat4 R = glm::toMat4(comp->orientation_);
+        const glm::mat4 S = glm::scale(comp->scale());
+        const glm::mat4 T = glm::translate(comp->position_);
+        comp->local_transform_ = T * S * R;
 
         // Set world transformation := local transformation if there is no parent
         if (comp->parent() == nullptr)

@@ -14,6 +14,13 @@ namespace rcube
 class CameraSystem;
 class RenderSystem;
 
+constexpr glm::vec3 XAXIS_POSITIVE = glm::vec3(+1, 0, 0);
+constexpr glm::vec3 XAXIS_NEGATIVE = glm::vec3(-1, 0, 0);
+constexpr glm::vec3 YAXIS_POSITIVE = glm::vec3(0, +1, 0);
+constexpr glm::vec3 YAXIS_NEGATIVE = glm::vec3(0, -1, 0);
+constexpr glm::vec3 ZAXIS_POSITIVE = glm::vec3(0, 0, +1);
+constexpr glm::vec3 ZAXIS_NEGATIVE = glm::vec3(0, 0, -1);
+
 struct Frustum
 {
     std::array<glm::vec3, 8> points;
@@ -38,9 +45,9 @@ class Camera : public Component<Camera>
     float far_plane = 1000.f; /// The farthest point relative to the camera which will be be drawn
     float orthographic_size =
         2; /// Used to control field of view indirectly when using orthographic projection
-    glm::vec3 target = glm::vec3(0);            /// Target where the camera points to
-    glm::vec3 up = glm::vec3(0, 1, 0);          /// Up orientation w.r.t. the camera
-    bool rendering = true;                      /// Whether the camera is actively rendering
+    glm::vec3 target = glm::vec3(0.f, 0.f, 0.f);
+    bool rendering =
+        true;                                   /// Whether the camera is actively rendering
     glm::ivec2 viewport_origin = glm::ivec2(0); /// Origin of the viewport where the scene is drawn
     glm::ivec2 viewport_size =
         glm::ivec2(1280, 720); /// Size of the viewport where the scene is drawn

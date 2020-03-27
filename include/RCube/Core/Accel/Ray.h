@@ -15,37 +15,17 @@ class Ray
 
   public:
     Ray(const glm::vec3 o, const glm::vec3 d, float tmin = 0.f,
-        float tmax = std::numeric_limits<float>::infinity())
-        : orig(o), tmin_(tmin), tmax_(tmax)
-    {
-        dir = glm::normalize(d);
-        inv_dir = 1.0f / orig;
-    }
+        float tmax = std::numeric_limits<float>::infinity());
 
-    const glm::vec3 &origin() const
-    {
-        return orig;
-    }
+    const glm::vec3 &origin() const;
 
-    const glm::vec3 &direction() const
-    {
-        return dir;
-    }
+    const glm::vec3 &direction() const;
 
-    const glm::vec3 &inverseDirection() const
-    {
-        return inv_dir;
-    }
+    const glm::vec3 &inverseDirection() const;
 
-    float tmin() const
-    {
-        return tmin_;
-    }
+    float tmin() const;
 
-    float tmax() const
-    {
-        return tmax_;
-    }
+    float tmax() const;
 };
 
 } // namespace rcube

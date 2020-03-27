@@ -34,7 +34,6 @@ struct RCubeViewerProps
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
     int MSAA = 0;                                  // Number of samples for multisampling
     glm::vec4 background_color = glm::vec4(0.2f, 0.2f, 0.2f, 1.f); // Background color
-    glm::vec3 camera_position = glm::vec3(1.f, 1.f, 1.f);          // Position of the camera
     float camera_fov = glm::radians(45.f); // Vertical FOV of the camera in radians
     bool camera_orthographic = false;
     bool ground_plane = true;
@@ -67,6 +66,12 @@ class RCubeViewer : public rcube::Window
     EntityHandle getEntity(std::string name);
 
     EntityHandle camera();
+
+    // Callback functions for injecting user code
+    std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &viewer) {};
+    std::function<void(RCubeViewer &viewer)> handleMouseDown = [](RCubeViewer &viewer) {};
+    std::function<void(RCubeViewer &viewer)> handleMouseUp = [](RCubeViewer &viewer) {};
+    std::function<void(RCubeViewer &viewer)> handleMouseMove = [](RCubeViewer &viewer) {};
 
   protected:
     virtual void draw() override;

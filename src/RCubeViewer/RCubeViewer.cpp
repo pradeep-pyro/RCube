@@ -3,6 +3,7 @@
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Components/ScalarField.h"
 #include "glm/gtx/euler_angles.hpp"
+#include "glm/gtx/string_cast.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -40,7 +41,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 
     // Create a default camera
     camera_ = createCamera();
-    camera_.get<Transform>()->setPosition(props.camera_position);
+    camera_.get<Transform>()->lookAt(glm::vec3(0.f, 0.f, 1.5f), glm::vec3(0.f, 0.f, 0.f),
+                                     YAXIS_POSITIVE);
     camera_.get<Camera>()->fov = props.camera_fov;
     camera_.get<Camera>()->background_color = props.background_color;
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
@@ -166,6 +168,7 @@ void RCubeViewer::draw()
 
     // Create GUI
     drawGUI();
+    customGUI(*this);
 
     // Render everything in the scene
     ImGui::Render();
@@ -339,49 +342,44 @@ void RCubeViewer::drawGUI()
     // Default camera
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        Camera *cam = camera_.get<Camera>();
         Transform *cam_tr = camera_.get<Transform>();
-        auto pos = cam_tr->position();
-        static float xyz[3];
-        xyz[0] = pos[0];
-        xyz[1] = pos[1];
-        xyz[2] = pos[2];
-        if (ImGui::InputFloat3("Position", xyz, 2))
-        {
-            cam_tr->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
-            xyz[0] = pos[0];
-            xyz[1] = pos[1];
-            xyz[2] = pos[2];
-        }
 
         // Default camera viewpoints
         if (ImGui::Button("+X"))
         {
-            camera_.get<Transform>()->setPosition(glm::vec3(+glm::length(pos), 0, 0));
+            cam->target = glm::vec3(0.f);
+            cam_tr->lookAt(glm::vec3(+1.5f, 0, 0), glm::vec3(0.f), YAXIS_POSITIVE);
         }
         ImGui::SameLine();
         if (ImGui::Button("-X"))
         {
-            cam_tr->setPosition(glm::vec3(-glm::length(pos), 0, 0));
+            cam->target = glm::vec3(0.f);
+            cam_tr->lookAt(glm::vec3(-1.5f, 0, 0), glm::vec3(0.f), YAXIS_POSITIVE);
         }
         ImGui::SameLine();
         if (ImGui::Button("+Y"))
         {
-            cam_tr->setPosition(glm::vec3(0, +glm::length(pos), 0));
+            cam->target = glm::vec3(0.f);
+            cam_tr->lookAt(glm::vec3(0, +1.5f, 0), glm::vec3(0.f), ZAXIS_POSITIVE);
         }
         ImGui::SameLine();
         if (ImGui::Button("-Y"))
         {
-            cam_tr->setPosition(glm::vec3(0, -glm::length(pos), 0));
+            cam->target = glm::vec3(0.f);
+            cam_tr->lookAt(glm::vec3(0, -1.5f, 0), glm::vec3(0.f), ZAXIS_POSITIVE);
         }
         ImGui::SameLine();
         if (ImGui::Button("+Z"))
         {
-            cam_tr->setPosition(glm::vec3(0, 0, +glm::length(pos)));
+            cam->target = glm::vec3(0.f);
+            cam_tr->lookAt(glm::vec3(0, 0, +1.5f), glm::vec3(0.f), YAXIS_POSITIVE);
         }
         ImGui::SameLine();
         if (ImGui::Button("-Z"))
         {
-            cam_tr->setPosition(glm::vec3(0, 0, -glm::length(pos)));
+            cam->target = glm::vec3(0.f);
+            cam_tr->lookAt(glm::vec3(0, 0, -1.5f), glm::vec3(0.f), YAXIS_POSITIVE);
         }
 
         drawGUIForCameraComponent(camera_);

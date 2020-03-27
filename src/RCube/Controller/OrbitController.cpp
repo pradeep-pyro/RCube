@@ -56,17 +56,15 @@ void OrbitController::orbit(int x, int y)
 {
     if (orbiting_ && (last_ox_ != x) && (last_oy_ != y))
     {
-        glm::vec3 pos = transform_->position();
+        glm::vec3 pos = transform_->position() - camera_->target;
         float r, ha, va;
         cartesianToSpherical(pos, r, ha, va);
-        float dx = static_cast<float>(last_ox_ - x) / static_cast<float>(width_);
-        float dy = static_cast<float>(last_oy_ - y) / static_cast<float>(height_);
-        dx *= orbit_speed;
-        dy *= orbit_speed;
+        const float dx = orbit_speed * static_cast<float>(last_ox_ - x) / static_cast<float>(width_);
+        const float dy = orbit_speed * static_cast<float>(last_oy_ - y) / static_cast<float>(height_);
         va = glm::clamp(va + dy, min_vertical_angle, max_vertical_angle);
         ha = glm::clamp(ha + dx, min_horizontal_angle, max_horizontal_angle);
         pos = sphericalToCartesian(r, ha, va);
-        transform_->setPosition(pos);
+        transform_->lookAt(pos + camera_->target, camera_->target, YAXIS_POSITIVE);
         last_ox_ = x;
         last_oy_ = y;
     }

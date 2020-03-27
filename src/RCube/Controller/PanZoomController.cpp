@@ -1,4 +1,5 @@
 #include "RCube/Controller/PanZoomController.h"
+#include "glm/gtx/string_cast.hpp"
 
 namespace rcube
 {
@@ -29,10 +30,11 @@ void PanZoomController::pan(int x, int y)
         float dy = -static_cast<float>(y - last_py_) / height_;
         dx *= pan_speed;
         dy *= pan_speed;
-        glm::vec3 side = glm::cross(camera_->up, camera_->target - transform_->worldPosition());
-        side = glm::normalize(side);
-        transform_->translate(side * dx - camera_->up * dy);
-        camera_->target += side * dx - camera_->up * dy;
+        const glm::vec3 up = glm::normalize(transform_->orientation() * YAXIS_POSITIVE);
+        const glm::vec3 forward = glm::normalize(camera_->target - transform_->worldPosition());
+        const glm::vec3 side = glm::normalize(glm::cross(up, forward));
+        transform_->translate(side * dx - up * dy);
+        camera_->target += side * dx - up * dy;
         last_px_ = x;
         last_py_ = y;
     }
@@ -43,12 +45,13 @@ void PanZoomController::zoom(float amount)
     // Zoom
     if (std::abs(amount) > 1e-6)
     {
-        glm::vec3 forward = glm::normalize(camera_->target - transform_->worldPosition());
+        const glm::vec3 forward = glm::normalize(camera_->target - transform_->worldPosition());
         // Dolly for perspective projection
         transform_->translate(forward * float(amount) * zoom_speed);
+        translate(forward * amount * zoom_speed);
         if (camera_->orthographic)
         {
-            camera_->orthographic_size += float(amount) * zoom_speed;
+            camera_->orthographic_size += amount * zoom_speed;
         }
     }
 }

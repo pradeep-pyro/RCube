@@ -338,6 +338,10 @@ void drawGUIForCameraComponent(EntityHandle ent)
 void RCubeViewer::drawGUI()
 {
     ImGui::Begin("RCubeViewer");
+
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate);
+
     ///////////////////////////////////////////////////////////////////////////
     // Default camera
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
@@ -587,6 +591,10 @@ bool RCubeViewer::pick(int xpos, int ypos, EntityHandle &ent, size_t id)
 
 void RCubeViewer::onMousePress(int key, int mods)
 {
+    if (ImGui::GetIO().WantCaptureMouse)
+    {
+        return;
+    }
     glm::dvec2 pos = getMousePosition();
     if (key == GLFW_MOUSE_BUTTON_MIDDLE)
     {

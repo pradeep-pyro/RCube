@@ -10,7 +10,13 @@
 namespace rcube
 {
 
-class Buffer
+enum class BufferType
+{
+    Array = GL_ARRAY_BUFFER,
+    ElementArray = GL_ELEMENT_ARRAY_BUFFER
+};
+
+template <BufferType Type> class Buffer
 {
     GLuint id_;
     size_t size_ = 0;
@@ -30,6 +36,10 @@ class Buffer
             release();
         }
     }
+    BufferType type()
+    {
+        return Type;
+    }
     void reserve(size_t num_elements)
     {
         use();
@@ -42,20 +52,52 @@ class Buffer
         glDeleteBuffers(1, &id_);
         id_ = 0;
     }
-    void setData(const float *buf, size_t size)
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::Array, void> setData(const float *buf, size_t size)
     {
         assert(size == size_);
         use();
         glBufferSubData(GL_ARRAY_BUFFER, 0, size * sizeof(float), buf);
         done();
     }
-    void setData(const std::vector<float> &buf)
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::Array, void> setData(const std::vector<float> &buf)
     {
         setData(&buf[0], buf.size());
     }
-    void setData(const std::vector<glm::vec3> &buf)
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::Array, void> setData(const std::vector<glm::vec3> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 3);
+    }
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::Array, void> setData(const std::vector<glm::vec2> &buf)
+    {
+        setData(glm::value_ptr(buf[0]), buf.size() * 2);
+    }
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::ElementArray, void> setData(const unsigned int *buf, size_t size)
+    {
+        assert(size == size_);
+        use();
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size * sizeof(unsigned int), buf);
+        done();
+    }
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::ElementArray, void>
+    setData(const std::vector<unsigned int> &buf)
+    {
+        setData(&buf[0], buf.size());
+    }
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::ElementArray, void> setData(const std::vector<glm::uvec3> &buf)
+    {
+        setData(glm::value_ptr(buf[0]), buf.size() * 3);
+    }
+    template <BufferType T = Type>
+    std::enable_if<T == BufferType::ElementArray, void> setData(const std::vector<glm::uvec2> &buf)
+    {
+        setData(glm::value_ptr(buf[0]), buf.size() * 2);
     }
     size_t size() const
     {
@@ -74,5 +116,8 @@ class Buffer
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 };
+
+using ArrayBuffer = Buffer<BufferType::Array>;
+using ElementArrayBuffer = Buffer<BufferType::ElementArray>;
 
 } // namespace rcube

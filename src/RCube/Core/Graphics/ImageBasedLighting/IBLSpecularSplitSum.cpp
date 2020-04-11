@@ -311,6 +311,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     rdr_.resize(0, 0, resolution_, resolution_);
 
     glm::mat4 eye(1.0);
+    const glm::vec3 eye_pos(0., 0., 0.);
     for (unsigned int mip = 0; mip < num_mipmaps; ++mip)
     {
         // Resize framebuffer and viewport according to mipmap size
@@ -325,7 +326,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         for (unsigned int i = 0; i < 6; ++i)
         {
             rdr_.clear();
-            rdr_.setCamera(views_[i], projection_, eye);
+            rdr_.setCamera(eye_pos, views_[i], projection_, eye);
             rdr_.render(cube_.get(), shader_.get(), eye);
             prefiltered_map->use();
             glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mip, 0, 0, 0, 0, mip_width,

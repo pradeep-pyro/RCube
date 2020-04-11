@@ -41,7 +41,8 @@ class GLRenderer
 
     void setLights(const std::vector<Light> &lights);
 
-    void setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
+    void setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
+                   const glm::mat4 &view_to_projection,
                    const glm::mat4 &projection_to_viewport);
 
     void render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world);
@@ -78,6 +79,9 @@ class GLRenderer
 
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
+
+    // Buffer to store lights data
+    std::vector<float> light_data_;
 
     // Skybox
     std::shared_ptr<Mesh> skybox_mesh_;

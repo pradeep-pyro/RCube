@@ -112,6 +112,7 @@ void RenderSystem::update(bool /* force */)
     for (const auto &camera_entity : camera_entities)
     {
         Camera *cam = world_->getComponent<Camera>(camera_entity);
+        Transform *tr = world_->getComponent<Transform>(camera_entity);
         if (!cam->rendering)
         {
             continue;
@@ -124,7 +125,7 @@ void RenderSystem::update(bool /* force */)
         renderer.clear(true, true, true);
 
         // set camera & lights
-        renderer.setCamera(cam->world_to_view, cam->view_to_projection,
+        renderer.setCamera(tr->worldPosition(), cam->world_to_view, cam->view_to_projection,
                            cam->projection_to_viewport);
 
         // Draw all opaque

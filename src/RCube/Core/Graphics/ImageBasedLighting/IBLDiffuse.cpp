@@ -157,11 +157,12 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
     shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
     glm::mat4 eye(1.0);
+    glm::vec3 eye_pos(0., 0., 0.);
     fbo_->use();
     for (unsigned int i = 0; i < 6; ++i)
     {
         rdr_.clear();
-        rdr_.setCamera(views_[i], projection_, eye);
+        rdr_.setCamera(eye_pos, views_[i], projection_, eye);
         rdr_.render(cube_.get(), shader_.get(), eye);
         irradiance_map->use();
         glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0, fbo_->width(),

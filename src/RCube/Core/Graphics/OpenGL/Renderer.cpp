@@ -169,6 +169,8 @@ void GLRenderer::initialize()
     skybox_mesh_->uploadToGPU();
     skybox_shader_ = ShaderProgram::create(skybox_vert, skybox_frag, true);
 
+    // Lights data
+    light_data_.reserve(99 * 12);
     init_ = true;
 }
 
@@ -186,13 +188,13 @@ void GLRenderer::resize(int top, int left, int width, int height)
     quad_shader_->use();
 }
 
-void GLRenderer::setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
+void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
                            const glm::mat4 &projection_to_viewport)
 {
     initialize();
 
     // TODO: avoid computing inverse, eye position could be an argument to this method
-    const glm::vec3 eye_pos = glm::vec3(glm::inverse(world_to_view)[3]);
+    const glm::vec3 eye_pos1 = glm::vec3(glm::inverse(world_to_view)[3]);
 
     const int float4x4_size = sizeof(glm::mat4);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices_);
@@ -204,7 +206,7 @@ void GLRenderer::setCamera(const glm::mat4 &world_to_view, const glm::mat4 &view
                     glm::value_ptr(projection_to_viewport));
     // Copy eye pos to UBO
     glBufferSubData(GL_UNIFORM_BUFFER, 3 * float4x4_size, static_cast<int>(sizeof(glm::vec3)),
-                    glm::value_ptr(eye_pos));
+                    glm::value_ptr(eye_pos1));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
 }
@@ -213,32 +215,30 @@ void GLRenderer::setLights(const std::vector<Light> &lights)
 {
     initialize();
     // Copy lights
-    // TODO: Avoid creating this buffer inside this method
-    std::vector<float> light_data;
     assert(lights.size() < 99);
-    light_data.reserve(lights.size() * 12);
+    light_data_.clear();
     for (const Light &l : lights)
     {
         const glm::vec3 &pos_xyz = l.position;
         // pos_xyz = glm::vec3(world_to_view * glm::vec4(pos_xyz, 1.f));
         const glm::vec3 &dir = l.direction;
         // dir = glm::vec3(world_to_view * glm::vec4(dir, 0.f));
-        light_data.push_back(pos_xyz.x);
-        light_data.push_back(pos_xyz.y);
-        light_data.push_back(pos_xyz.z);
-        light_data.push_back(l.pos_w);
-        light_data.push_back(dir.x);
-        light_data.push_back(dir.y);
-        light_data.push_back(dir.z);
-        light_data.push_back(l.radius);
-        light_data.push_back(l.color.r);
-        light_data.push_back(l.color.g);
-        light_data.push_back(l.color.b);
-        light_data.push_back(l.cone_angle);
+        light_data_.push_back(pos_xyz.x);
+        light_data_.push_back(pos_xyz.y);
+        light_data_.push_back(pos_xyz.z);
+        light_data_.push_back(l.pos_w);
+        light_data_.push_back(dir.x);
+        light_data_.push_back(dir.y);
+        light_data_.push_back(dir.z);
+        light_data_.push_back(l.radius);
+        light_data_.push_back(l.color.r);
+        light_data_.push_back(l.color.g);
+        light_data_.push_back(l.color.b);
+        light_data_.push_back(l.cone_angle);
     }
     const int num_lights = static_cast<int>(lights.size());
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_lights_);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, light_data.size() * sizeof(float), light_data.data());
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, light_data_.size() * sizeof(float), light_data_.data());
     glBufferSubData(GL_UNIFORM_BUFFER, 99 * 12 * sizeof(float), sizeof(int), &num_lights);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo_lights_);
@@ -294,6 +294,7 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
 
 void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world)
 {
+    
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
 
     assert(program != nullptr);
@@ -311,7 +312,8 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     catch (const std::exception)
     {
     }
-    mesh->use();
+    //mesh->use();
+    glBindVertexArray(mesh->vao());
     if (mesh->numIndexData() == 0)
     {
         glDrawArrays(static_cast<GLint>(mesh->data.primitive), 0, mesh->numVertexData());
@@ -321,7 +323,7 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
         glDrawElements(static_cast<GLint>(mesh->data.primitive), (GLsizei)mesh->numIndexData(),
                        GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
     }
-    mesh->done();
+    glBindVertexArray(0);
 }
 
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)

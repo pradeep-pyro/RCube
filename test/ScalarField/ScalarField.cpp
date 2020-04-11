@@ -1,18 +1,6 @@
 #include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCubeViewer/RCubeViewer.h"
-
-std::shared_ptr<rcube::ShaderProgram> makeShader()
-{
-    using namespace rcube;
-    std::shared_ptr<rcube::ShaderProgram> shader_scalarfield_ =
-        ShaderProgram::create(SCALARFIELD_VERTEX_SHADER, SCALARFIELD_FRAGMENT_SHADER, true);
-    shader_scalarfield_->renderState().depth_test = true;
-    shader_scalarfield_->renderState().depth_write = true;
-    shader_scalarfield_->renderState().blending = false;
-    shader_scalarfield_->renderState().culling = false;
-    shader_scalarfield_->renderPriority() = RenderPriority::Opaque;
-    return shader_scalarfield_;
-}
+#include "RCubeViewer/Colormap.h"
 
 int main()
 {
@@ -37,12 +25,14 @@ int main()
     {
         height_field.push_back(v.y);
     }
-    sphere_mesh->addCustomAttribute("scalarfield", ScalarField::ATTRIBUTE_LOCATION, GLDataType::Float);
-    sphere_mesh->customAttribute("scalarfield").data->setData(height_field);
-    sphere.add<ScalarField>();
-    sphere.get<ScalarField>()->vmin = -1.f;
-    sphere.get<ScalarField>()->vmax = +1.f;
-    sphere.get<ScalarField>()->colormap = ScalarField::Colormap::Viridis;
+
+    // Create colors based on colormap
+    float vmin = -1.f;
+    float vmax = +1.f;
+    colormap(Colormap::Viridis, height_field, vmin, vmax, sphere_mesh->data.colors);
+    sphere_mesh->uploadToGPU();
+    // Set diffuse color to white since it will be multiplied with the colors above
+    sphere.get<Drawable>()->material->uniform("diffuse").set(glm::vec3(1, 1, 1));
 
     // Show viewer
     viewer.execute();

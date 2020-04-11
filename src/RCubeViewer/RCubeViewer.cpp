@@ -1,7 +1,6 @@
 #include "RCubeViewer/RCubeViewer.h"
 #include "RCube/Core/Arch/World.h"
 #include "RCubeViewer/Components/Name.h"
-#include "RCubeViewer/Components/ScalarField.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "imgui.h"
@@ -35,10 +34,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    // auto rs = std::make_unique<RenderSystem>(props.resolution, props.MSAA);
-    auto rs = std::make_unique<ViewerRenderSystem>(props.resolution, props.MSAA);
-    world_.addSystem(std::move(rs));
-
+    world_.addSystem(std::make_unique<RenderSystem>(props.resolution, props.MSAA));
+    
     // Create a default camera
     camera_ = createCamera();
     camera_.get<Transform>()->lookAt(glm::vec3(0.f, 0.f, 1.5f), glm::vec3(0.f, 0.f, 0.f),
@@ -432,40 +429,7 @@ void RCubeViewer::drawGUI()
             {
                 if (ImGui::BeginTabBar("Components"))
                 {
-                    Drawable *dr = nullptr;
-                    Transform *tr = nullptr;
-                    Camera *cam = nullptr;
-                    ScalarField *sf = nullptr;
-                    try
-                    {
-                        dr = ent.get<Drawable>();
-                    }
-                    catch (const std::exception &)
-                    {
-                    }
-                    try
-                    {
-                        tr = ent.get<Transform>();
-                    }
-                    catch (const std::exception &)
-                    {
-                    }
-                    try
-                    {
-                        cam = ent.get<Camera>();
-                    }
-                    catch (const std::exception &)
-                    {
-                    }
-                    try
-                    {
-                        sf = ent.get<ScalarField>();
-                    }
-                    catch (const std::exception &)
-                    {
-                    }
-
-                    if (dr != nullptr)
+                    if (ent.has<Drawable>())
                     {
                         if (ImGui::BeginTabItem("Drawable"))
                         {
@@ -473,7 +437,7 @@ void RCubeViewer::drawGUI()
                             ImGui::EndTabItem();
                         }
                     }
-                    if (tr != nullptr)
+                    if (ent.has<Transform>())
                     {
                         if (ImGui::BeginTabItem("Transform"))
                         {
@@ -481,19 +445,11 @@ void RCubeViewer::drawGUI()
                             ImGui::EndTabItem();
                         }
                     }
-                    if (cam != nullptr)
+                    if (ent.has<Camera>())
                     {
                         if (ImGui::BeginTabItem("Camera"))
                         {
                             drawGUIForCameraComponent(ent);
-                            ImGui::EndTabItem();
-                        }
-                    }
-                    if (sf != nullptr)
-                    {
-                        if (ImGui::BeginTabItem("Scalar Field"))
-                        {
-                            drawGUIForScalarFieldComponent(ent);
                             ImGui::EndTabItem();
                         }
                     }

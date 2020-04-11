@@ -15,7 +15,6 @@
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/RenderSystem.h"
-#include "RCubeViewer/Systems/ViewerRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
 #include <memory>

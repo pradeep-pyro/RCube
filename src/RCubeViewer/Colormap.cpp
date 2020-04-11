@@ -1,5 +1,7 @@
 #include "RCubeViewer/Colormap.h"
 #include <algorithm>
+#include <stdexcept>
+#include <vector>
 
 namespace rcube
 {
@@ -204,19 +206,41 @@ void colormap(const float palette[256][3], float value, glm::vec3 &rgb)
     rgb.b = std::max(zero, std::min(one, (one - t) * b_min + t * b_max));
 }
 
-void colormap(Colormap cm, float value, glm::vec3 &rgb)
+void colormap(Colormap cm, float value, float vmin, float vmax, glm::vec3 &rgb)
 {
+    if (vmax < vmin)
+    {
+        throw std::invalid_argument("vmax must be greater than vmin");
+    }
+    const float denom = vmax - vmin;
+    const float norm_value = value - vmin / denom;
     switch (cm)
     {
     case Colormap::Viridis:
-        colormap(viridis, value, rgb);
+        colormap(viridis, norm_value, rgb);
         break;
     case Colormap::Magma:
-        colormap(magma, value, rgb);
+        colormap(magma, norm_value, rgb);
         break;
     default:
         break;
     }
+}
+
+void colormap(Colormap cm, const float *ptr, size_t size, float vmin, float vmax, std::vector<glm::vec3> &colors)
+{
+    colors.reserve(size);
+    glm::vec3 rgb;
+    for (size_t i = 0; i < size; ++i)
+    {
+        colormap(cm, ptr[i], vmin, vmax, rgb);
+        colors.push_back(rgb);
+    }
+}
+
+void colormap(Colormap cm, const std::vector<float> &value, float vmin, float vmax, std::vector<glm::vec3> &colors)
+{
+    colormap(cm, value.data(), value.size(), vmin, vmax, colors);
 }
 
 } // namespace rcube

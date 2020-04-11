@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include <vector>
 
 namespace rcube
 {
@@ -15,6 +16,10 @@ enum class Colormap
     Grays = 5
 };
 
-void colormap(Colormap cm, float value, glm::vec3 &rgb);
+void colormap(Colormap cm, float value, float vmin, float vmax, glm::vec3 &rgb);
+
+void colormap(Colormap cm, const float *value, size_t size, float vmin, float vmax, glm::vec3 &rgb);
+
+void colormap(Colormap cm, const std::vector<float> &value, float vmin, float vmax, std::vector<glm::vec3> &colors);
 
 } // namespace rcube

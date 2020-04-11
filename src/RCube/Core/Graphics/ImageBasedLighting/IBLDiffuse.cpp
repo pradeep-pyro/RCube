@@ -104,7 +104,7 @@ IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
     : resolution_(resolution), num_samples_(num_samples)
 {
     // Create a unit cube in clip space
-    cube_ = Mesh::create();
+    cube_ = Mesh::create(MeshPrimitive::Triangles);
     cube_->data = box(2.0, 2.0, 2.0, 1, 1, 1);
     cube_->uploadToGPU();
 
@@ -156,7 +156,6 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
     shader_->cubemap("env_map") = env_map;
     shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
-
     glm::mat4 eye(1.0);
     fbo_->use();
     for (unsigned int i = 0; i < 6; ++i)

@@ -34,7 +34,7 @@ public:
         using namespace rcube;
 
         // Create ground plane
-        std::shared_ptr<Mesh> gridMesh = Mesh::create();
+        std::shared_ptr<Mesh> gridMesh = Mesh::create(MeshPrimitive::Lines);
         gridMesh->data = rcube::grid(2, 2, 10, 10,
             glm::vec3(1.0, 0.0, 0.0),
             glm::vec3(0.0, 1.0, 0.0),
@@ -47,7 +47,7 @@ public:
 
         // Create a sphere with texture
         {
-            std::shared_ptr<Mesh> sphereMesh = Mesh::create();
+            std::shared_ptr<Mesh> sphereMesh = Mesh::create(MeshPrimitive::Triangles);
             std::shared_ptr<ShaderProgram> blinnPhong =
                 makeBlinnPhongMaterial(glm::vec3(1.0, 0.7, 0.8), glm::vec3(1.0), 4.f, true);
 
@@ -65,7 +65,7 @@ public:
 
         // Create a sphere
         {
-            std::shared_ptr<Mesh> sphereMesh = Mesh::create();
+            std::shared_ptr<Mesh> sphereMesh = Mesh::create(MeshPrimitive::Triangles);
             //sphereMesh->data = icoSphere(0.5, 3);
             sphereMesh->data = cubeSphere(0.5, 10);
             sphereMesh->uploadToGPU();
@@ -78,7 +78,7 @@ public:
 
         // Create a plane
         {
-            std::shared_ptr<Mesh> planeMesh = Mesh::create();
+            std::shared_ptr<Mesh> planeMesh = Mesh::create(MeshPrimitive::Triangles);
             planeMesh->data = plane(2, 2, 10, 10, rcube::Orientation::PositiveY);
             planeMesh->uploadToGPU();
             std::shared_ptr<ShaderProgram> blinnPhong =
@@ -89,7 +89,7 @@ public:
         }
 
         // Create box with texture
-        std::shared_ptr<Mesh> boxMesh = Mesh::create();
+        std::shared_ptr<Mesh> boxMesh = Mesh::create(MeshPrimitive::Triangles);
         boxMesh->data = box(1, 1, 1, 1, 1, 1);
         boxMesh->uploadToGPU();
         std::shared_ptr<ShaderProgram> tex_blinnPhong = makeBlinnPhongMaterial();

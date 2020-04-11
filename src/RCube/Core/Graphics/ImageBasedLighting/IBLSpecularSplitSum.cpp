@@ -247,7 +247,7 @@ IBLSpecularSplitSum::IBLSpecularSplitSum(unsigned int resolution, int num_sample
     : resolution_(resolution), num_samples_(num_samples)
 {
     // Create a unit cube in clip space
-    cube_ = Mesh::create();
+    cube_ = Mesh::create(MeshPrimitive::Triangles);
     cube_->data = box(2.0, 2.0, 2.0, 1, 1, 1);
     cube_->uploadToGPU();
 

@@ -66,7 +66,7 @@ EntityHandle RCubeViewer::addIcoSphereSurface(const std::string name, float radi
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> sphereMesh = Mesh::create();
+    std::shared_ptr<Mesh> sphereMesh = Mesh::create(MeshPrimitive::Triangles);
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     sphereMesh->data = icoSphere(radius, numSubdivisions);
     sphereMesh->uploadToGPU();
@@ -81,7 +81,7 @@ EntityHandle RCubeViewer::addCubeSphereSurface(const std::string name, float rad
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> sphereMesh = Mesh::create();
+    std::shared_ptr<Mesh> sphereMesh = Mesh::create(MeshPrimitive::Triangles);
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     sphereMesh->data = cubeSphere(radius, numSegments);
     sphereMesh->uploadToGPU();
@@ -97,7 +97,7 @@ EntityHandle RCubeViewer::addBoxSurface(const std::string name, float width, flo
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> boxMesh = Mesh::create();
+    std::shared_ptr<Mesh> boxMesh = Mesh::create(MeshPrimitive::Triangles);
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     boxMesh->data = box(width, height, depth, width_segments, height_segments, depth_segments);
     boxMesh->uploadToGPU();
@@ -111,7 +111,7 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const MeshData &dat
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> mesh = Mesh::create();
+    std::shared_ptr<Mesh> mesh = Mesh::create(MeshPrimitive::Triangles);
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
     mesh->data = data;
     mesh->uploadToGPU();
@@ -180,7 +180,7 @@ void RCubeViewer::draw()
 
 void drawGUIForScalarFieldComponent(EntityHandle ent)
 {
-    ScalarField *sf = ent.get<ScalarField>();
+    /*ScalarField *sf = ent.get<ScalarField>();
     ImGui::Checkbox("Show", &sf->show);
     ImGui::InputFloat("vmin", &sf->vmin);
     ImGui::InputFloat("vmax", &sf->vmax);
@@ -189,7 +189,7 @@ void drawGUIForScalarFieldComponent(EntityHandle ent)
     if (ImGui::Combo("Colormap", &curr_colormap, colormap_names, IM_ARRAYSIZE(colormap_names)))
     {
         sf->colormap = static_cast<ScalarField::Colormap>(curr_colormap);
-    }
+    }*/
 }
 
 void drawGUIForTransformComponent(EntityHandle ent)
@@ -651,11 +651,10 @@ EntityHandle RCubeViewer::createCamera()
 
 EntityHandle RCubeViewer::createGroundPlane()
 {
-    std::shared_ptr<Mesh> gridMesh = Mesh::create();
+    std::shared_ptr<Mesh> gridMesh = Mesh::create(MeshPrimitive::Lines);
     gridMesh->data = rcube::grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0),
                                  glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0));
     gridMesh->uploadToGPU();
-    /*std::shared_ptr<FlatMaterial> flat = std::make_shared<FlatMaterial>();*/
     std::shared_ptr<ShaderProgram> flat = makeFlatMaterial();
     ground_ = createSurface();
     ground_.get<Drawable>()->mesh = gridMesh;

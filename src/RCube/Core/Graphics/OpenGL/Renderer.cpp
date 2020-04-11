@@ -3,6 +3,7 @@
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/string_cast.hpp"
+#include <iostream>
 
 namespace rcube
 {
@@ -154,7 +155,7 @@ void GLRenderer::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Full screen quad
-    quad_mesh_ = Mesh::create();
+    quad_mesh_ = Mesh::create(MeshPrimitive::Triangles);
     quad_mesh_->data.vertices = {glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
                                  glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)};
     quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1),
@@ -163,7 +164,7 @@ void GLRenderer::initialize()
     quad_shader_ = ShaderProgram::create(quad_vert, quad_frag, true);
 
     // Skybox
-    skybox_mesh_ = Mesh::create();
+    skybox_mesh_ = Mesh::create(MeshPrimitive::Triangles);
     skybox_mesh_->data.vertices = skybox_vertices;
     skybox_mesh_->uploadToGPU();
     skybox_shader_ = ShaderProgram::create(skybox_vert, skybox_frag, true);
@@ -311,14 +312,16 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     {
     }
     mesh->use();
-    if (!mesh->indexed())
+    if (mesh->numIndexData() == 0)
     {
-        program->drawArrays(static_cast<GLint>(mesh->data.primitive), 0, mesh->numVertices());
+        glDrawArrays(static_cast<GLint>(mesh->data.primitive), 0, mesh->numVertexData());
     }
     else
     {
-        program->drawElements(static_cast<GLint>(mesh->data.primitive), 0, mesh->numPrimitives());
+        glDrawElements(static_cast<GLint>(mesh->data.primitive), (GLsizei)mesh->numIndexData(),
+                       GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
     }
+    mesh->done();
 }
 
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)

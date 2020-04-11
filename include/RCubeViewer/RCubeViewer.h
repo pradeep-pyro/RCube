@@ -53,6 +53,7 @@ class RCubeViewer : public rcube::Window
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
 
     EntityHandle addIcoSphereSurface(const std::string name, float radius, int numSubdivisions);
+
     EntityHandle addCubeSphereSurface(const std::string name, float radius, int numSegments);
 
     EntityHandle addBoxSurface(const std::string name, float width, float height, float depth,

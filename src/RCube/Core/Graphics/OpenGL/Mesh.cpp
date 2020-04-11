@@ -1,5 +1,6 @@
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
+#include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 #include "glad/glad.h"
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
@@ -106,25 +107,37 @@ bool MeshData::valid() const
 // Mesh
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Mesh> Mesh::create()
+std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>> attributes, MeshPrimitive prim)
 {
     auto mesh = std::make_shared<Mesh>();
-    glGenVertexArrays(1, &mesh->glbuf_.vao);
-    glBindVertexArray(mesh->glbuf_.vao);
-    glGenBuffers(1, &mesh->glbuf_.vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->glbuf_.vertices);
-    GLuint vid = static_cast<GLuint>(MeshAttributes::Vertices);
-    glEnableVertexAttribArray(vid);
-    glVertexAttribPointer(vid, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glGenVertexArrays(1, &mesh->vao_);
+    glBindVertexArray(mesh->vao_);
+    for (auto attr : attributes)
+    {
+        auto attrbuf = AttributeBuffer::create(attr->name(), attr->location(), attr->dim());
+        attrbuf->buffer()->use();
+        GLuint loc = static_cast<GLuint>(attrbuf->location());
+        glVertexAttribPointer(loc, static_cast<GLint>(attr->dim()), GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(loc);
+        mesh->attributes_[attr->name()] = attrbuf;
+    }
+    mesh->indices_ = AttributeIndexBuffer::create(prim == MeshPrimitive::Points ? 1 : (prim == MeshPrimitive::Lines ? 2 : 3));
+    mesh->indices_->buffer()->use();
     mesh->init_ = true;
-    mesh->disableAttribute(MeshAttributes::Colors);
-    mesh->disableAttribute(MeshAttributes::Normals);
-    mesh->disableAttribute(MeshAttributes::TexCoords);
-    mesh->disableAttribute(MeshAttributes::Tangents);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     checkGLError();
     return mesh;
+}
+
+std::shared_ptr<Mesh> Mesh::create(MeshPrimitive prim)
+{
+    return Mesh::create(
+        {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
+         AttributeBuffer::create("normals", GLuint(AttributeLocation::NORMAL), 3),
+         AttributeBuffer::create("uvs", GLuint(AttributeLocation::UV), 2),
+         AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
+         AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3)}, prim);
 }
 
 void Mesh::release()
@@ -133,47 +146,21 @@ void Mesh::release()
     {
         return;
     }
-    if (glbuf_.vao != 0)
+    for (auto &kv : attributes_)
     {
-        glDeleteVertexArrays(1, &glbuf_.vao);
-        glbuf_.vao = 0;
+        kv.second->release();
     }
-    if (glbuf_.vertices != 0)
+    if (vao_ != 0)
     {
-        glDeleteBuffers(1, &glbuf_.vertices);
-        glbuf_.vertices = 0;
-    }
-    if (glbuf_.normals != 0)
-    {
-        glDeleteBuffers(1, &glbuf_.normals);
-        glbuf_.normals = 0;
-    }
-    if (glbuf_.indices != 0)
-    {
-        glDeleteBuffers(1, &glbuf_.indices);
-        glbuf_.indices = 0;
-    }
-    if (glbuf_.texcoords != 0)
-    {
-        glDeleteBuffers(1, &glbuf_.texcoords);
-        glbuf_.texcoords = 0;
-    }
-    if (glbuf_.colors != 0)
-    {
-        glDeleteBuffers(1, &glbuf_.colors);
-        glbuf_.colors = 0;
-    }
-    if (glbuf_.tangents != 0)
-    {
-        glDeleteBuffers(1, &glbuf_.tangents);
-        glbuf_.colors = 0;
+        glDeleteVertexArrays(1, &vao_);
+        vao_ = 0;
     }
     init_ = false;
 }
 
 GLuint Mesh::vao() const
 {
-    return glbuf_.vao;
+    return vao_;
 }
 
 bool Mesh::valid() const
@@ -181,82 +168,29 @@ bool Mesh::valid() const
     return init_;
 }
 
-bool Mesh::indexed() const
+void Mesh::enableAttribute(std::string name)
 {
-    return indexed_;
-}
-
-void Mesh::enableAttribute(MeshAttributes attr)
-{
-    GLuint *id;
-    int dim = 3;
-    if (attr == MeshAttributes::Normals)
-    {
-        id = &glbuf_.normals;
-        has_normals_ = true;
-    }
-    else if (attr == MeshAttributes::Colors)
-    {
-        id = &glbuf_.colors;
-        has_colors_ = true;
-    }
-    else if (attr == MeshAttributes::Vertices)
-    {
-        id = &glbuf_.vertices;
-        has_vertices_ = true;
-    }
-    else if (attr == MeshAttributes::Tangents)
-    {
-        id = &glbuf_.tangents;
-        has_tangents_ = true;
-    }
-    else if (attr == MeshAttributes::TexCoords)
-    {
-        id = &glbuf_.texcoords;
-        dim = 2;
-        has_texcoords_ = true;
-    }
-
-    GLuint gl_attr = static_cast<GLuint>(attr);
+    GLuint location = attributes_.at(name)->location();
     use();
-    if (*id == 0)
-    {
-        glGenBuffers(1, id);
-        glBindBuffer(GL_ARRAY_BUFFER, *id);
-        glVertexAttribPointer(gl_attr, dim, GL_FLOAT, GL_FALSE, 0, NULL);
-    }
-    checkGLError();
-    glBindVertexArray(glbuf_.vao);
-    glEnableVertexAttribArray(gl_attr);
-    // glEnableVertexArrayAttrib(glbuf_.vao, gl_attr);
+    glEnableVertexAttribArray(location);
     done();
 }
 
-void Mesh::disableAttribute(MeshAttributes attr)
+void Mesh::disableAttribute(std::string name)
 {
+    auto &attr = attributes_.at(name);
     checkGLError();
     use();
-    GLuint gl_attr = static_cast<GLuint>(attr);
-    glDisableVertexAttribArray(gl_attr);
-    if (attr == MeshAttributes::Normals)
+    GLuint id = attr->buffer()->id();
+    GLuint location = attr->location();
+    glDisableVertexAttribArray(location);
+    if (attr->dim() == 3)
     {
-        setDefaultValue(gl_attr, glm::vec3(0, 0, 1));
-        has_normals_ = false;
+        setDefaultValue(location, glm::vec3(1, 1, 1));
     }
-    else if (attr == MeshAttributes::Colors)
+    else if (attr->dim() == 2)
     {
-        setDefaultValue(gl_attr, glm::vec3(1));
-        has_colors_ = false;
-    }
-    else if (attr == MeshAttributes::TexCoords)
-    {
-        setDefaultValue(gl_attr, glm::vec2(0));
-        has_texcoords_ = false;
-    }
-    else if (attr == MeshAttributes::Tangents)
-    {
-        setDefaultValue(gl_attr, glm::vec3(1, 0, 0));
-        has_tangents_ = false;
+        setDefaultValue(location, glm::vec2(0, 0));
     }
     checkGLError();
     done();
@@ -268,7 +202,7 @@ void Mesh::use() const
     {
         throw std::runtime_error(ERROR_MESH_UNINITIALIZED);
     }
-    glBindVertexArray(glbuf_.vao);
+    glBindVertexArray(vao_);
 }
 
 void Mesh::done() const
@@ -276,198 +210,52 @@ void Mesh::done() const
     glBindVertexArray(0);
 }
 
-void Mesh::setIndexed(bool flag)
+size_t Mesh::numVertexData() const
 {
-    indexed_ = flag;
-    if (flag && (glbuf_.indices == 0))
-    {
-        use();
-        glGenBuffers(1, &glbuf_.indices);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glbuf_.indices);
-        done();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    }
-    checkGLError();
+    return attributes_.at("positions")->size();
 }
 
-size_t Mesh::numVertices() const
+size_t Mesh::numIndexData() const
 {
-    return num_vertices_;
+    if (indices_ != nullptr)
+    {
+        return indices_->size();
+    }
+    return 0;
 }
 
-size_t Mesh::numPrimitives() const
+bool Mesh::hasAttribute(std::string name) const
 {
-    return num_primitives_;
+    return attributes_.find(name) != attributes_.end();
 }
 
-bool Mesh::hasAttribute(MeshAttributes attr) const
+void Mesh::uploadToGPU()
 {
-    if (attr == MeshAttributes::Vertices)
-    {
-        return has_vertices_;
-    }
-    if (attr == MeshAttributes::Normals)
-    {
-        return has_normals_;
-    }
-    if (attr == MeshAttributes::Colors)
-    {
-        return has_colors_;
-    }
-    if (attr == MeshAttributes::TexCoords)
-    {
-        return has_texcoords_;
-    }
-    if (attr == MeshAttributes::Tangents)
-    {
-        return has_tangents_;
-    }
-    return false;
-}
-
-void Mesh::addCustomAttribute(const std::string &name, GLuint attribute_location,
-                              GLDataType attribute_type)
-{
-    assert(valid());
-    size_t num_elements = data.vertices.size();
-    int dim = 1;
-    switch (attribute_type)
-    {
-    case GLDataType::Float:
-        break;
-    case GLDataType::Vec2f:
-        num_elements *= 2;
-        dim = 2;
-        break;
-    case GLDataType::Vec3f:
-        num_elements *= 3;
-        dim = 3;
-        break;
-    case GLDataType::Vec4f:
-        num_elements *= 4;
-        dim = 4;
-        break;
-    default:
-        throw std::runtime_error(
-            "Unsupported attribute type. Only 1D, 2D, 3D and 4D floats are supported for now.");
-    }
-
-    std::shared_ptr<Buffer> buf = Buffer::create(num_elements);
-    buf->use();
-    use();
-    glVertexAttribPointer(attribute_location, dim, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(attribute_location);
     done();
-    buf->done();
-    custom_attributes_.push_back({name, attribute_location, attribute_type, buf});
-}
-
-Attribute &Mesh::customAttribute(const std::string &name)
-{
-    auto it = std::find_if(custom_attributes_.begin(), custom_attributes_.end(),
-                           [&](Attribute &attr) { return attr.name == name; });
-    if (it == custom_attributes_.end())
-    {
-        throw std::runtime_error("Attribute named " + name + " not found.");
-    }
-    return *it;
-}
-
-void Mesh::uploadToGPU(bool clear_cpu_data)
-{
-    setArrayBuffer(glbuf_.vertices, glm::value_ptr(data.vertices[0]), 3 * static_cast<unsigned int>(data.vertices.size()));
-    num_vertices_ = 3 * data.vertices.size();
-
-    if (data.normals.size() > 0 && data.normals.size() == data.vertices.size())
-    {
-        enableAttribute(MeshAttributes::Normals);
-        setArrayBuffer(glbuf_.normals, glm::value_ptr(data.normals[0]), 3 * static_cast<unsigned int>(data.normals.size()));
-    }
-    else
-    {
-        checkGLError();
-        disableAttribute(MeshAttributes::Normals);
-    }
-
-    if (data.texcoords.size() > 0 && data.texcoords.size() == data.vertices.size())
-    {
-        enableAttribute(MeshAttributes::TexCoords);
-        setArrayBuffer(glbuf_.texcoords, glm::value_ptr(data.texcoords[0]),
-                       2 * static_cast<unsigned int>(data.texcoords.size()));
-    }
-    else
-    {
-        checkGLError();
-        disableAttribute(MeshAttributes::TexCoords);
-    }
-
-    if (data.colors.size() > 0 && data.colors.size() == data.vertices.size())
-    {
-        enableAttribute(MeshAttributes::Colors);
-        setArrayBuffer(glbuf_.colors, glm::value_ptr(data.colors[0]), 3 * static_cast<unsigned int>(data.colors.size()));
-    }
-    else
-    {
-        checkGLError();
-        disableAttribute(MeshAttributes::Colors);
-    }
-
-    if (data.tangents.size() > 0 && data.tangents.size() == data.vertices.size())
-    {
-        enableAttribute(MeshAttributes::Tangents);
-        setArrayBuffer(glbuf_.tangents, glm::value_ptr(data.tangents[0]), 3 * static_cast<unsigned int>(data.tangents.size()));
-    }
-    else
-    {
-        checkGLError();
-        disableAttribute(MeshAttributes::Tangents);
-    }
-
+    attributes_["positions"]->setData(data.vertices);
+    attributes_["normals"]->setData(data.normals);
+    attributes_["colors"]->setData(data.colors);
+    attributes_["uvs"]->setData(data.texcoords);
+    attributes_["tangents"]->setData(data.tangents);
     if (data.indexed)
     {
-        int dim = 3;
-        if (data.primitive == MeshPrimitive::Points)
-        {
-            dim = 1;
-        }
-        else if (data.primitive == MeshPrimitive::Lines)
-        {
-            dim = 2;
-        }
-        if (data.indices.size() % dim != 0)
-        {
-            throw std::runtime_error(ERROR_MESH_PRIMITIVE_INDICES_MISMATCH);
-        }
-        setIndexed(true);
-        setElementBuffer(data.indices.data(), static_cast<unsigned int>(data.indices.size()));
-        num_primitives_ = data.indices.size();
+        indices_->setData(data.indices);
+        indices_->update();
     }
-    else
+    for (auto &kv : attributes_)
     {
-        setIndexed(false);
+        if (kv.second->data().size() / kv.second->dim() != attributes_["positions"]->data().size() / attributes_["positions"]->dim())
+        {
+            disableAttribute(kv.first);
+        }
+        else
+        {
+            enableAttribute(kv.first);
+            kv.second->update();
+        }
     }
-
-    checkGLError();
-    if (clear_cpu_data)
-    {
-        data.clear();
-    }
 }
 
-// Private methods
-
-void Mesh::setArrayBuffer(GLuint id, const float *data, unsigned int count)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * count, data, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-void Mesh::setElementBuffer(const unsigned int *data, unsigned int count)
-{
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glbuf_.indices);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * count, data, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
 void Mesh::setDefaultValue(GLuint id, const glm::vec3 &val)
 {
     glVertexAttrib3f(id, val[0], val[1], val[2]);
@@ -481,7 +269,7 @@ void Mesh::updateBVH()
 {
     // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
     std::vector<PrimitivePtr> prims;
-    if (indexed())
+    if (numIndexData() > 0)
     {
         prims.reserve(data.indices.size() / 3);
         size_t face_id = 0;

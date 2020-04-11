@@ -1,9 +1,9 @@
-#ifndef MESH_H
-#define MESH_H
+#pragma once
 
+#include "RCube/Core/Accel/BVH.h"
+#include "RCube/Core/Graphics/OpenGL/AttributeBuffer.h"
 #include "RCube/Core/Graphics/OpenGL/Buffer.h"
 #include "RCube/Core/Graphics/OpenGL/GLDataType.h"
-#include "RCube/Core/Accel/BVH.h"
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include <map>
@@ -21,14 +21,6 @@ enum class MeshPrimitive
     Triangles = GL_TRIANGLES
 };
 
-enum class MeshAttributes
-{
-    Vertices = 0,
-    Normals = 1,
-    TexCoords = 2,
-    Colors = 3,
-    Tangents = 4
-};
 struct MeshData
 {
     std::vector<glm::vec3> vertices, normals, colors, tangents;
@@ -46,18 +38,16 @@ struct MeshData
     void scaleAndCenter();
 };
 
-struct Attribute
-{
-    std::string name;
-    GLuint location;
-    GLDataType type;
-    std::shared_ptr<Buffer> data;
-};
-
 // Represents a 3D triangle/line Mesh with vertex positions, normals,
 // texcoords, colors using OpenGL buffers
 class Mesh
 {
+    GLuint vao_ = 0;
+    std::map<std::string, std::shared_ptr<AttributeBuffer>> attributes_;
+    std::shared_ptr<AttributeIndexBuffer> indices_;
+    bool init_ = false;
+    BVHNodePtr bvh_;  // Bounding Volume Hierarchy for intersection queries
+
   public:
     MeshData data;
 
@@ -70,7 +60,10 @@ class Mesh
     /**
      * Initialize actually creates the vertex attribute object and buffers on the OpenGL side
      */
-    static std::shared_ptr<Mesh> create();
+    static std::shared_ptr<Mesh> create(MeshPrimitive prim);
+
+    static std::shared_ptr<Mesh> create(std::vector<std::shared_ptr<AttributeBuffer>> attributes,
+                                        MeshPrimitive prim);
 
     void release();
 
@@ -82,70 +75,26 @@ class Mesh
 
     void done() const;
 
-    bool hasAttribute(MeshAttributes attr) const;
+    bool hasAttribute(std::string name) const;
 
-    void addCustomAttribute(const std::string &name, GLuint attribute_location,
-                            GLDataType attribute_type);
+    void uploadToGPU();
 
-    Attribute &customAttribute(const std::string &name);
+    size_t numVertexData() const;
 
-    bool indexed() const;
-
-    void uploadToGPU(bool clear_cpu_data = false);
-
-    size_t numVertices() const;
-
-    size_t numPrimitives() const;
+    size_t numIndexData() const;
 
     void updateBVH();
 
     bool rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id);
 
+    void enableAttribute(std::string name);
+
+    void disableAttribute(std::string name);
+
   private:
-    void enableAttribute(MeshAttributes attr);
-
-    void disableAttribute(MeshAttributes attr);
-
-    void setIndexed(bool flag);
-
-    void setArrayBuffer(GLuint id, const float *data, unsigned int count);
-
-    void setElementBuffer(const unsigned int *data, unsigned int count);
-
     void setDefaultValue(GLuint id, const glm::vec3 &val);
 
     void setDefaultValue(GLuint id, const glm::vec2 &val);
-
-    // Opengl Buffer IDs
-    struct GLBufferIDs
-    {
-        GLBufferIDs()
-            : vao(0), vertices(0), normals(0), indices(0), texcoords(0), colors(0), tangents(0)
-        {
-        }
-        GLuint vao, vertices, normals, indices, texcoords, colors, tangents;
-    };
-    GLBufferIDs glbuf_;
-
-    // Number of elements
-    size_t num_vertices_ = 0;
-    size_t num_primitives_ = 0;
-
-    // Flags
-    bool has_vertices_ = true;
-    bool has_normals_ = false;
-    bool has_texcoords_ = false;
-    bool has_colors_ = false;
-    bool has_tangents_ = false;
-    bool indexed_ = false;
-    bool init_ = false;
-
-    std::vector<Attribute> custom_attributes_;
-
-    // BVH
-    BVHNodePtr bvh_;
 };
 
 } // namespace rcube
-
-#endif // GEOMETRY_H

@@ -18,7 +18,7 @@ enum class BufferType
 
 template <BufferType Type> class Buffer
 {
-    GLuint id_;
+    GLuint id_ = 0;
     size_t size_ = 0;
 
   public:
@@ -43,7 +43,8 @@ template <BufferType Type> class Buffer
     void reserve(size_t num_elements)
     {
         use();
-        glBufferData(GL_ARRAY_BUFFER, num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GLenum(Type), num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+        //glNamedBufferData(id_, num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
         size_ = num_elements;
         done();
     }
@@ -52,53 +53,55 @@ template <BufferType Type> class Buffer
         glDeleteBuffers(1, &id_);
         id_ = 0;
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::Array, void> setData(const float *buf, size_t size)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    void setData(const float *buf, size_t size)
     {
         assert(size == size_);
         use();
-        glBufferSubData(GL_ARRAY_BUFFER, 0, size * sizeof(float), buf);
+        glBufferSubData(GLenum(Type), 0, size * sizeof(float), buf);
+        //glNamedBufferSubData(id_, 0, size * sizeof(float), buf);
         done();
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::Array, void> setData(const std::vector<float> &buf)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    void setData(const std::vector<float> &buf)
     {
         setData(&buf[0], buf.size());
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::Array, void> setData(const std::vector<glm::vec3> &buf)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    void setData(const std::vector<glm::vec3> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 3);
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::Array, void> setData(const std::vector<glm::vec2> &buf)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    void setData(const std::vector<glm::vec2> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 2);
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::ElementArray, void> setData(const unsigned int *buf, size_t size)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    void setData(const unsigned int *buf, size_t size)
     {
         assert(size == size_);
         use();
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size * sizeof(unsigned int), buf);
+        glBufferSubData(GLenum(Type), 0, size * sizeof(unsigned int), buf);
+        //glNamedBufferSubData(id_, 0, size * sizeof(unsigned int), buf);
         done();
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::ElementArray, void>
-    setData(const std::vector<unsigned int> &buf)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    void setData(const std::vector<unsigned int> &buf)
     {
         setData(&buf[0], buf.size());
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::ElementArray, void> setData(const std::vector<glm::uvec3> &buf)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    void setData(const std::vector<glm::uvec3> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 3);
     }
-    template <BufferType T = Type>
-    std::enable_if<T == BufferType::ElementArray, void> setData(const std::vector<glm::uvec2> &buf)
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    void setData(const std::vector<glm::uvec2> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 2);
     }
+
     size_t size() const
     {
         return size_;
@@ -109,11 +112,11 @@ template <BufferType Type> class Buffer
     }
     void use() const
     {
-        glBindBuffer(GL_ARRAY_BUFFER, id_);
+        glBindBuffer(GLenum(Type), id_);
     }
     void done() const
     {
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GLenum(Type), 0);
     }
 };
 

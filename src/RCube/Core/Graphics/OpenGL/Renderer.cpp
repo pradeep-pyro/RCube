@@ -5,6 +5,10 @@
 #include "glm/gtx/string_cast.hpp"
 #include <iostream>
 
+// Enable this to explicitly compute normal matrix as transpose of inverse of model matrix
+// Only needed when non-uniform scaling is present
+// #define RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
+
 namespace rcube
 {
 
@@ -200,8 +204,7 @@ void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_v
 {
     initialize();
 
-    // TODO: avoid computing inverse, eye position could be an argument to this method
-    const glm::vec3 eye_pos1 = glm::vec3(glm::inverse(world_to_view)[3]);
+    // const glm::vec3 eye_pos = glm::vec3(glm::inverse(world_to_view)[3]);
 
     const int float4x4_size = sizeof(glm::mat4);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices_);
@@ -213,7 +216,7 @@ void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_v
                     glm::value_ptr(projection_to_viewport));
     // Copy eye pos to UBO
     glBufferSubData(GL_UNIFORM_BUFFER, 3 * float4x4_size, static_cast<int>(sizeof(glm::vec3)),
-                    glm::value_ptr(eye_pos1));
+                    glm::value_ptr(eye_pos));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
 }
@@ -301,9 +304,11 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
 
 void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world)
 {
-
+#ifdef RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
-
+#else
+    const glm::mat3 &normal_matrix = model_to_world;
+#endif
     assert(program != nullptr);
 
     // Update settings
@@ -341,7 +346,7 @@ void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
     skybox_shader_->cubemap("skybox") = cubemap;
     skybox_shader_->use();
     checkGLError();
-    skybox_shader_->drawArrays(GL_TRIANGLES, 0, 36);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     checkGLError();
     glDepthFunc(GL_LESS);
 }
@@ -355,7 +360,7 @@ void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     // Apply the effect on the input and render in bound framebuffer
-    effect->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     effect->done();
 }
 
@@ -366,7 +371,7 @@ void GLRenderer::renderFullscreenQuad(ShaderProgram *prog, Framebuffer *output)
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     output->use();
-    prog->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     output->done();
     prog->done();
 }
@@ -380,7 +385,7 @@ void GLRenderer::renderTextureToScreen(Texture2D *tex)
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     quad_shader_->use();
-    quad_shader_->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 } // namespace rcube

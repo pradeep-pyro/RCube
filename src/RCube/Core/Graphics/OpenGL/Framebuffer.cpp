@@ -67,10 +67,10 @@ void Framebuffer::use()
     {
         throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
     }
-    if (!isComplete())
+    /*if (!isComplete())
     {
         throw std::runtime_error(ERROR_FRAMEBUFFER_NOT_COMPLETE);
-    }
+    }*/
     glBindFramebuffer(GL_FRAMEBUFFER, id_);
 }
 
@@ -211,7 +211,6 @@ void Framebuffer::blit(Framebuffer &target_fbo, bool color, bool depth, bool ste
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_fbo.id());
-    // glDrawBuffer(GL_BACK);
     GLbitfield bits = 0;
     if (color)
     {
@@ -248,6 +247,7 @@ void Framebuffer::blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color, boo
     }
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glDrawBuffer(GL_BACK);
     glBlitFramebuffer(0, 0, width_, height_, dst0.x, dst0.y, dst1.x, dst1.y, bits, GL_NEAREST);
 }
 
@@ -269,6 +269,7 @@ void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0
     }
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glDrawBuffer(GL_BACK);
     glBlitFramebuffer(src0.x, src0.y, src1.x, src1.y, dst0.x, dst0.y, dst1.x, dst1.y, bits,
                       GL_NEAREST);
 }

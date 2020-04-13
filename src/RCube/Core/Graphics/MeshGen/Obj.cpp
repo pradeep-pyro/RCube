@@ -16,7 +16,7 @@ namespace rcube
  * Creates mesh data from OBJ file
  * @param file_name file name of the input mesh
  */
-MeshData loadOBJ(const std::string &file_name)
+TriangleMeshData loadOBJ(const std::string &file_name)
 {
 
     auto getFileExtension = [](const std::string &FileName) -> std::string {
@@ -41,8 +41,7 @@ MeshData loadOBJ(const std::string &file_name)
         throw std::runtime_error("loadOBJ:: can not open\n" + file_name);
     }
 
-    MeshData mesh_data;
-    mesh_data.primitive = MeshPrimitive::Triangles;
+    TriangleMeshData mesh_data;
     mesh_data.indexed = true;
     mesh_data.clear();
 
@@ -72,7 +71,7 @@ MeshData loadOBJ(const std::string &file_name)
                 }
                 else
                 {
-                    //read the vertex coordinates 
+                    // read the vertex coordinates
                     glm::vec3 vert(0);
                     vert.x = vert_vec[0];
                     vert.y = vert_vec[1];
@@ -82,7 +81,7 @@ MeshData loadOBJ(const std::string &file_name)
 
                 if (vert_vec.size() == 6)
                 {
-                    //read the vertex color 
+                    // read the vertex color
                     glm::vec3 color(0);
                     color.x = vert_vec[3];
                     color.y = vert_vec[4];
@@ -174,9 +173,9 @@ MeshData loadOBJ(const std::string &file_name)
                     (f.size() > 0 && fn.size() == f.size() &&
                      ft.size() == f.size())) // face, norm, tex
                 {
-                    for (auto &f_id : f)
+                    for (size_t fidx = 0; fidx < f.size(); fidx += 3)
                     {
-                        mesh_data.indices.push_back(f_id);
+                        mesh_data.indices.push_back({f[fidx], f[fidx + 1], f[fidx + 2]});
                     }
                     // TODO when we support face texture and face norm, we can
                     // read if from here

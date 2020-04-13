@@ -55,6 +55,11 @@ class AttributeBuffer
         return &data_[0];
     }
 
+    float *ptr()
+    {
+        return &data_[0];
+    }
+
     const glm::vec3 *ptrVec3() const
     {
         if (dim_ != 3)
@@ -65,6 +70,16 @@ class AttributeBuffer
         return reinterpret_cast<const glm::vec3 *>(&data_[0]);
     }
 
+    glm::vec3 *ptrVec3()
+    {
+        if (dim_ != 3)
+        {
+            throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
+                                     "D data as 3D");
+        }
+        return reinterpret_cast<glm::vec3 *>(&data_[0]);
+    }
+
     const glm::vec2 *ptrVec2() const
     {
         if (dim_ != 2)
@@ -73,6 +88,16 @@ class AttributeBuffer
                                      "D data as 2D");
         }
         return reinterpret_cast<const glm::vec2 *>(&data_[0]);
+    }
+
+    glm::vec2 *ptrVec2()
+    {
+        if (dim_ != 2)
+        {
+            throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
+                                     "D data as 2D");
+        }
+        return reinterpret_cast<glm::vec2 *>(&data_[0]);
     }
 
     size_t size() const
@@ -122,7 +147,7 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to set 2D data, expected " + std::to_string(dim_) +
                                      "D data");
         }
-        data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 2);;
+        data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 2);
     }
 
     void setData(const std::vector<glm::vec3> &data)

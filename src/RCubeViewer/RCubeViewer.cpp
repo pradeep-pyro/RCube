@@ -35,7 +35,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
     world_.addSystem(std::make_unique<RenderSystem>(props.resolution, props.MSAA));
-    
+
     // Create a default camera
     camera_ = createCamera();
     camera_.get<Transform>()->lookAt(glm::vec3(0.f, 0.f, 1.5f), glm::vec3(0.f, 0.f, 0.f),
@@ -63,9 +63,8 @@ EntityHandle RCubeViewer::addIcoSphereSurface(const std::string name, float radi
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> sphereMesh = Mesh::create(MeshPrimitive::Triangles);
+    std::shared_ptr<Mesh> sphereMesh = Mesh::create(icoSphere(radius, numSubdivisions));
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    sphereMesh->data = icoSphere(radius, numSubdivisions);
     sphereMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = sphereMesh;
     ent.get<Drawable>()->material = blinnPhong;
@@ -78,9 +77,8 @@ EntityHandle RCubeViewer::addCubeSphereSurface(const std::string name, float rad
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> sphereMesh = Mesh::create(MeshPrimitive::Triangles);
+    std::shared_ptr<Mesh> sphereMesh = Mesh::create(cubeSphere(radius, numSegments));
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    sphereMesh->data = cubeSphere(radius, numSegments);
     sphereMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = sphereMesh;
     ent.get<Drawable>()->material = blinnPhong;
@@ -94,23 +92,22 @@ EntityHandle RCubeViewer::addBoxSurface(const std::string name, float width, flo
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> boxMesh = Mesh::create(MeshPrimitive::Triangles);
+    std::shared_ptr<Mesh> boxMesh =
+        Mesh::create(box(width, height, depth, width_segments, height_segments, depth_segments));
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    boxMesh->data = box(width, height, depth, width_segments, height_segments, depth_segments);
     boxMesh->uploadToGPU();
     ent.get<Drawable>()->mesh = boxMesh;
     ent.get<Drawable>()->material = blinnPhong;
     return ent;
 }
 
-EntityHandle RCubeViewer::addSurface(const std::string name, const MeshData &data)
+EntityHandle RCubeViewer::addSurface(const std::string name, const TriangleMeshData &data)
 {
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
-    std::shared_ptr<Mesh> mesh = Mesh::create(MeshPrimitive::Triangles);
+    std::shared_ptr<Mesh> mesh = Mesh::create(data);
     std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    mesh->data = data;
     mesh->uploadToGPU();
     ent.get<Drawable>()->mesh = mesh;
     ent.get<Drawable>()->material = blinnPhong;
@@ -233,14 +230,37 @@ void drawGUIForDrawableComponent(EntityHandle ent)
     ImGui::Separator();
 
     // Mesh
-    ImGui::LabelText("#vertices", std::to_string(dr->mesh->data.vertices.size()).c_str());
-    ImGui::LabelText("#faces", std::to_string(dr->mesh->data.indices.size()).c_str());
-    ImGui::LabelText("Has texcoords",
-                     (dr->mesh->data.vertices.size() == dr->mesh->data.texcoords.size()) ? "True"
-                                                                                         : "False");
-    const bool has_colors = dr->mesh->data.vertices.size() == dr->mesh->data.colors.size();
-    ImGui::LabelText("Has colors", has_colors ? "True" : "False");
-    ImGui::LabelText("Indexed", dr->mesh->data.indexed ? "True" : "False");
+    static const char *current_attr = nullptr;
+    if (ImGui::BeginCombo("Attribute", current_attr))
+    {
+        for (auto &kv : dr->mesh->attributes())
+        {
+            bool is_selected =
+                (current_attr == kv.first.c_str());
+            if (ImGui::Selectable(kv.first.c_str(), is_selected))
+            {
+                current_attr = kv.first.c_str();
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (current_attr != nullptr)
+    {
+        ImGui::LabelText("Count", std::to_string(dr->mesh->attribute(current_attr)->size()).c_str());
+        ImGui::LabelText("Dimension", std::to_string(dr->mesh->attribute(current_attr)->dim()).c_str());
+        ImGui::LabelText("Layout location",
+                         std::to_string(dr->mesh->attribute(current_attr)->location()).c_str());
+        bool checked = dr->mesh->attributeEnabled(current_attr);
+        if (ImGui::Checkbox("Active", &checked))
+        {
+            checked ? dr->mesh->enableAttribute(current_attr)
+                    : dr->mesh->disableAttribute(current_attr);
+        }
+    }
+    ImGui::LabelText(
+        "#Faces", std::to_string(dr->mesh->indices()->size() / dr->mesh->primitiveDim()).c_str());
     ImGui::Separator();
 
     // Material
@@ -393,7 +413,7 @@ void RCubeViewer::drawGUI()
         auto it = world_.entities();
 
         std::vector<const char *> entity_names;
-        entity_names.reserve(world_.numEntities());
+        entity_names.reserve(world_.numEntities() + 1);
         entity_names.push_back("(None)");
         while (it.hasNext())
         {
@@ -607,9 +627,9 @@ EntityHandle RCubeViewer::createCamera()
 
 EntityHandle RCubeViewer::createGroundPlane()
 {
-    std::shared_ptr<Mesh> gridMesh = Mesh::create(MeshPrimitive::Lines);
-    gridMesh->data = rcube::grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0),
-                                 glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0));
+    std::shared_ptr<Mesh> gridMesh =
+        Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
+                          glm::vec3(0.0, 0.0, 0.0)));
     gridMesh->uploadToGPU();
     std::shared_ptr<ShaderProgram> flat = makeFlatMaterial();
     ground_ = createSurface();

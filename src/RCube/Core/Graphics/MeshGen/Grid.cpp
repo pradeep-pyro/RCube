@@ -3,11 +3,10 @@
 namespace rcube
 {
 
-MeshData grid(float width, float height, int width_segments, int height_segments,
-              glm::vec3 color_centerline_x, glm::vec3 color_centerline_z, glm::vec3 color_grid)
+LineMeshData grid(float width, float height, int width_segments, int height_segments,
+                  glm::vec3 color_centerline_x, glm::vec3 color_centerline_z, glm::vec3 color_grid)
 {
-    MeshData mesh;
-    mesh.primitive = MeshPrimitive::Lines;
+    LineMeshData mesh;
     mesh.indexed = false;
     float half_width = width / 2.f;
     float half_height = height / 2.f;

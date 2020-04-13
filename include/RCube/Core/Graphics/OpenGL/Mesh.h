@@ -21,17 +21,32 @@ enum class MeshPrimitive
     Triangles = GL_TRIANGLES
 };
 
-struct MeshData
+struct LineMeshData
 {
-    std::vector<glm::vec3> vertices, normals, colors, tangents;
-    std::vector<glm::vec2> texcoords;
-    std::vector<unsigned int> indices;
-    MeshPrimitive primitive = MeshPrimitive::Triangles;
+    std::vector<glm::vec3> vertices, colors;
+    std::vector<glm::uvec2> indices;
     bool indexed = false;
 
     void clear();
 
-    void append(MeshData &other);
+    void append(LineMeshData &other);
+
+    bool valid() const;
+
+    void scaleAndCenter();
+};
+
+
+struct TriangleMeshData
+{
+    std::vector<glm::vec3> vertices, normals, colors, tangents;
+    std::vector<glm::vec2> texcoords;
+    std::vector<glm::uvec3> indices;
+    bool indexed = false;
+
+    void clear();
+
+    void append(TriangleMeshData &other);
 
     bool valid() const;
 
@@ -43,14 +58,14 @@ struct MeshData
 class Mesh
 {
     GLuint vao_ = 0;
+    MeshPrimitive primitive_ = MeshPrimitive::Triangles;
     std::map<std::string, std::shared_ptr<AttributeBuffer>> attributes_;
     std::shared_ptr<AttributeIndexBuffer> indices_;
+    std::map<std::string, bool> attributes_enabled_; 
     bool init_ = false;
     BVHNodePtr bvh_;  // Bounding Volume Hierarchy for intersection queries
 
   public:
-    MeshData data;
-
     Mesh() = default;
 
     Mesh(const Mesh &other) = delete;
@@ -60,7 +75,13 @@ class Mesh
     /**
      * Initialize actually creates the vertex attribute object and buffers on the OpenGL side
      */
-    static std::shared_ptr<Mesh> create(MeshPrimitive prim);
+    static std::shared_ptr<Mesh> createLineMesh();
+
+    static std::shared_ptr<Mesh> createTriangleMesh();
+
+    static std::shared_ptr<Mesh> create(const LineMeshData &linemesh);
+
+    static std::shared_ptr<Mesh> create(const TriangleMeshData &trimesh);
 
     static std::shared_ptr<Mesh> create(std::vector<std::shared_ptr<AttributeBuffer>> attributes,
                                         MeshPrimitive prim);
@@ -77,7 +98,31 @@ class Mesh
 
     bool hasAttribute(std::string name) const;
 
+    std::shared_ptr<AttributeBuffer> attribute(std::string name);
+
+    std::shared_ptr<AttributeIndexBuffer> indices();
+
     void uploadToGPU();
+
+    MeshPrimitive primitive() const
+    {
+        return primitive_;
+    }
+
+    size_t primitiveDim() const
+    {
+        return primitive_ == MeshPrimitive::Points ? 1 : (primitive_ == MeshPrimitive::Lines ? 2 : 3);
+    }
+
+    const auto& attributes() const
+    {
+        return attributes_;
+    }
+
+    bool attributeEnabled(std::string name) const
+    {
+        return attributes_enabled_.at(name);
+    }
 
     size_t numVertexData() const;
 

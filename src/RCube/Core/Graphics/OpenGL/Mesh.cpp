@@ -14,35 +14,7 @@ const std::string ERROR_MESH_UNINITIALIZED = "Cannot use Mesh without initializi
 const std::string ERROR_MESH_PRIMITIVE_INDICES_MISMATCH =
     "Mismatch between mesh indices count and primitive";
 
-//-----------------------------------------------------------------------------
-// MeshData
-//-----------------------------------------------------------------------------
-void MeshData::clear()
-{
-    vertices.clear();
-    normals.clear();
-    colors.clear();
-    texcoords.clear();
-    indices.clear();
-}
-
-void MeshData::append(MeshData &other)
-{
-    assert(primitive == other.primitive && indexed == other.indexed);
-    size_t offset = vertices.size();
-    vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
-    normals.insert(normals.end(), other.normals.begin(), other.normals.end());
-    colors.insert(colors.end(), other.colors.begin(), other.colors.end());
-    texcoords.insert(texcoords.end(), other.texcoords.begin(), other.texcoords.end());
-    auto tmp = other.indices;
-    for (auto &val : tmp)
-    {
-        val += static_cast<unsigned int>(offset);
-    }
-    indices.insert(indices.end(), tmp.begin(), tmp.end());
-}
-
-void MeshData::scaleAndCenter()
+void findCentroidAndScale(const std::vector<glm::vec3> &vertices, glm::vec3 &centroid, float &scale)
 {
     glm::vec3 min = vertices[0];
     glm::vec3 max = vertices[0];
@@ -73,16 +45,51 @@ void MeshData::scaleAndCenter()
             max.z = v.z;
         }
     }
-    const glm::vec3 centroid = 0.5f * (max + min);
+    centroid = 0.5f * (max + min);
     const glm::vec3 size = glm::abs(max - min);
-    const float scale = std::max(size.x, std::max(size.y, size.z));
+    scale = std::max(size.x, std::max(size.y, size.z));
+}
+
+//-----------------------------------------------------------------------------
+// MeshData
+//-----------------------------------------------------------------------------
+void TriangleMeshData::clear()
+{
+    vertices.clear();
+    normals.clear();
+    colors.clear();
+    texcoords.clear();
+    indices.clear();
+}
+
+void TriangleMeshData::append(TriangleMeshData &other)
+{
+    assert(primitive == other.primitive && indexed == other.indexed);
+    size_t offset = vertices.size();
+    vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
+    normals.insert(normals.end(), other.normals.begin(), other.normals.end());
+    colors.insert(colors.end(), other.colors.begin(), other.colors.end());
+    texcoords.insert(texcoords.end(), other.texcoords.begin(), other.texcoords.end());
+    auto tmp = other.indices;
+    for (auto &val : tmp)
+    {
+        val += static_cast<unsigned int>(offset);
+    }
+    indices.insert(indices.end(), tmp.begin(), tmp.end());
+}
+
+void TriangleMeshData::scaleAndCenter()
+{
+    glm::vec3 centroid;
+    float scale;
+    findCentroidAndScale(vertices, centroid, scale);
     for (glm::vec3 &v : vertices)
     {
         v = 2.0f * (v - centroid) / scale;
     }
 }
 
-bool MeshData::valid() const
+bool TriangleMeshData::valid() const
 {
     if (vertices.empty())
     {
@@ -107,7 +114,8 @@ bool MeshData::valid() const
 // Mesh
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>> attributes, MeshPrimitive prim)
+std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>> attributes,
+                                   MeshPrimitive prim)
 {
     auto mesh = std::make_shared<Mesh>();
     glGenVertexArrays(1, &mesh->vao_);
@@ -120,8 +128,11 @@ std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>>
         glVertexAttribPointer(loc, static_cast<GLint>(attr->dim()), GL_FLOAT, GL_FALSE, 0, NULL);
         glEnableVertexAttribArray(loc);
         mesh->attributes_[attr->name()] = attrbuf;
+        mesh->attributes_enabled_[attr->name()] = true;
     }
-    mesh->indices_ = AttributeIndexBuffer::create(prim == MeshPrimitive::Points ? 1 : (prim == MeshPrimitive::Lines ? 2 : 3));
+    mesh->indices_ = AttributeIndexBuffer::create(
+        prim == MeshPrimitive::Points ? 1 : (prim == MeshPrimitive::Lines ? 2 : 3));
+    mesh->primitive_ = prim;
     mesh->indices_->buffer()->use();
     mesh->init_ = true;
     glBindVertexArray(0);
@@ -130,14 +141,44 @@ std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>>
     return mesh;
 }
 
-std::shared_ptr<Mesh> Mesh::create(MeshPrimitive prim)
+std::shared_ptr<Mesh> Mesh::create(const LineMeshData &linemesh)
+{
+    auto mesh = Mesh::createLineMesh();
+    mesh->attributes_["positions"]->setData(linemesh.vertices);
+    mesh->attributes_["colors"]->setData(linemesh.colors);
+    mesh->indices_->setData(linemesh.indices);
+    return mesh;
+}
+
+std::shared_ptr<Mesh> Mesh::create(const TriangleMeshData &trimesh)
+{
+    auto mesh = Mesh::createTriangleMesh();
+    mesh->attributes_["positions"]->setData(trimesh.vertices);
+    mesh->attributes_["normals"]->setData(trimesh.normals);
+    mesh->attributes_["colors"]->setData(trimesh.colors);
+    mesh->attributes_["uvs"]->setData(trimesh.texcoords);
+    mesh->attributes_["tangents"]->setData(trimesh.tangents);
+    mesh->indices_->setData(trimesh.indices);
+    return mesh;
+}
+
+std::shared_ptr<Mesh> Mesh::createLineMesh()
+{
+    return Mesh::create(
+        {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
+         AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
+        MeshPrimitive::Lines);
+}
+
+std::shared_ptr<Mesh> Mesh::createTriangleMesh()
 {
     return Mesh::create(
         {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
          AttributeBuffer::create("normals", GLuint(AttributeLocation::NORMAL), 3),
          AttributeBuffer::create("uvs", GLuint(AttributeLocation::UV), 2),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
-         AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3)}, prim);
+         AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3)},
+        MeshPrimitive::Triangles);
 }
 
 void Mesh::release()
@@ -174,6 +215,7 @@ void Mesh::enableAttribute(std::string name)
     use();
     glEnableVertexAttribArray(location);
     done();
+    attributes_enabled_[name] = true;
 }
 
 void Mesh::disableAttribute(std::string name)
@@ -194,6 +236,7 @@ void Mesh::disableAttribute(std::string name)
     }
     checkGLError();
     done();
+    attributes_enabled_[name] = false;
 }
 
 void Mesh::use() const
@@ -229,22 +272,33 @@ bool Mesh::hasAttribute(std::string name) const
     return attributes_.find(name) != attributes_.end();
 }
 
+std::shared_ptr<AttributeBuffer> Mesh::attribute(std::string name)
+{
+    return attributes_.at(name);
+}
+
+std::shared_ptr<AttributeIndexBuffer> Mesh::indices()
+{
+    return indices_;
+}
+
 void Mesh::uploadToGPU()
 {
     done();
-    attributes_["positions"]->setData(data.vertices);
+    /*attributes_["positions"]->setData(data.vertices);
     attributes_["normals"]->setData(data.normals);
     attributes_["colors"]->setData(data.colors);
     attributes_["uvs"]->setData(data.texcoords);
-    attributes_["tangents"]->setData(data.tangents);
-    if (data.indexed)
+    attributes_["tangents"]->setData(data.tangents);*/
+    /*if (data.indexed)
     {
         indices_->setData(data.indices);
-        indices_->update();
-    }
+    }*/
+    indices_->update();
     for (auto &kv : attributes_)
     {
-        if (kv.second->data().size() / kv.second->dim() != attributes_["positions"]->data().size() / attributes_["positions"]->dim())
+        if (kv.second->data().size() / kv.second->dim() !=
+            attributes_["positions"]->data().size() / attributes_["positions"]->dim())
         {
             disableAttribute(kv.first);
         }
@@ -269,25 +323,27 @@ void Mesh::updateBVH()
 {
     // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
     std::vector<PrimitivePtr> prims;
+    const glm::vec3 *pos = attributes_["positions"]->ptrVec3();
+    const unsigned int *ind = indices_->ptr();
     if (numIndexData() > 0)
     {
-        prims.reserve(data.indices.size() / 3);
+        prims.reserve(indices_->size() / 3);
         size_t face_id = 0;
-        for (size_t i = 0; i < data.indices.size(); i += 3)
+        for (size_t i = 0; i < indices_->size(); i += 3)
         {
-            prims.push_back(std::make_shared<Triangle>(
-                face_id++, data.vertices[data.indices[i + 0]], data.vertices[data.indices[i + 1]],
-                data.vertices[data.indices[i + 2]]));
+            prims.push_back(std::make_shared<Triangle>(face_id++, pos[ind[i + 0]], pos[ind[i + 1]],
+                                                       pos[ind[i + 2]]));
         }
     }
     else
     {
-        prims.reserve(data.vertices.size() / 3);
+        size_t num_verts = numVertexData();
+        prims.reserve(num_verts / 3);
         size_t face_id = 0;
-        for (size_t i = 0; i < data.vertices.size(); i += 3)
+        for (size_t i = 0; i < num_verts; i += 3)
         {
-            prims.push_back(std::make_shared<Triangle>(face_id++, data.vertices[i + 0],
-                                                       data.vertices[i + 1], data.vertices[i + 2]));
+            prims.push_back(
+                std::make_shared<Triangle>(face_id++, pos[i + 0], pos[i + 1], pos[i + 2]));
         }
     }
     bvh_ = buildBVH(prims);
@@ -307,6 +363,40 @@ bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id)
     }
     id = prim->id();
     return true;
+}
+
+void LineMeshData::clear()
+{
+    vertices.clear();
+    colors.clear();
+    indices.clear();
+}
+
+void LineMeshData::append(LineMeshData &other)
+{
+    assert(indexed == other.indexed);
+    vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
+    colors.insert(colors.end(), other.colors.begin(), other.colors.end());
+    glm::uvec2 offset(vertices.size(), vertices.size());
+    indices.reserve(indices.size() + other.indices.size());
+    std::transform(other.indices.begin(), other.indices.end(), std::back_inserter(indices),
+                   [&](const glm::uvec2 &ind) { return ind + offset; });
+}
+
+bool LineMeshData::valid() const
+{
+    return vertices.size() == colors.size() && vertices.size() >= 2;
+}
+
+void LineMeshData::scaleAndCenter()
+{
+    glm::vec3 centroid;
+    float scale;
+    findCentroidAndScale(vertices, centroid, scale);
+    for (glm::vec3 &v : vertices)
+    {
+        v = 2.0f * (v - centroid) / scale;
+    }
 }
 
 } // namespace rcube

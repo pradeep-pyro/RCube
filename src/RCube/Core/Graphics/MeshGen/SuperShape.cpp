@@ -31,12 +31,11 @@ glm::vec3 superSphericalCoordinates(float lat, float lon, float lat_a, float lat
     return glm::vec3(x, z, y);
 }
 
-MeshData superShape(float radius, unsigned int rows, unsigned int cols, float a, float b, float m1,
+TriangleMeshData superShape(float radius, unsigned int rows, unsigned int cols, float a, float b, float m1,
                     float m2, float n1, float n2, float n3)
 {
-    MeshData data;
+    TriangleMeshData data;
     data.indexed = true;
-    data.primitive = MeshPrimitive::Triangles;
     float lat_inc = glm::pi<float>() / (rows - 1);
     float lon_inc = glm::two_pi<float>() / (cols - 1);
     data.vertices.reserve(rows * cols + 2);
@@ -81,12 +80,8 @@ MeshData superShape(float radius, unsigned int rows, unsigned int cols, float a,
         unsigned int r2 = (i + 1) * cols;
         for (unsigned int j = 0; j < cols; ++j)
         {
-            data.indices.push_back(r1 + j);
-            data.indices.push_back(r2 + j);
-            data.indices.push_back(r2 + (j + 1) % cols);
-            data.indices.push_back(r1 + j);
-            data.indices.push_back(r2 + (j + 1) % cols);
-            data.indices.push_back(r1 + (j + 1) % cols);
+            data.indices.push_back({r1 + j, r2 + j, r2 + (j + 1) % cols});
+            data.indices.push_back({r1 + j, r2 + (j + 1) % cols, r1 + (j + 1) % cols});
         }
     }
 
@@ -95,25 +90,22 @@ MeshData superShape(float radius, unsigned int rows, unsigned int cols, float a,
     for (unsigned int j = 0; j < cols; ++j)
     {
         // bottom cap
-        data.indices.push_back(spole_idx);
-        data.indices.push_back(1 * cols + (j + 1) % cols);
-        data.indices.push_back(1 * cols + j);
+        data.indices.push_back({spole_idx, 1 * cols + (j + 1) % cols, 1 * cols + j});
         // top cap
-        data.indices.push_back(npole_idx);
-        data.indices.push_back((rows - 3) * cols + (j + 1) % cols);
-        data.indices.push_back((rows - 3) * cols + j);
+        data.indices.push_back(
+            {npole_idx, (rows - 3) * cols + (j + 1) % cols, (rows - 3) * cols + j});
     }
 
     data.normals.resize(data.vertices.size(), glm::vec3(0));
     for (size_t i = 0; i < data.indices.size(); i += 3)
     {
-        auto v1 = data.vertices[data.indices[i]];
-        auto v2 = data.vertices[data.indices[i + 1]];
-        auto v3 = data.vertices[data.indices[i + 2]];
+        auto v1 = data.vertices[data.indices[i][0]];
+        auto v2 = data.vertices[data.indices[i][1]];
+        auto v3 = data.vertices[data.indices[i][2]];
         glm::vec3 fnormal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
-        data.normals[data.indices[i]] += fnormal;
-        data.normals[data.indices[i + 1]] += fnormal;
-        data.normals[data.indices[i + 2]] += fnormal;
+        data.normals[data.indices[i][0]] += fnormal;
+        data.normals[data.indices[i][1]] += fnormal;
+        data.normals[data.indices[i][2]] += fnormal;
     }
 
     for (auto &n : data.normals)

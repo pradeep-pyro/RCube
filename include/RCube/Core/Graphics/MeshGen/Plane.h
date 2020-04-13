@@ -28,7 +28,7 @@ enum class Orientation
  * @param ort Orientation of the plane: +X, -X, +Y, -Y, +Z, -Z
  * @return MeshData
  */
-MeshData plane(float width, float height, unsigned int width_segments, unsigned int height_segments,
+TriangleMeshData plane(float width, float height, unsigned int width_segments, unsigned int height_segments,
                Orientation ort);
 
 } // namespace rcube

@@ -15,7 +15,7 @@ namespace rcube
  * @param theta_end Ending angle of the disk (default: 2pi)
  * @return A disk shaped mesh
  */
-MeshData circle(float radius = 1, int radial_segments = 10, float theta_start = 0,
+TriangleMeshData circle(float radius = 1, int radial_segments = 10, float theta_start = 0,
                 float theta_end = glm::two_pi<float>());
 
 } // namespace rcube

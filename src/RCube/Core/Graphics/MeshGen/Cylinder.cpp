@@ -6,13 +6,12 @@
 namespace rcube
 {
 
-MeshData cylinder(float radius_bottom, float radius_top, float height, int radial_segments,
+TriangleMeshData cylinder(float radius_bottom, float radius_top, float height, int radial_segments,
                   int height_segments, float theta_start, float theta_end, bool top_cap,
                   bool bottom_cap)
 {
-    MeshData data;
+    TriangleMeshData data;
     data.indexed = true;
-    data.primitive = MeshPrimitive::Triangles;
 
     float half_height = height / 2.f;
     float theta_inc = (theta_end - theta_start) / float(radial_segments);
@@ -44,18 +43,14 @@ MeshData cylinder(float radius_bottom, float radius_top, float height, int radia
             int ip1_j = (i + 1) * stride + j;
             int i_jp1 = i * stride + j + 1;
             int ip1_jp1 = (i + 1) * stride + j + 1;
-            data.indices.push_back(i_j);
-            data.indices.push_back(i_jp1);
-            data.indices.push_back(ip1_j);
-            data.indices.push_back(ip1_j);
-            data.indices.push_back(i_jp1);
-            data.indices.push_back(ip1_jp1);
+            data.indices.push_back({i_j, i_jp1, ip1_j});
+            data.indices.push_back({ip1_j, i_jp1, ip1_jp1});
         }
     }
 
     if (top_cap)
     {
-        MeshData top_cap = circle(radius_top, radial_segments, theta_start, theta_end);
+        TriangleMeshData top_cap = circle(radius_top, radial_segments, theta_start, theta_end);
         for (auto &v : top_cap.vertices)
         {
             v.y += half_height;
@@ -64,7 +59,7 @@ MeshData cylinder(float radius_bottom, float radius_top, float height, int radia
     }
     if (bottom_cap)
     {
-        MeshData bottom_cap = circle(radius_bottom, radial_segments, theta_start, theta_end);
+        TriangleMeshData bottom_cap = circle(radius_bottom, radial_segments, theta_start, theta_end);
         for (auto &v : bottom_cap.vertices)
         {
             v.y -= half_height;

@@ -16,10 +16,10 @@ namespace rcube
  * @param color_centerline_x Color of the centerline along x direction
  * @param color_centerline_z Color of the centerline along z direction
  * @param color_grid Color of the gridlines (except the centerlines)
- * @return A grid mesh
+ * @return A LineMeshdata populated with a grid
  */
-MeshData grid(float width, float height, int width_segments, int height_segments,
-              glm::vec3 color_centerline_x, glm::vec3 color_centerline_z, glm::vec3 color_grid);
+LineMeshData grid(float width, float height, int width_segments, int height_segments,
+                  glm::vec3 color_centerline_x, glm::vec3 color_centerline_z, glm::vec3 color_grid);
 
 } // namespace rcube
 

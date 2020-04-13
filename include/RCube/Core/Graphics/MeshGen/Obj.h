@@ -10,7 +10,7 @@ namespace rcube
  * Creates mesh data from OBJ file
  * @param file_name file name of the input mesh
  */
-MeshData loadOBJ(const std::string &file_name);
+TriangleMeshData loadOBJ(const std::string &file_name);
 } // namespace rcube
 
 #endif // OBJ_H

@@ -58,7 +58,7 @@ class RCubeViewer : public rcube::Window
     EntityHandle addBoxSurface(const std::string name, float width, float height, float depth,
                                int width_segments, int height_segments, int depth_segments,
                                int numSegments);
-    EntityHandle addSurface(const std::string name, const MeshData &data);
+    EntityHandle addSurface(const std::string name, const TriangleMeshData &data);
 
     EntityHandle addPointLight(const std::string name, glm::vec3 position, float radius,
                                glm::vec3 color);

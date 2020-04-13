@@ -4,10 +4,10 @@
 namespace rcube
 {
 
-MeshData box(float width, float height, float depth, unsigned int width_segments,
-             unsigned int height_segments, unsigned int depth_segments)
+TriangleMeshData box(float width, float height, float depth, unsigned int width_segments,
+                     unsigned int height_segments, unsigned int depth_segments)
 {
-    std::vector<MeshData> data;
+    std::vector<TriangleMeshData> data;
     data.resize(6);
     data[0] = plane(depth, height, depth_segments, height_segments, Orientation::PositiveX); // +x
     for (auto &v : data[0].vertices)
@@ -53,27 +53,11 @@ MeshData box(float width, float height, float depth, unsigned int width_segments
         n_verts += data[i].vertices.size();
         n_indices += data[i].indices.size();
     }
-    MeshData box_data;
+    TriangleMeshData box_data;
     box_data.indexed = true;
-    box_data.primitive = MeshPrimitive::Triangles;
-    box_data.vertices.reserve(n_verts);
-    box_data.normals.reserve(n_verts);
-    box_data.texcoords.reserve(n_verts);
-    box_data.indices.reserve(n_indices);
-    for (int i = 0; i < 6; ++i)
+    for (size_t i = 0; i < 6; ++i)
     {
-        for (auto &ind : data[i].indices)
-        {
-            ind += offset[i];
-        }
-        box_data.vertices.insert(box_data.vertices.end(), data[i].vertices.begin(),
-                                 data[i].vertices.end());
-        box_data.indices.insert(box_data.indices.end(), data[i].indices.begin(),
-                                data[i].indices.end());
-        box_data.normals.insert(box_data.normals.end(), data[i].normals.begin(),
-                                data[i].normals.end());
-        box_data.texcoords.insert(box_data.texcoords.end(), data[i].texcoords.begin(),
-                                  data[i].texcoords.end());
+        box_data.append(data[i]);
     }
     return box_data;
 }

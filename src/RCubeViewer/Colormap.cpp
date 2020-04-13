@@ -238,6 +238,20 @@ void colormap(Colormap cm, const float *ptr, size_t size, float vmin, float vmax
     }
 }
 
+void colormap(Colormap cm, const std::vector<float> values, float vmin, float vmax,
+              std::vector<float> &colors)
+{
+    colors.reserve(values.size());
+    glm::vec3 rgb;
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        colormap(cm, values[i], vmin, vmax, rgb);
+        colors.push_back(rgb.r);
+        colors.push_back(rgb.g);
+        colors.push_back(rgb.b);
+    }
+}
+
 void colormap(Colormap cm, const std::vector<float> &value, float vmin, float vmax, std::vector<glm::vec3> &colors)
 {
     colormap(cm, value.data(), value.size(), vmin, vmax, colors);

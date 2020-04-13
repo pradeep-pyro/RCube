@@ -2,11 +2,10 @@
 namespace rcube
 {
 
-MeshData circle(float radius, int radial_segments, float theta_start, float theta_end)
+TriangleMeshData circle(float radius, int radial_segments, float theta_start, float theta_end)
 {
-    MeshData data;
+    TriangleMeshData data;
     data.indexed = true;
-    data.primitive = MeshPrimitive::Triangles;
 
     data.vertices.reserve(radial_segments + 2);
     data.texcoords.reserve(radial_segments + 2);
@@ -33,9 +32,7 @@ MeshData circle(float radius, int radial_segments, float theta_start, float thet
 
     for (int i = 0; i <= radial_segments; ++i)
     {
-        data.indices.push_back(i);
-        data.indices.push_back(i + 1);
-        data.indices.push_back(0);
+        data.indices.push_back({i, i + 1, 0});
     }
 
     return data;

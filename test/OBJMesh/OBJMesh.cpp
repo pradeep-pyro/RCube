@@ -16,7 +16,7 @@ int main()
 
     // Load obj file
     std::string input_obj_file = std::string(OBJ_RESOURCE_PATH) + "/" + "armadillo.obj";
-    MeshData mesh = rcube::loadOBJ(input_obj_file);
+    TriangleMeshData mesh = rcube::loadOBJ(input_obj_file);
 
     // Make sure the mesh is OK
     assert(mesh.valid() && "Input OBJ file is not valid");

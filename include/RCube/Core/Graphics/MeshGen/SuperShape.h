@@ -18,7 +18,7 @@ namespace rcube
  * @param n3 Real number
  * @return Mesh of a supershape
  */
-MeshData superShape(float radius, unsigned int parallels, unsigned int meridians, float a, float b,
+TriangleMeshData superShape(float radius, unsigned int parallels, unsigned int meridians, float a, float b,
                     float m1, float m2, float n1, float n2, float n3);
 
 } // namespace rcube

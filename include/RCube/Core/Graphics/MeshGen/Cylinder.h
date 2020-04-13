@@ -20,7 +20,7 @@ namespace rcube
  * @param bottom_cap Whether to include a bottom cap
  * @return A cylinder mesh
  */
-MeshData cylinder(float radius_bottom = 1, float radius_top = 1, float height = 1,
+TriangleMeshData cylinder(float radius_bottom = 1, float radius_top = 1, float height = 1,
                   int radial_segments = 10, int height_segments = 10, float theta_start = 0,
                   float theta_end = glm::two_pi<float>(), bool top_cap = true,
                   bool bottom_cap = true);

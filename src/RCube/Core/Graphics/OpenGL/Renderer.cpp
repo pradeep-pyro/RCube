@@ -155,17 +155,23 @@ void GLRenderer::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Full screen quad
-    quad_mesh_ = Mesh::create(MeshPrimitive::Triangles);
-    quad_mesh_->data.vertices = {glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, -1.0f, 0.0f),
-                                 glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, -1.0f, 0.0f)};
-    quad_mesh_->data.texcoords = {glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1),
-                                  glm::vec2(1, 0)};
+    quad_mesh_ = Mesh::create({AttributeBuffer::create("positions", AttributeLocation::POSITION, 3),
+                               AttributeBuffer::create("uvs", AttributeLocation::UV, 2)},
+                              MeshPrimitive::Triangles);
+    quad_mesh_->attribute("positions")
+        ->setData(std::vector<glm::vec3>{glm::vec3(-1.0f, 1.0f, 0.0f),
+                                         glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f),
+                                         glm::vec3(1.0f, -1.0f, 0.0f)});
+    quad_mesh_->attribute("uvs")->setData(
+        std::vector<glm::vec2>{glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
     quad_mesh_->uploadToGPU();
     quad_shader_ = ShaderProgram::create(quad_vert, quad_frag, true);
 
     // Skybox
-    skybox_mesh_ = Mesh::create(MeshPrimitive::Triangles);
-    skybox_mesh_->data.vertices = skybox_vertices;
+    skybox_mesh_ =
+        Mesh::create({AttributeBuffer::create("positions", AttributeLocation::POSITION, 3)},
+                     MeshPrimitive::Triangles);
+    skybox_mesh_->attribute("positions")->setData(skybox_vertices);
     skybox_mesh_->uploadToGPU();
     skybox_shader_ = ShaderProgram::create(skybox_vert, skybox_frag, true);
 
@@ -188,7 +194,8 @@ void GLRenderer::resize(int top, int left, int width, int height)
     quad_shader_->use();
 }
 
-void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view, const glm::mat4 &view_to_projection,
+void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
+                           const glm::mat4 &view_to_projection,
                            const glm::mat4 &projection_to_viewport)
 {
     initialize();
@@ -294,7 +301,7 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
 
 void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world)
 {
-    
+
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
 
     assert(program != nullptr);
@@ -312,15 +319,15 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     catch (const std::exception)
     {
     }
-    //mesh->use();
+    // mesh->use();
     glBindVertexArray(mesh->vao());
     if (mesh->numIndexData() == 0)
     {
-        glDrawArrays(static_cast<GLint>(mesh->data.primitive), 0, mesh->numVertexData());
+        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0, mesh->numVertexData());
     }
     else
     {
-        glDrawElements(static_cast<GLint>(mesh->data.primitive), (GLsizei)mesh->numIndexData(),
+        glDrawElements(static_cast<GLint>(mesh->primitive()), (GLsizei)mesh->numIndexData(),
                        GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
     }
     glBindVertexArray(0);

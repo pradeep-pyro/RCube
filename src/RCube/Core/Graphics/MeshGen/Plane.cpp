@@ -4,16 +4,11 @@
 namespace rcube
 {
 
-MeshData plane(float width, float height, unsigned int width_segments, unsigned int height_segments,
+TriangleMeshData plane(float width, float height, unsigned int width_segments, unsigned int height_segments,
                Orientation ort)
 {
-    MeshData mesh_data;
-    mesh_data.primitive = MeshPrimitive::Triangles;
+    TriangleMeshData mesh_data;
     mesh_data.indexed = true;
-    mesh_data.indices.clear();
-    mesh_data.vertices.clear();
-    mesh_data.normals.clear();
-    mesh_data.texcoords.clear();
 
     float half_width = width / 2.f;
     float half_height = height / 2.f;
@@ -74,12 +69,8 @@ MeshData plane(float width, float height, unsigned int width_segments, unsigned 
             unsigned int b = j + width_vertices * (i + 1);
             unsigned int c = (j + 1) + width_vertices * (i + 1);
             unsigned int d = (j + 1) + width_vertices * i;
-            mesh_data.indices.push_back(a);
-            mesh_data.indices.push_back(b);
-            mesh_data.indices.push_back(d);
-            mesh_data.indices.push_back(b);
-            mesh_data.indices.push_back(c);
-            mesh_data.indices.push_back(d);
+            mesh_data.indices.push_back({a, b, d});
+            mesh_data.indices.push_back({b, c, d});
         }
     }
     return mesh_data;

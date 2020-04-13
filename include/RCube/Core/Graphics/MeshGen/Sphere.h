@@ -5,9 +5,9 @@
 namespace rcube
 {
 
-MeshData icoSphere(float radius = 1, unsigned int subdivisions = 0);
+TriangleMeshData icoSphere(float radius = 1, unsigned int subdivisions = 0);
 
-MeshData cubeSphere(float radius = 1, unsigned int n_segments = 1);
+TriangleMeshData cubeSphere(float radius = 1, unsigned int n_segments = 1);
 
 } // namespace rcube
 

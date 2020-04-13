@@ -42,7 +42,7 @@ void CameraSystem::update(bool /* force */)
             float half_ortho_h = cam->orthographic_size / 2.f;
             float half_ortho_w = half_ortho_h * aspect_ratio;
             cam->view_to_projection = glm::ortho(-half_ortho_w, half_ortho_w, -half_ortho_h,
-                                                 half_ortho_h, cam->near_plane, cam->far_plane);
+                                                 half_ortho_h, -0.5f * cam->far_plane, 0.5f * cam->far_plane);
         }
         else
         {

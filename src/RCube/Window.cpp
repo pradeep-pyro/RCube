@@ -237,6 +237,7 @@ glm::dvec2 Window::getMousePosition() const
 void Window::execute()
 {
     initialize(); // User should override this method
+    glfwSwapInterval(0);
     while (!glfwWindowShouldClose(window_))
     {
         draw(); // User should override this method

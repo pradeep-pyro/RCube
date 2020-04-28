@@ -64,7 +64,7 @@ void TriangleMeshData::clear()
 
 void TriangleMeshData::append(TriangleMeshData &other)
 {
-    assert(primitive == other.primitive && indexed == other.indexed);
+    assert(indexed == other.indexed);
     size_t offset = vertices.size();
     vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
     normals.insert(normals.end(), other.normals.begin(), other.normals.end());
@@ -160,6 +160,14 @@ std::shared_ptr<Mesh> Mesh::create(const TriangleMeshData &trimesh)
     mesh->attributes_["tangents"]->setData(trimesh.tangents);
     mesh->indices_->setData(trimesh.indices);
     return mesh;
+}
+
+std::shared_ptr<Mesh> Mesh::createPointMesh()
+{
+    return Mesh::create(
+        {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
+         AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
+        MeshPrimitive::Points);
 }
 
 std::shared_ptr<Mesh> Mesh::createLineMesh()
@@ -285,15 +293,6 @@ std::shared_ptr<AttributeIndexBuffer> Mesh::indices()
 void Mesh::uploadToGPU()
 {
     done();
-    /*attributes_["positions"]->setData(data.vertices);
-    attributes_["normals"]->setData(data.normals);
-    attributes_["colors"]->setData(data.colors);
-    attributes_["uvs"]->setData(data.texcoords);
-    attributes_["tangents"]->setData(data.tangents);*/
-    /*if (data.indexed)
-    {
-        indices_->setData(data.indices);
-    }*/
     indices_->update();
     for (auto &kv : attributes_)
     {

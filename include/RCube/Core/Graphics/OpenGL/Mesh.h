@@ -75,6 +75,9 @@ class Mesh
     /**
      * Initialize actually creates the vertex attribute object and buffers on the OpenGL side
      */
+
+    static std::shared_ptr<Mesh> createPointMesh();
+
     static std::shared_ptr<Mesh> createLineMesh();
 
     static std::shared_ptr<Mesh> createTriangleMesh();

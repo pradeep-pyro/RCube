@@ -510,7 +510,7 @@ glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
     return glm::vec2(ndc_x, ndc_y);
 }
 
-bool RCubeViewer::pick(int xpos, int ypos, EntityHandle &ent, size_t id)
+bool RCubeViewer::pick(int xpos, int ypos, EntityHandle &ent, size_t &id)
 {
     Camera *cam = camera_.get<Camera>();
     Transform *cam_tr = camera_.get<Transform>();
@@ -528,7 +528,7 @@ bool RCubeViewer::pick(int xpos, int ypos, EntityHandle &ent, size_t id)
     size_t closest_id = 0;
     glm::vec3 closest_point;
     bool hit = false;
-    for (auto iter = world_.entities(); iter.hasNext();)
+    for (auto iter = world_.entities(); iter.hasNext(); )
     {
         EntityHandle e = iter.next();
         if (!e.has<Drawable>() || !e.has<Transform>())
@@ -571,6 +571,10 @@ void RCubeViewer::onMousePress(int key, int mods)
     {
         return;
     }
+    if (handleMouseDown(*this))
+    {
+        return;
+    }
     glm::dvec2 pos = getMousePosition();
     if (key == GLFW_MOUSE_BUTTON_MIDDLE)
     {
@@ -589,6 +593,10 @@ void RCubeViewer::onMousePress(int key, int mods)
 }
 void RCubeViewer::onMouseRelease(int key, int mods)
 {
+    if (handleMouseUp(*this))
+    {
+        return;
+    }
     glm::dvec2 pos = getMousePosition();
     if (key == GLFW_MOUSE_BUTTON_MIDDLE)
     {
@@ -601,6 +609,10 @@ void RCubeViewer::onMouseRelease(int key, int mods)
 }
 void RCubeViewer::onMouseMove(double xpos, double ypos)
 {
+    if (handleMouseMove(*this))
+    {
+        return;
+    }
     glm::dvec2 pos = getMousePosition();
     ctrl_.orbit(static_cast<int>(pos.x), static_cast<int>(pos.y));
     ctrl_.pan(static_cast<int>(pos.x), static_cast<int>(pos.y));

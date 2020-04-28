@@ -67,11 +67,19 @@ class RCubeViewer : public rcube::Window
 
     EntityHandle camera();
 
+    bool pick(int xpos, int ypos, EntityHandle &ent, size_t &id);
+
     // Callback functions for injecting user code
     std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &viewer) {};
-    std::function<void(RCubeViewer &viewer)> handleMouseDown = [](RCubeViewer &viewer) {};
-    std::function<void(RCubeViewer &viewer)> handleMouseUp = [](RCubeViewer &viewer) {};
-    std::function<void(RCubeViewer &viewer)> handleMouseMove = [](RCubeViewer &viewer) {};
+    std::function<bool(RCubeViewer &viewer)> handleMouseDown = [](RCubeViewer &viewer) -> bool {
+        return false;
+    };
+    std::function<bool(RCubeViewer &viewer)> handleMouseUp = [](RCubeViewer &viewer) -> bool {
+        return false;
+    };
+    std::function<bool(RCubeViewer &viewer)> handleMouseMove = [](RCubeViewer &viewer) -> bool {
+        return false;
+    };
 
   protected:
     virtual void draw() override;
@@ -85,8 +93,6 @@ class RCubeViewer : public rcube::Window
     virtual void beforeTerminate() override;
 
     glm::vec2 screenToNDC(int xpos, int ypos);
-
-    bool pick(int xpos, int ypos, EntityHandle &ent, size_t id);
 
     virtual void onMousePress(int key, int mods);
 

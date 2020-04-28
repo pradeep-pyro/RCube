@@ -307,7 +307,7 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
 #ifdef RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
     glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
 #else
-    const glm::mat3 &normal_matrix = model_to_world;
+    const glm::mat3 normal_matrix(model_to_world);
 #endif
     assert(program != nullptr);
 
@@ -316,13 +316,14 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
 
     // Use shader and set uniforms
     program->use();
-    try
+    Uniform u_model_matrix, u_normal_matrix;
+    if (program->hasUniform("model_matrix", u_model_matrix))
     {
-        program->uniform("model_matrix").set(model_to_world);
-        program->uniform("normal_matrix").set(normal_matrix);
+        u_model_matrix.set(model_to_world);
     }
-    catch (const std::exception)
+    if (program->hasUniform("normal_matrix", u_normal_matrix))
     {
+        u_normal_matrix.set(normal_matrix);
     }
     // mesh->use();
     glBindVertexArray(mesh->vao());

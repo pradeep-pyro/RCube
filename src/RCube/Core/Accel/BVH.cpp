@@ -7,7 +7,7 @@ bool BVHNode::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &primitiv
 {
     if (aabb.rayIntersect(ray))
     {
-        if (left->primitives.size() > 0 || right->primitives.size() > 0)
+        if ((left != nullptr && left->primitives.size() > 0) || (right != nullptr && right->primitives.size() > 0))
         {
             bool hitLeft = left->rayIntersect(ray, pt, primitive);
             bool hitRight = right->rayIntersect(ray, pt, primitive);

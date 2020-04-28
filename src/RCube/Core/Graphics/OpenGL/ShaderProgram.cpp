@@ -315,7 +315,18 @@ const std::vector<ShaderAttributeDesc> &ShaderProgram::attributes() const
 {
     return attributes_;
 }
-const Uniform &ShaderProgram::uniform(std::string name) const
+bool ShaderProgram::hasUniform(std::string name, Uniform &uni)
+{
+    auto it = uniforms_.find(name);
+    if (it == uniforms_.end())
+    {
+        return false;
+    }
+    uni = it->second;
+    return true;
+}
+const Uniform &ShaderProgram::uniform(
+    std::string name) const
 {
     return uniforms_.at(name);
 }

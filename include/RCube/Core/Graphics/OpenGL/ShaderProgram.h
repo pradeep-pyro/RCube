@@ -247,6 +247,7 @@ class ShaderProgram
     const std::vector<ShaderAttributeDesc> &attributes() const;
     const Uniform &uniform(std::string name) const;
     Uniform &uniform(std::string name);
+    bool hasUniform(std::string name, Uniform &uni);
     const std::shared_ptr<Texture2D> &texture(std::string name) const;
     std::shared_ptr<Texture2D> &texture(std::string name);
     const std::shared_ptr<TextureCubemap> &cubemap(std::string name) const;

@@ -13,7 +13,7 @@ source_group(TREE ${RC_ROOT} FILES ${INC_FILES})
 source_group(TREE ${RC_ROOT} FILES ${SRC_FILES})
 
 add_library(RCube STATIC ${INC_FILES} ${SRC_FILES})
-set_property(TARGET RCube PROPERTY CXX_STANDARD 14)
+set_property(TARGET RCube PROPERTY CXX_STANDARD 17)
 set_property(TARGET RCube PROPERTY CXX_STANDARD_REQUIRED TRUE)
 add_definitions(-DNOMINMAX)
 
@@ -33,5 +33,7 @@ target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
 
 target_link_libraries(RCube glm_static glfw glad stb_image imgui)
 
-add_subdirectory(test)
-add_subdirectory(apps)
+option(RCUBE_BUILD_EXAMPLES "Whether to build examples (default: OFF)" ON)
+if(RCUBE_BUILD_EXAMPLES)
+    add_subdirectory(test)
+endif()

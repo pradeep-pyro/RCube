@@ -1,11 +1,11 @@
 #pragma once
 
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <vector>
-#include "glm/glm.hpp"
 #include "RCube/Core/Graphics/OpenGL/Buffer.h"
+#include "glm/glm.hpp"
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace rcube
 {
@@ -26,7 +26,6 @@ class AttributeBuffer
     size_t dim_ = 1;
     std::vector<float> data_;
     std::shared_ptr<ArrayBuffer> buffer_;
-
 
   public:
     AttributeBuffer() = default;
@@ -134,8 +133,9 @@ class AttributeBuffer
     {
         if (data.size() % dim_ != 0)
         {
-            throw std::runtime_error("Attempting to set data of size " + std::to_string(data.size()) +
-                                     "which is not divisible by " + std::to_string(dim_) + " (dim)");
+            throw std::runtime_error("Attempting to set data of size " +
+                                     std::to_string(data.size()) + "which is not divisible by " +
+                                     std::to_string(dim_) + " (dim)");
         }
         data_ = data;
     }
@@ -203,8 +203,8 @@ class AttributeIndexBuffer
     {
         if (dim_ != 3)
         {
-            throw std::runtime_error("Attempting to interpret "
-                                     + std::to_string(dim_) + "D data as 3D");
+            throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
+                                     "D data as 3D");
         }
         return reinterpret_cast<const glm::uvec3 *>(&data_[0]);
     }
@@ -213,8 +213,8 @@ class AttributeIndexBuffer
     {
         if (dim_ != 2)
         {
-            throw std::runtime_error("Attempting to interpret " +
-                                     std::to_string(dim_) + "D data as 2D");
+            throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
+                                     "D data as 2D");
         }
         return reinterpret_cast<const glm::uvec2 *>(&data_[0]);
     }
@@ -261,17 +261,31 @@ class AttributeIndexBuffer
             throw std::runtime_error("Attempting to set 2D data, expected " + std::to_string(dim_) +
                                      "D data");
         }
-        data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 2);
+        if (data.empty())
+        {
+            data_.clear();
+        }
+        else
+        {
+            data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 2);
+        }
     }
 
     void setData(const std::vector<glm::uvec3> &data)
     {
         if (dim_ != 3)
         {
-            throw std::runtime_error("Attempting to set 3D data, expected " +
-                                         std::to_string(dim_) + "D data");
+            throw std::runtime_error("Attempting to set 3D data, expected " + std::to_string(dim_) +
+                                     "D data");
         }
-        data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 3);
+        if (data.empty())
+        {
+            data_.clear();
+        }
+        else
+        {
+            data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 3);
+        }
     }
 
     void update()
@@ -292,6 +306,5 @@ class AttributeIndexBuffer
         data_.swap(std::vector<unsigned int>{});
     }
 };
-
 
 } // namespace rcube

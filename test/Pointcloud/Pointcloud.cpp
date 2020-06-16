@@ -2,7 +2,9 @@
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Colormap.h"
 #include "RCubeViewer/Components/Name.h"
+#include "RCubeViewer/Components/Pickable.h"
 #include "RCubeViewer/RCubeViewer.h"
+#include "imgui.h"
 #include <random>
 
 int main()
@@ -35,21 +37,35 @@ int main()
     pc_entity.get<Drawable>()->material->uniform("diffuse").set(glm::vec3(0.8, 0.2, 0.0));
 
     // Make pointcloud pickable with mouse click
+    pc_entity.add<viewer::Pickable>();
     pc_entity.get<Drawable>()->mesh->updateBVH();
 
-    viewer.handleMouseDown = [&](rcube::viewer::RCubeViewer &v) -> bool {
-        glm::dvec2 mouse_pos = v.getMousePosition();
-        EntityHandle ent;
-        size_t triangle_index;
-        if (v.pick(int(mouse_pos.x), int(mouse_pos.y), ent, triangle_index))
+    // viewer.callInDrawLoop = [&](rcube::viewer::RCubeViewer &v) -> bool {
+    //    glm::dvec2 mouse_pos = v.getMousePosition();
+    //    EntityHandle ent;
+    //    size_t triangle_index;
+    //    if (v.world().getSystem("PickSystem")pick(int(mouse_pos.x), int(mouse_pos.y), ent,
+    //    triangle_index))
+    //    {
+    //        std::cout << "Picked entity '" << ent.get<Name>()->name << "' by selecting triangle "
+    //                  << triangle_index << ", which corresponds to pointcloud index "
+    //                  << (size_t)std::floor((double)triangle_index /
+    //                                        (double)num_triangles_per_point)
+    //                  << std::endl;
+    //    }
+    //    return false; // Return false to process default mouse down stuff in the viewer
+    //};
+    viewer.customGUI = [&](viewer::RCubeViewer &v) {
+        ImGui::Begin("Pick");
+        viewer::Pickable *pick_comp = pc_entity.get<viewer::Pickable>();
+        if (pick_comp->picked)
         {
-            std::cout << "Picked entity '" << ent.get<Name>()->name << "' by selecting triangle "
-                      << triangle_index << ", which corresponds to pointcloud index "
-                      << (size_t)std::floor((double)triangle_index /
-                                            (double)num_triangles_per_point)
-                      << std::endl;
+            ImGui::Text(
+                "Picked triangle index %zd, which corresponds to pointcloud index %zd\n",
+                pick_comp->triangle,
+                (size_t)std::floor((double)pick_comp->triangle / (double)num_triangles_per_point));
         }
-        return false; // Return false to process default mouse down stuff in the viewer
+        ImGui::End();
     };
 
     // Show viewer

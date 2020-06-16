@@ -6,6 +6,123 @@
 namespace rcube
 {
 
+InputState::InputState()
+{
+    keystate_.resize(26, ButtonState::Released);
+    mousestate_.resize(3, ButtonState::Released);
+}
+
+InputState &InputState::instance()
+{
+    static InputState state;
+    return state;
+}
+
+bool InputState::isKeyDown(Key aKey) const
+{
+    return keystate_[char(aKey) - 'A'] == ButtonState::Down ||
+           keystate_[char(aKey) - 'A'] == ButtonState::JustDown;
+}
+
+bool InputState::isKeyJustDown(Key aKey) const
+{
+    return keystate_[char(aKey) - 'A'] == ButtonState::JustDown;
+}
+
+InputState::ButtonState InputState::keyState(Key aKey) const
+{
+    return keystate_[char(aKey) - 'A'];
+}
+
+bool InputState::isMouseDown(Mouse aMouseButton) const
+{
+    return mousestate_[int(aMouseButton)] == ButtonState::Down ||
+           mousestate_[int(aMouseButton)] == ButtonState::JustDown;
+}
+
+bool InputState::isMouseJustDown(Mouse aMouseButton) const
+{
+    return mousestate_[int(aMouseButton)] == ButtonState::JustDown;
+}
+
+InputState::ButtonState InputState::mouseState(Mouse aMouseButton) const
+{
+    return mousestate_[int(aMouseButton)];
+}
+
+const glm::dvec2 &InputState::mousePos() const
+{
+    return mousepos_;
+}
+
+const glm::dvec2 InputState::scrollAmount()
+{
+    glm::dvec2 tmp = scroll_;
+    scroll_.x = 0.0;
+    scroll_.y = 0.0;
+    return tmp;
+}
+
+void InputState::setScrollAmount(double xscroll, double yscroll)
+{
+    scroll_.x = xscroll;
+    scroll_.y = yscroll;
+}
+
+void InputState::update(GLFWwindow *window)
+{
+    for (char i = char(Key::A); i <= char(Key::Z); ++i)
+    {
+        int vectorIndex = i - char(Key::A);
+        bool isKeyDown = glfwGetKey(window, i) == GLFW_PRESS;
+
+        ButtonState lastKeyState = keystate_[vectorIndex];
+
+        if (isKeyDown && lastKeyState == ButtonState::JustDown)
+        {
+            keystate_[vectorIndex] = ButtonState::Down;
+        }
+        else if (isKeyDown && (lastKeyState == ButtonState::Released ||
+                               lastKeyState == ButtonState::JustReleased))
+        {
+            keystate_[vectorIndex] = ButtonState::JustDown;
+        }
+        else if (!isKeyDown && lastKeyState == ButtonState::JustReleased)
+        {
+            keystate_[vectorIndex] = ButtonState::Released;
+        }
+        else if (!isKeyDown &&
+                 (lastKeyState == ButtonState::Down || lastKeyState == ButtonState::JustDown))
+        {
+            keystate_[vectorIndex] = ButtonState::JustReleased;
+        }
+    }
+    for (int i = 0; i < 3; ++i)
+    {
+        bool isMouseDown = glfwGetMouseButton(window, i) == GLFW_PRESS;
+        ButtonState lastMouseState = mousestate_[i];
+        if (isMouseDown && lastMouseState == ButtonState::JustDown)
+        {
+            mousestate_[i] = ButtonState::Down;
+        }
+        else if (isMouseDown && (lastMouseState == ButtonState::Released ||
+                                 lastMouseState == ButtonState::JustReleased))
+        {
+            mousestate_[i] = ButtonState::JustDown;
+        }
+        else if (!isMouseDown && lastMouseState == ButtonState::JustReleased)
+        {
+            mousestate_[i] = ButtonState::Released;
+        }
+        else if (!isMouseDown &&
+                 (lastMouseState == ButtonState::Down || lastMouseState == ButtonState::JustDown))
+        {
+            mousestate_[i] = ButtonState::JustReleased;
+        }
+    }
+    glfwGetCursorPos(window, &mousepos_[0], &mousepos_[1]);
+}
+
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                             const GLchar *message, const void *userParam)
 {
@@ -139,9 +256,9 @@ static void callbackMouseMove(GLFWwindow *window, double xpos, double ypos)
 
 static void callbackScroll(GLFWwindow *window, double xoffset, double yoffset)
 {
+    InputState::instance().setScrollAmount(xoffset, yoffset);
     static_cast<Window *>(glfwGetWindowUserPointer(window))->onScroll(xoffset, yoffset);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -242,6 +359,7 @@ void Window::execute()
     {
         draw(); // User should override this method
         glfwPollEvents();
+        InputState::instance().update(window_);
         glfwSwapBuffers(window_);
     }
     beforeTerminate(); // User should override this method

@@ -1,13 +1,87 @@
-#ifndef WINDOW_H
-#define WINDOW_H
+#pragma once
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
+#include <iostream>
 #include <string>
+#include <vector>
 
 namespace rcube
 {
+
+class InputState
+{
+    InputState();
+    ~InputState() = default;
+
+  public:
+    InputState(const InputState &) = delete;
+    InputState &operator=(const InputState &) = delete;
+    static InputState &instance();
+
+    enum class Key
+    {
+        A = GLFW_KEY_A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        O,
+        P,
+        Q,
+        R,
+        S,
+        T,
+        U,
+        V,
+        W,
+        X,
+        Y,
+        Z
+    };
+
+    enum class Mouse
+    {
+        Left,
+        Right,
+        Middle,
+    };
+
+    enum class ButtonState
+    {
+        Down,
+        JustDown,
+        Released,
+        JustReleased
+    };
+
+    bool isKeyDown(Key aKey) const;
+    bool isKeyJustDown(Key aKey) const;
+    ButtonState keyState(Key aKey) const;
+    bool isMouseDown(Mouse aMouseButton) const;
+    bool isMouseJustDown(Mouse aMouseButton) const;
+    ButtonState mouseState(Mouse aMouseButton) const;
+    const glm::dvec2 &mousePos() const;
+    const glm::dvec2 scrollAmount();
+    void setScrollAmount(double xscroll, double yscroll);
+    void update(GLFWwindow *window);
+
+  private:
+    std::vector<ButtonState> keystate_;
+    std::vector<ButtonState> mousestate_;
+    glm::dvec2 mousepos_ = glm::dvec2(0.0, 0.0);
+    glm::dvec2 scroll_ = glm::vec2(0.f, 0.f);
+};
 
 class Window
 {
@@ -30,6 +104,8 @@ class Window
     void shouldClose(bool flag);
 
   protected:
+    friend class InputState;
+
     virtual void initialize();
     virtual void draw();
     virtual void beforeTerminate();
@@ -41,5 +117,3 @@ class Window
 };
 
 } // namespace rcube
-
-#endif // WINDOW_H

@@ -1,6 +1,9 @@
 #include "RCubeViewer/RCubeViewer.h"
 #include "RCube/Core/Arch/World.h"
 #include "RCubeViewer/Components/Name.h"
+#include "RCubeViewer/Components/CameraController.h"
+#include "RCubeViewer/Systems/CameraControllerSystem.h"
+#include "RCubeViewer/Systems/PickSystem.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "imgui.h"
@@ -35,6 +38,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
     world_.addSystem(std::make_unique<RenderSystem>(props.resolution, props.MSAA));
+    world_.addSystem(std::make_unique<CameraControllerSystem>());
+    world_.addSystem(std::make_unique<PickSystem>());
 
     // Create a default camera
     camera_ = createCamera();
@@ -49,8 +54,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     ground_ = createGroundPlane();
     ground_.get<Drawable>()->visible = props.ground_plane;
 
-    ctrl_.resize(static_cast<float>(props.resolution.x), static_cast<float>(props.resolution.y));
-    ctrl_.setEntity(camera_);
     world_.initialize();
 
     IMGUI_CHECKVERSION();
@@ -483,13 +486,7 @@ void RCubeViewer::drawGUI()
 
 void RCubeViewer::onResize(int w, int h)
 {
-    ctrl_.resize(static_cast<float>(w), static_cast<float>(h));
     camera_.get<rcube::Camera>()->viewport_size = glm::ivec2(w, h);
-}
-
-void RCubeViewer::onScroll(double xoffset, double yoffset)
-{
-    ctrl_.zoom(static_cast<float>(yoffset));
 }
 
 void RCubeViewer::beforeTerminate()
@@ -510,121 +507,12 @@ glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
     return glm::vec2(ndc_x, ndc_y);
 }
 
-bool RCubeViewer::pick(int xpos, int ypos, EntityHandle &ent, size_t &id)
-{
-    Camera *cam = camera_.get<Camera>();
-    Transform *cam_tr = camera_.get<Transform>();
-    const glm::vec2 ndc = screenToNDC(xpos, ypos);
-    const glm::vec4 ray_clip(ndc.x, ndc.y, -1.0, 1.0);
-    glm::vec4 ray_eye = glm::inverse(cam->viewToProjection()) * ray_clip;
-    ray_eye.z = -1.f;
-    ray_eye.w = 0.f;
-    glm::vec3 ray_wor(glm::inverse(cam->worldToView()) * ray_eye);
-    ray_wor = glm::normalize(ray_wor);
-
-    // Closest hit info
-    float min_dist = std::numeric_limits<float>::infinity();
-    EntityHandle closest;
-    size_t closest_id = 0;
-    glm::vec3 closest_point;
-    bool hit = false;
-    for (auto iter = world_.entities(); iter.hasNext(); )
-    {
-        EntityHandle e = iter.next();
-        if (!e.has<Drawable>() || !e.has<Transform>())
-        {
-            continue;
-        }
-        Drawable *dr = e.get<Drawable>();
-        if (!dr->visible)
-        {
-            continue;
-        }
-        Transform *tr = e.get<Transform>();
-        const glm::mat4 model_inv = glm::inverse(tr->worldTransform());
-        glm::vec3 ray_origin_model = glm::vec3(model_inv * glm::vec4(cam_tr->worldPosition(), 1.0));
-        glm::vec3 ray_dir_model = glm::normalize(model_inv * glm::vec4(ray_wor, 0.0));
-        Ray ray_model(ray_origin_model, ray_dir_model);
-        glm::vec3 pt;
-        size_t id;
-        if (dr->mesh->rayIntersect(ray_model, pt, id))
-        {
-            hit = true;
-            min_dist = std::min(glm::length(pt - ray_model.origin()), min_dist);
-            closest_point = pt;
-            closest_id = id;
-            closest = e;
-        }
-    }
-    if (hit)
-    {
-        ent = closest;
-        id = closest_id;
-        return true;
-    }
-    return false;
-}
-
-void RCubeViewer::onMousePress(int key, int mods)
-{
-    if (ImGui::GetIO().WantCaptureMouse)
-    {
-        return;
-    }
-    if (handleMouseDown(*this))
-    {
-        return;
-    }
-    glm::dvec2 pos = getMousePosition();
-    if (key == GLFW_MOUSE_BUTTON_MIDDLE)
-    {
-        ctrl_.startPanning(static_cast<int>(pos.x), static_cast<int>(pos.y));
-    }
-    else if (key == GLFW_MOUSE_BUTTON_RIGHT)
-    {
-        ctrl_.startOrbiting(static_cast<int>(pos.x), static_cast<int>(pos.y));
-    }
-    else if (key == GLFW_MOUSE_BUTTON_LEFT)
-    {
-        EntityHandle ent;
-        size_t id = 0;
-        pick(static_cast<int>(pos.x), static_cast<int>(pos.y), ent, id);
-    }
-}
-void RCubeViewer::onMouseRelease(int key, int mods)
-{
-    if (handleMouseUp(*this))
-    {
-        return;
-    }
-    glm::dvec2 pos = getMousePosition();
-    if (key == GLFW_MOUSE_BUTTON_MIDDLE)
-    {
-        ctrl_.stopPanning(static_cast<int>(pos.x), static_cast<int>(pos.y));
-    }
-    else if (key == GLFW_MOUSE_BUTTON_RIGHT)
-    {
-        ctrl_.stopOrbiting(static_cast<int>(pos.x), static_cast<int>(pos.y));
-    }
-}
-void RCubeViewer::onMouseMove(double xpos, double ypos)
-{
-    if (handleMouseMove(*this))
-    {
-        return;
-    }
-    glm::dvec2 pos = getMousePosition();
-    ctrl_.orbit(static_cast<int>(pos.x), static_cast<int>(pos.y));
-    ctrl_.pan(static_cast<int>(pos.x), static_cast<int>(pos.y));
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 EntityHandle RCubeViewer::createSurface()
 {
     auto ent = world_.createEntity();
-    auto dr = Drawable();
-    ent.add<Drawable>(dr);
+    ent.add<Drawable>(Drawable());
     ent.add<Transform>(Transform());
     return ent;
 }
@@ -634,6 +522,7 @@ EntityHandle RCubeViewer::createCamera()
     auto ent = world_.createEntity();
     ent.add<Camera>(Camera());
     ent.add<Transform>(Transform());
+    ent.add<CameraController>();
     return ent;
 }
 

@@ -8,9 +8,7 @@ namespace rcube
 
 CameraSystem::CameraSystem()
 {
-    ComponentMask camera_filter;
-    camera_filter.set(Transform::family());
-    camera_filter.set(Camera::family());
+    ComponentMask camera_filter(Transform::family(), Camera::family());
     addFilter(camera_filter);
 }
 

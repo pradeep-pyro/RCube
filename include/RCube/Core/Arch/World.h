@@ -6,6 +6,8 @@
 #include "RCube/Core/Arch/System.h"
 #include <cassert>
 #include <memory>
+#include <tuple>
+#include <utility>
 
 namespace rcube
 {
@@ -52,6 +54,7 @@ class World
         manager->add(entity, comp);
         updateEntityToSystem(entity, ComponentType::family(), true);
     }
+
 
     /**
      * Remove the component of type ComponentType from the entity
@@ -121,7 +124,7 @@ class World
      */
     size_t numEntities() const;
 
-    System *getSystem(const std::string& name) const
+    System *getSystem(const std::string &name) const
     {
         for (auto &sys : systems_)
         {
@@ -177,6 +180,7 @@ struct EntityHandle
         assert(valid());
         world->addComponent(entity, comp);
     }
+
     /**
      * Remove the component of type T from the entity
      */

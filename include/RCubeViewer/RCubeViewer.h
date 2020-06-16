@@ -3,7 +3,6 @@
 #include "RCube/Components/Drawable.h"
 #include "RCube/Components/PointLight.h"
 #include "RCube/Components/Transform.h"
-#include "RCube/Controller/OrbitController.h"
 #include "RCube/Core/Arch/World.h"
 #include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
@@ -44,7 +43,6 @@ class RCubeViewer : public rcube::Window
     rcube::World world_;
     rcube::EntityHandle ground_;
     rcube::EntityHandle camera_;
-    rcube::OrbitController ctrl_;
 
     glm::vec3 default_surface_color_ = glm::vec3(0.75, 0.75, 0.75);
 
@@ -67,19 +65,13 @@ class RCubeViewer : public rcube::Window
 
     EntityHandle camera();
 
-    bool pick(int xpos, int ypos, EntityHandle &ent, size_t &id);
+    World &world()
+    {
+        return world_;
+    }
 
     // Callback functions for injecting user code
     std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &viewer) {};
-    std::function<bool(RCubeViewer &viewer)> handleMouseDown = [](RCubeViewer &viewer) -> bool {
-        return false;
-    };
-    std::function<bool(RCubeViewer &viewer)> handleMouseUp = [](RCubeViewer &viewer) -> bool {
-        return false;
-    };
-    std::function<bool(RCubeViewer &viewer)> handleMouseMove = [](RCubeViewer &viewer) -> bool {
-        return false;
-    };
 
   protected:
     virtual void draw() override;
@@ -88,17 +80,9 @@ class RCubeViewer : public rcube::Window
 
     virtual void onResize(int w, int h) override;
 
-    virtual void onScroll(double xoffset, double yoffset) override;
-
     virtual void beforeTerminate() override;
 
     glm::vec2 screenToNDC(int xpos, int ypos);
-
-    virtual void onMousePress(int key, int mods);
-
-    virtual void onMouseRelease(int key, int mods);
-
-    virtual void onMouseMove(double xpos, double ypos);
 
     EntityHandle createSurface();
 

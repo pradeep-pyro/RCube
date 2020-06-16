@@ -19,6 +19,15 @@ namespace rcube
  */
 struct ComponentMask
 {
+    ComponentMask() = default;
+    template <typename... Ts> ComponentMask(size_t arg0, const Ts &... args)
+    {
+        std::vector<size_t> families{arg0, args...};
+        for (auto &&x : families)
+        {
+            set(x);
+        }
+    }
     std::bitset<8> bits;
     void set(size_t pos, bool flag = true);
     void reset(size_t pos);
@@ -75,9 +84,22 @@ class System
         filters_.push_back(filter);
         registered_entities_[filter].reserve(512);
     }
-    virtual void initialize() = 0;
+    /**
+     * Gets a list of entities that match the given component mask filter
+     * @param filter Component mask filter to get entities of interest
+     * @return List of entities that were registered under te given filter
+     */
+    const std::vector<Entity> & getFilteredEntities(const ComponentMask &filter)
+    {
+        return registered_entities_[filter];
+    }
+    virtual void initialize()
+    {
+    }
     virtual void update(bool force) = 0;
-    virtual void cleanup() = 0;
+    virtual void cleanup()
+    {
+    }
     virtual const std::string name() const = 0;
     /**
      * Register the world

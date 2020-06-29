@@ -79,6 +79,8 @@ class Camera : public Component<Camera>
         return projection_to_viewport;
     }
 
+    void drawGUI();
+
   private:
     friend class CameraSystem;        // This will update the camera matrices
     friend class RenderSystem;        // This will make use of the matrices

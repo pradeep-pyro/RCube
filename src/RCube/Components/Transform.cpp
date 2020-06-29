@@ -1,4 +1,7 @@
 #include "RCube/Components/Transform.h"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
 
 namespace rcube
 {
@@ -88,8 +91,37 @@ void Transform::rotate(const glm::quat &quaternion)
 void Transform::lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up)
 {
     setPosition(position);
-    setOrientation(glm::normalize(glm::quatLookAt(glm::normalize(target - position), glm::normalize(up))));
+    setOrientation(
+        glm::normalize(glm::quatLookAt(glm::normalize(target - position), glm::normalize(up))));
     dirty_ = true;
+}
+
+void Transform::drawGUI()
+{
+    // TODO: think of a way to handle transform hierarchy
+    if (ImGui::InputFloat3("Position", glm::value_ptr(position_), 2))
+    {
+        dirty_ = true;
+    }
+
+    static glm::vec3 euler = glm::eulerAngles(orientation_);
+    if (ImGui::SliderAngle("Orientation X", glm::value_ptr(euler)))
+    {
+        setOrientation(glm::quat(euler));
+    }
+    if (ImGui::SliderAngle("Orientation Y", glm::value_ptr(euler) + 2))
+    {
+        setOrientation(glm::quat(euler));
+    }
+    if (ImGui::SliderAngle("Orientation Z", glm::value_ptr(euler) + 1))
+    {
+        setOrientation(glm::quat(euler));
+    }
+
+    if (ImGui::InputFloat3("Scale", glm::value_ptr(scale_), 2))
+    {
+        dirty_ = true;
+    }
 }
 
 } // namespace rcube

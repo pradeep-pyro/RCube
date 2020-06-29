@@ -23,6 +23,8 @@ class Drawable : public Component<Drawable>
     std::shared_ptr<Mesh> mesh;              /// OpenGL mesh
     std::shared_ptr<ShaderProgram> material; /// Material describing the rendering appearance
     bool visible = true;                     /// Whether visible when rendered
+
+    void drawGUI();
 };
 
 } // namespace rcube

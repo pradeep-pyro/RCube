@@ -132,6 +132,8 @@ class Transform : public Component<Transform>
      */
     void lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up);
 
+    void drawGUI();
+
   private:
     friend class TransformSystem;
     glm::vec3 position_, scale_;

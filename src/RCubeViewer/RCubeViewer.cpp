@@ -175,186 +175,6 @@ void RCubeViewer::draw()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void drawGUIForScalarFieldComponent(EntityHandle ent)
-{
-    /*ScalarField *sf = ent.get<ScalarField>();
-    ImGui::Checkbox("Show", &sf->show);
-    ImGui::InputFloat("vmin", &sf->vmin);
-    ImGui::InputFloat("vmax", &sf->vmax);
-    const char *colormap_names[5] = {"Viridis", "Plasma", "Magma", "Inferno", "Jet"};
-    int curr_colormap = sf->colormap;
-    if (ImGui::Combo("Colormap", &curr_colormap, colormap_names, IM_ARRAYSIZE(colormap_names)))
-    {
-        sf->colormap = static_cast<ScalarField::Colormap>(curr_colormap);
-    }*/
-}
-
-void drawGUIForTransformComponent(EntityHandle ent)
-{
-    // TODO: think of a way to handle transform hierarchy
-    Transform *tr = ent.get<Transform>();
-    static float xyz[3];
-    const glm::vec3 &pos = tr->position();
-    xyz[0] = pos[0];
-    xyz[1] = pos[1];
-    xyz[2] = pos[2];
-    if (ImGui::InputFloat3("Position", xyz, 2))
-    {
-        tr->setPosition(glm::vec3(xyz[0], xyz[1], xyz[2]));
-    }
-
-    static glm::vec3 euler = glm::eulerAngles(tr->orientation());
-    if (ImGui::SliderAngle("Orientation X", glm::value_ptr(euler)))
-    {
-        tr->setOrientation(glm::quat(euler));
-    }
-    if (ImGui::SliderAngle("Orientation Y", glm::value_ptr(euler) + 2))
-    {
-        tr->setOrientation(glm::quat(euler));
-    }
-    if (ImGui::SliderAngle("Orientation Z", glm::value_ptr(euler) + 1))
-    {
-        tr->setOrientation(glm::quat(euler));
-    }
-
-    static glm::vec3 scale = tr->scale();
-    if (ImGui::InputFloat3("Scale", glm::value_ptr(scale), 2))
-    {
-        tr->setScale(scale);
-    }
-}
-
-void drawGUIForDrawableComponent(EntityHandle ent)
-{
-    Drawable *dr = ent.get<Drawable>();
-
-    // Visibility
-    ImGui::Checkbox("Visible", &(dr->visible));
-    ImGui::Separator();
-
-    // Mesh
-    static const char *current_attr = nullptr;
-    if (ImGui::BeginCombo("Attribute", current_attr))
-    {
-        for (auto &kv : dr->mesh->attributes())
-        {
-            bool is_selected =
-                (current_attr == kv.first.c_str());
-            if (ImGui::Selectable(kv.first.c_str(), is_selected))
-            {
-                current_attr = kv.first.c_str();
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-    if (current_attr != nullptr)
-    {
-        ImGui::LabelText("Count", std::to_string(dr->mesh->attribute(current_attr)->size()).c_str());
-        ImGui::LabelText("Dimension", std::to_string(dr->mesh->attribute(current_attr)->dim()).c_str());
-        ImGui::LabelText("Layout location",
-                         std::to_string(dr->mesh->attribute(current_attr)->location()).c_str());
-        bool checked = dr->mesh->attributeEnabled(current_attr);
-        if (ImGui::Checkbox("Active", &checked))
-        {
-            checked ? dr->mesh->enableAttribute(current_attr)
-                    : dr->mesh->disableAttribute(current_attr);
-        }
-    }
-    ImGui::LabelText(
-        "#Faces", std::to_string(dr->mesh->indices()->size() / dr->mesh->primitiveDim()).c_str());
-    ImGui::Separator();
-
-    // Material
-    const auto &uniforms = dr->material->availableUniforms();
-    for (const ShaderUniformDesc &uni : uniforms)
-    {
-        switch (uni.type)
-        {
-        case GLDataType::Bool:
-        {
-            bool uni_bool;
-            dr->material->uniform(uni.name).get(uni_bool);
-            if (ImGui::Checkbox(uni.name.c_str(), &uni_bool))
-            {
-                dr->material->uniform(uni.name).set(uni_bool);
-            }
-            break;
-        }
-        case GLDataType::Int:
-        {
-            int uni_int;
-            dr->material->uniform(uni.name).get(uni_int);
-            if (ImGui::InputInt(uni.name.c_str(), &uni_int))
-            {
-                dr->material->uniform(uni.name).set(uni_int);
-            }
-            break;
-        }
-        case GLDataType::Float:
-        {
-            float uni_float;
-            dr->material->uniform(uni.name).get(uni_float);
-            if (ImGui::InputFloat(uni.name.c_str(), &uni_float))
-            {
-                dr->material->uniform(uni.name).set(uni_float);
-            }
-            break;
-        }
-        case GLDataType::Vec2f:
-        {
-            glm::vec2 uni_vec2f;
-            dr->material->uniform(uni.name).get(uni_vec2f);
-            if (ImGui::InputFloat2(uni.name.c_str(), glm::value_ptr(uni_vec2f)))
-            {
-                dr->material->uniform(uni.name).set(uni_vec2f);
-            }
-            break;
-        }
-        case GLDataType::Vec3f:
-        {
-            glm::vec3 uni_vec3f;
-            dr->material->uniform(uni.name).get(uni_vec3f);
-            if (ImGui::InputFloat3(uni.name.c_str(), glm::value_ptr(uni_vec3f)))
-            {
-                dr->material->uniform(uni.name).set(uni_vec3f);
-            }
-            break;
-        }
-        case GLDataType::Color3f:
-        {
-            glm::vec3 uni_vec3f;
-            dr->material->uniform(uni.name).get(uni_vec3f);
-            if (ImGui::ColorEdit3(uni.name.c_str(), glm::value_ptr(uni_vec3f)))
-            {
-                dr->material->uniform(uni.name).set(uni_vec3f);
-            }
-            break;
-        }
-        }
-    }
-}
-
-void drawGUIForCameraComponent(EntityHandle ent)
-{
-    Camera *camera = ent.get<Camera>();
-
-    ImGui::Checkbox("Orthographic", &camera->orthographic);
-    if (camera->orthographic)
-    {
-        ImGui::InputFloat("Orthographic Width", &camera->orthographic_size);
-    }
-    else
-    {
-        ImGui::SliderAngle("FOV (deg.)", &camera->fov, 5.f, 89.f);
-    }
-    ImGui::InputFloat("Near Plane", &camera->near_plane);
-    ImGui::InputFloat("Far Plane", &camera->far_plane);
-    ImGui::ColorEdit4("Background Color", glm::value_ptr(camera->background_color));
-    ImGui::Checkbox("Skybox", &camera->use_skybox);
-}
-
 void RCubeViewer::drawGUI()
 {
     ImGui::Begin("RCubeViewer");
@@ -406,7 +226,7 @@ void RCubeViewer::drawGUI()
             cam_tr->lookAt(glm::vec3(0, 0, -1.5f), glm::vec3(0.f), YAXIS_POSITIVE);
         }
 
-        drawGUIForCameraComponent(camera_);
+        camera_.get<Camera>()->drawGUI();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -456,7 +276,7 @@ void RCubeViewer::drawGUI()
                     {
                         if (ImGui::BeginTabItem("Drawable"))
                         {
-                            drawGUIForDrawableComponent(ent);
+                            ent.get<Drawable>()->drawGUI();
                             ImGui::EndTabItem();
                         }
                     }
@@ -464,7 +284,7 @@ void RCubeViewer::drawGUI()
                     {
                         if (ImGui::BeginTabItem("Transform"))
                         {
-                            drawGUIForTransformComponent(ent);
+                            ent.get<Transform>()->drawGUI();
                             ImGui::EndTabItem();
                         }
                     }
@@ -472,7 +292,7 @@ void RCubeViewer::drawGUI()
                     {
                         if (ImGui::BeginTabItem("Camera"))
                         {
-                            drawGUIForCameraComponent(ent);
+                            ent.get<Camera>()->drawGUI();
                             ImGui::EndTabItem();
                         }
                     }

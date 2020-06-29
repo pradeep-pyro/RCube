@@ -1,4 +1,5 @@
 #include "RCube/Components/Camera.h"
+#include "imgui.h"
 
 namespace rcube
 {
@@ -27,6 +28,23 @@ Frustum Camera::frustum()
         fr.points[i].z = tmp.z;
     }
     return fr;
+}
+
+void Camera::drawGUI()
+{
+    ImGui::Checkbox("Orthographic", &orthographic);
+    if (orthographic)
+    {
+        ImGui::InputFloat("Orthographic Width", &orthographic_size);
+    }
+    else
+    {
+        ImGui::SliderAngle("FOV (deg.)", &fov, 5.f, 89.f);
+    }
+    ImGui::InputFloat("Near Plane", &near_plane);
+    ImGui::InputFloat("Far Plane", &far_plane);
+    ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color));
+    ImGui::Checkbox("Skybox", &use_skybox);
 }
 
 } // namespace rcube

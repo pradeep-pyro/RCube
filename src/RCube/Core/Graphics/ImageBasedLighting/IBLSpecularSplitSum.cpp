@@ -314,8 +314,8 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     for (unsigned int mip = 0; mip < num_mipmaps; ++mip)
     {
         // Resize framebuffer and viewport according to mipmap size
-        unsigned int mip_width = resolution_ * std::pow(0.5, mip);
-        unsigned int mip_height = resolution_ * std::pow(0.5, mip);
+        unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
+        unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         fbo_->resize(mip_width, mip_height);
         rdr_.resize(0, 0, mip_width, mip_height);
         fbo_->use();

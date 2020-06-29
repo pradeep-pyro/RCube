@@ -184,7 +184,7 @@ void GLRenderer::initialize()
     init_ = true;
 }
 
-void GLRenderer::resize(int top, int left, int width, int height)
+void GLRenderer::resize(int top, int left, size_t width, size_t height)
 {
     top_ = top;
     left_ = left;
@@ -192,8 +192,8 @@ void GLRenderer::resize(int top, int left, int width, int height)
     height_ = height;
 
     glEnable(GL_SCISSOR_TEST);
-    glViewport(top_, left_, width_, height_);
-    glScissor(top_, left_, width_, height_);
+    glViewport(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
+    glScissor(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
 
     quad_shader_->use();
 }
@@ -329,7 +329,7 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     glBindVertexArray(mesh->vao());
     if (mesh->numIndexData() == 0)
     {
-        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0, mesh->numVertexData());
+        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0, static_cast<GLsizei>(mesh->numVertexData()));
     }
     else
     {

@@ -70,8 +70,8 @@ class RCubeViewer : public rcube::Window
         return world_;
     }
 
-    // Callback functions for injecting user code
-    std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &viewer) {};
+    // Function to setup custom GUI windows
+    std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &/*viewer*/) {};
 
   protected:
     virtual void draw() override;

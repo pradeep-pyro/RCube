@@ -30,11 +30,6 @@ int main()
     material->albedo = glm::vec3(0.0, 0.3, 0.7);
     material->wireframe = true;
 
-    // Apply gamma correction to the screen
-    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
-
-    viewer.updateImageBasedLighting();
-
     // Show viewer
     viewer.execute();
     return 0;

@@ -1,6 +1,6 @@
 #include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
-#include "RCubeViewer/RCubeViewer.h"
 #include "RCubeViewer/Colormap.h"
+#include "RCubeViewer/RCubeViewer.h"
 
 int main()
 {
@@ -32,13 +32,10 @@ int main()
     float vmax = +1.f;
     colormap(Colormap::Viridis, height_field, vmin, vmax, sphere_mesh->attribute("colors")->data());
     sphere_mesh->uploadToGPU();
-    // Set diffuse color to white since it will be multiplied with the colors above
+
+    // Set albedo color to white since it will be multiplied with the colors above
     auto material =
         std::dynamic_pointer_cast<PhysicallyBasedMaterial>(sphere.get<Drawable>()->material);
-    material->albedo = glm::vec3(1, 1, 1);
-
-    // Gamme correction
-    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
 
     // Show viewer
     viewer.execute();

@@ -1,7 +1,12 @@
 #include "RCubeViewer/RCubeViewer.h"
 #include "RCube/Core/Arch/World.h"
-#include "RCubeViewer/Components/Name.h"
+#include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
+#include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
+#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
+#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
+#include "RCube/Core/Graphics/TexGen/Gradient.h"
 #include "RCubeViewer/Components/CameraController.h"
+#include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Systems/CameraControllerSystem.h"
 #include "RCubeViewer/Systems/PickSystem.h"
 #include "glm/gtx/euler_angles.hpp"
@@ -48,6 +53,24 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->fov = props.camera_fov;
     camera_.get<Camera>()->background_color = props.background_color;
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
+    // Make a default skybox
+    camera_.get<Camera>()->skybox = TextureCubemap::create(256, 256);
+    glm::vec3 color_top =
+        glm::pow(glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f), glm::vec3(2.2f));
+    glm::vec3 color_bot =
+        glm::pow(glm::vec3(100.f / 255.f, 93 / 255.f, 86.f / 255.f), glm::vec3(2.2f));
+    Image front_back = gradientV(256, 256, color_top, color_bot);
+    Image top = gradientV(256, 256, color_top, color_top);
+    Image bottom = gradientV(256, 256, color_bot, color_bot);
+    camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveY, top);
+    camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeY, bottom);
+    camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveX, front_back);
+    camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeX, front_back);
+    camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeZ, front_back);
+    camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveZ, front_back);
+    camera_.get<Camera>()->use_skybox = true;
+    // Add gamma correction
+    camera_.get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
     // Put a directional light on the camera
     camera_.add<DirectionalLight>();
     // Create a ground plane
@@ -60,60 +83,16 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     initImGUI(window_);
 }
 
-EntityHandle RCubeViewer::addIcoSphereSurface(const std::string name, float radius,
-                                              int numSubdivisions)
-{
-    EntityHandle ent = createSurface();
-    ent.add<Name>(name);
-
-    std::shared_ptr<Mesh> sphereMesh = Mesh::create(icoSphere(radius, numSubdivisions));
-    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    sphereMesh->uploadToGPU();
-    ent.get<Drawable>()->mesh = sphereMesh;
-    ent.get<Drawable>()->material = blinnPhong;
-    return ent;
-}
-
-EntityHandle RCubeViewer::addCubeSphereSurface(const std::string name, float radius,
-                                               int numSegments)
-{
-    EntityHandle ent = createSurface();
-    ent.add<Name>(name);
-
-    std::shared_ptr<Mesh> sphereMesh = Mesh::create(cubeSphere(radius, numSegments));
-    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    sphereMesh->uploadToGPU();
-    ent.get<Drawable>()->mesh = sphereMesh;
-    ent.get<Drawable>()->material = blinnPhong;
-    return ent;
-}
-
-EntityHandle RCubeViewer::addBoxSurface(const std::string name, float width, float height,
-                                        float depth, int width_segments, int height_segments,
-                                        int depth_segments, int numSegments)
-{
-    EntityHandle ent = createSurface();
-    ent.add<Name>(name);
-
-    std::shared_ptr<Mesh> boxMesh =
-        Mesh::create(box(width, height, depth, width_segments, height_segments, depth_segments));
-    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
-    boxMesh->uploadToGPU();
-    ent.get<Drawable>()->mesh = boxMesh;
-    ent.get<Drawable>()->material = blinnPhong;
-    return ent;
-}
-
 EntityHandle RCubeViewer::addSurface(const std::string name, const TriangleMeshData &data)
 {
     EntityHandle ent = createSurface();
     ent.add<Name>(name);
 
     std::shared_ptr<Mesh> mesh = Mesh::create(data);
-    std::shared_ptr<ShaderProgram> blinnPhong = makeBlinnPhongMaterial();
+    std::shared_ptr<Material> mat = std::make_shared<PhysicallyBasedMaterial>();
     mesh->uploadToGPU();
     ent.get<Drawable>()->mesh = mesh;
-    ent.get<Drawable>()->material = blinnPhong;
+    ent.get<Drawable>()->material = mat;
     return ent;
 }
 
@@ -154,6 +133,12 @@ EntityHandle RCubeViewer::getEntity(std::string name)
 EntityHandle RCubeViewer::camera()
 {
     return camera_;
+}
+
+void RCubeViewer::initialize()
+{
+    // Update the PBR image-based lighting maps for all object's materials
+    updateImageBasedLighting();
 }
 
 void RCubeViewer::draw()
@@ -327,6 +312,38 @@ glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
     return glm::vec2(ndc_x, ndc_y);
 }
 
+void RCubeViewer::updateImageBasedLighting()
+{
+    auto skybox = camera_.get<Camera>()->skybox;
+    if (skybox != nullptr)
+    {
+        std::shared_ptr<TextureCubemap> irradiance_map;
+        std::shared_ptr<TextureCubemap> prefilter_map;
+        std::shared_ptr<Texture2D> brdf_lut;
+        {
+            IBLDiffuse diff;
+            irradiance_map = diff.irradiance(skybox);
+            IBLSpecularSplitSum spec;
+            prefilter_map = spec.prefilter(skybox);
+            brdf_lut = spec.integrateBRDF();
+        }
+
+        for (auto ent_it = world_.entities(); ent_it.hasNext();)
+        {
+            auto ent = ent_it.next();
+            if (ent.has<Drawable>())
+            {
+                auto mat = ent.get<Drawable>()->material;
+                auto pbrmat = std::dynamic_pointer_cast<PhysicallyBasedMaterial>(mat);
+                if (pbrmat != nullptr)
+                {
+                    pbrmat->setIBLMaps(irradiance_map, prefilter_map, brdf_lut);
+                }
+            }
+        }
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 EntityHandle RCubeViewer::createSurface()
@@ -348,14 +365,17 @@ EntityHandle RCubeViewer::createCamera()
 
 EntityHandle RCubeViewer::createGroundPlane()
 {
-    std::shared_ptr<Mesh> gridMesh =
+    /*std::shared_ptr<Mesh> gridMesh =
+        Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
+                          glm::vec3(0.0, 0.0, 0.0)));*/
+    std::shared_ptr<Mesh> mesh =
         Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
                           glm::vec3(0.0, 0.0, 0.0)));
-    gridMesh->uploadToGPU();
-    std::shared_ptr<ShaderProgram> flat = makeFlatMaterial();
+    mesh->uploadToGPU();
+    auto mat = std::make_shared<FlatMaterial>();
     ground_ = createSurface();
-    ground_.get<Drawable>()->mesh = gridMesh;
-    ground_.get<Drawable>()->material = flat;
+    ground_.get<Drawable>()->mesh = mesh;
+    ground_.get<Drawable>()->material = mat;
     return ground_;
 }
 

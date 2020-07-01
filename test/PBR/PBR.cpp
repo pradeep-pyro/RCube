@@ -48,10 +48,8 @@ int main()
     // The IBL maps are precomputed as:
     // (1) diffuse irradiance cubemap using importance sampling, and
     // (2, 3) prefiltered specular cubmapand BRDF 2D LUT using the split-sum approximation.
-    mat->createIBLMaps(env_map);
-
-    // Apply gamma correction to the screen
-    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
+    // mat->createIBLMaps(env_map);
+    // This is not required in practice since the viewer updates all image-based lighting maps during initialization
 
     // Show viewer
     viewer.execute();

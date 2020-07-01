@@ -4,7 +4,7 @@
 #include "RCube/Components/PointLight.h"
 #include "RCube/Components/Transform.h"
 #include "RCube/Core/Arch/World.h"
-#include "RCube/Core/Graphics/Materials/BlinnPhongMaterial.h"
+#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/MeshGen/Grid.h"
@@ -49,13 +49,6 @@ class RCubeViewer : public rcube::Window
   public:
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
 
-    EntityHandle addIcoSphereSurface(const std::string name, float radius, int numSubdivisions);
-
-    EntityHandle addCubeSphereSurface(const std::string name, float radius, int numSegments);
-
-    EntityHandle addBoxSurface(const std::string name, float width, float height, float depth,
-                               int width_segments, int height_segments, int depth_segments,
-                               int numSegments);
     EntityHandle addSurface(const std::string name, const TriangleMeshData &data);
 
     EntityHandle addPointLight(const std::string name, glm::vec3 position, float radius,
@@ -64,6 +57,8 @@ class RCubeViewer : public rcube::Window
     EntityHandle getEntity(std::string name);
 
     EntityHandle camera();
+
+    void updateImageBasedLighting();
 
     World &world()
     {
@@ -74,6 +69,8 @@ class RCubeViewer : public rcube::Window
     std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &/*viewer*/) {};
 
   protected:
+    virtual void initialize() override;
+
     virtual void draw() override;
 
     virtual void drawGUI();

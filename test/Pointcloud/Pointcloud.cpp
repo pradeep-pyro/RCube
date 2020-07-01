@@ -36,9 +36,7 @@ int main()
     EntityHandle pc_entity = viewer.addSurface("pointcloud", pointcloudMesh);
     auto mat =
         std::dynamic_pointer_cast<PhysicallyBasedMaterial>(pc_entity.get<Drawable>()->material);
-    mat->albedo = glm::vec3(0.8, 0.8, 0.8);
-    mat->roughness = 0.8;
-    mat->metallic = 0.3;
+    mat->albedo = glm::vec3(0.f, 0.8f, 0.5f);
 
     // Make pointcloud pickable with mouse click
     pc_entity.add<viewer::Pickable>();
@@ -56,12 +54,6 @@ int main()
         }
         ImGui::End();
     };
-
-    // Apply gamma correction to the screen
-    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
-
-    // Compute IBL to all PBR materials
-    viewer.updateImageBasedLighting();
 
     // Show viewer
     viewer.execute();

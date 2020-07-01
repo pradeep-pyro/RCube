@@ -13,15 +13,6 @@ namespace rcube
  * PhysicallyBasedMaterial is for displaying realistic surfaces with varying roughness and metalness
  * characteristics. It uses a physically-based Cook-Torrance BRDF for computing specular.
  */
-std::shared_ptr<ShaderProgram> makePhysicallyBasedMaterial(glm::vec3 albedo = glm::vec3(1.0),
-                                                           float roughness = 0.5f,
-                                                           float metalness = 0.5f,
-                                                           bool wireframe = false);
-
-enum class MaterialType
-{
-};
-
 class PhysicallyBasedMaterial : public Material
 {
   public:
@@ -50,8 +41,6 @@ class PhysicallyBasedMaterial : public Material
                     std::shared_ptr<TextureCubemap> prefilter, std::shared_ptr<Texture2D> brdf);
 
     void createIBLMaps(std::shared_ptr<TextureCubemap> environment_map);
-
-    void setFromMaterial();
 
     virtual const RenderSettings renderState() const;
 };

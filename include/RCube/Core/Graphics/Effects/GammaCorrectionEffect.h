@@ -1,5 +1,4 @@
-#ifndef GAMMACORRECTIONEFFECT_H
-#define GAMMACORRECTIONEFFECT_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 namespace rcube
@@ -14,5 +13,3 @@ namespace rcube
 std::shared_ptr<ShaderProgram> makeGammaCorrectionEffect();
 
 } // namespace rcube
-
-#endif // GAMMACORRECTIONEFFECT_H

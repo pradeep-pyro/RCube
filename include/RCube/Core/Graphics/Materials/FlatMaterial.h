@@ -9,8 +9,6 @@ namespace rcube
 /**
  * FlatMaterial is for representing objects in a flat style without any 3D shading
  */
-std::shared_ptr<ShaderProgram> makeFlatMaterial();
-
 class FlatMaterial : public Material
 {
   public:

@@ -27,13 +27,13 @@ ShaderProgram::~ShaderProgram()
     release();
 }
 
-std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_shader,
-                                                     const FragmentShader &fragment_shader,
+std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
+                                                     const std::string &fragment_shader,
                                                      bool debug)
 {
     auto prog = std::make_shared<ShaderProgram>();
-    prog->addShader(GL_VERTEX_SHADER, vertex_shader.source, debug);
-    prog->addShader(GL_FRAGMENT_SHADER, fragment_shader.source, debug);
+    prog->addShader(GL_VERTEX_SHADER, vertex_shader, debug);
+    prog->addShader(GL_FRAGMENT_SHADER, fragment_shader, debug);
     prog->link(debug);
     // Get all attributes and uniforms from the program
     prog->generateAttributes();
@@ -42,15 +42,15 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     return prog;
 }
 
-std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_shader,
-                                                     const GeometryShader &geometry_shader,
-                                                     const FragmentShader &fragment_shader,
+std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
+                                                     const std::string &geometry_shader,
+                                                     const std::string &fragment_shader,
                                                      bool debug)
 {
     auto prog = std::make_shared<ShaderProgram>();
-    prog->addShader(GL_VERTEX_SHADER, vertex_shader.source, debug);
-    prog->addShader(GL_GEOMETRY_SHADER, geometry_shader.source, debug);
-    prog->addShader(GL_FRAGMENT_SHADER, fragment_shader.source, debug);
+    prog->addShader(GL_VERTEX_SHADER, vertex_shader, debug);
+    prog->addShader(GL_GEOMETRY_SHADER, geometry_shader, debug);
+    prog->addShader(GL_FRAGMENT_SHADER, fragment_shader, debug);
     prog->link();
     // Get all attributes and uniforms from the program
     prog->generateAttributes();

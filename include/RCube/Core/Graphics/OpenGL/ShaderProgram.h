@@ -241,12 +241,12 @@ class ShaderProgram
     ShaderProgram(const ShaderProgram &other) = delete;
     ~ShaderProgram();
     void release();
-    static std::shared_ptr<ShaderProgram> create(const VertexShader &vertex_shader,
-                                                 const FragmentShader &fragment_shader,
+    static std::shared_ptr<ShaderProgram> create(const std::string &vertex_shader,
+                                                 const std::string &fragment_shader,
                                                  bool debug = false);
-    static std::shared_ptr<ShaderProgram> create(const VertexShader &vertex_shader,
-                                                 const GeometryShader &geometry_shader,
-                                                 const FragmentShader &fragment_shader,
+    static std::shared_ptr<ShaderProgram> create(const std::string &vertex_shader,
+                                                 const std::string &geometry_shader,
+                                                 const std::string &fragment_shader,
                                                  bool debug = false);
     const std::unordered_map<std::string, ShaderAttributeDesc> &attributes() const;
     const Uniform &uniform(std::string name) const;

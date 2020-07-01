@@ -1,7 +1,7 @@
-#include <iostream>
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
+#include <iostream>
 
 namespace rcube
 {
@@ -9,31 +9,28 @@ namespace rcube
 
 #define RCUBE_GLSL(source) "#version " RCUBE_GLSL_VERSION "\n" #source
 
-const static VertexShader
-    SPECULAR_PREFILTER_VERTEX_SHADER({ShaderAttributeDesc{"position", GLDataType::Vec3f}}, {},
-                                     RCUBE_GLSL(
-                                         layout(location = 0) in vec3 position;
+const static std::string SpecularPrefilterVertexShader =
+    R"(
+    #version 420
+    layout(location = 0) in vec3 position;
 
-                                         out vec3 direction;
+    out vec3 direction;
 
-                                         layout(std140, binding = 0) uniform Camera {
-                                             mat4 view_matrix;
-                                             mat4 projection_matrix;
-                                             mat4 viewport_matrix;
-                                             vec3 eye_pos;
+    layout(std140, binding = 0) uniform Camera {
+    mat4 view_matrix;
+    mat4 projection_matrix;
+    mat4 viewport_matrix;
+    vec3 eye_pos;
                                          };
 
                                          void main() {
-                                             direction = position;
-                                             gl_Position = projection_matrix * view_matrix *
-                                                           vec4(position, 1);
-                                         }));
+    direction = position;
+    gl_Position = projection_matrix * view_matrix * vec4(position, 1);
+}
+)";
 
-const static FragmentShader
-    SPECULAR_PREFILTER_FRAGMENT_SHADER({ShaderUniformDesc{"num_samples", GLDataType::Int},
-                                        ShaderUniformDesc{"roughness", GLDataType::Float}},
-                                       {}, {ShaderCubemapDesc{"env_map"}}, "frag_color",
-                                       R"(
+const static std::string SpecularPrefilterFragmentShader =
+    R"(
         #version 420
         layout(binding=0) uniform samplerCube env_map;
 
@@ -112,14 +109,11 @@ const static FragmentShader
             }
             prefiltered_color /= weight;
             frag_color = vec4(prefiltered_color, 1.0);
-        })");
+        })";
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const static VertexShader
-    SPECULAR_BRDF_VERTEX_SHADER({ShaderAttributeDesc("vertex", GLDataType::Vec3f),
-                                 ShaderAttributeDesc("texcoord", GLDataType::Vec2f)},
-                                {}, R"(
+const static std::string SpecularBrdfVertexShader = R"(
 #version 420
 layout (location = 0) in vec3 vertex;
 layout (location = 2) in vec2 texcoord;
@@ -129,117 +123,116 @@ void main() {
     v_texcoord = texcoord;
     gl_Position = vec4(vertex, 1.0);
 }
-)");
+)";
 
-const static FragmentShader SPECULAR_BRDF_FRAGMENT_SHADER({}, {}, {}, "out_color",
-                                                          R"(
-        #version 420
-        in vec2 v_texcoord;
+const static std::string SpecularBrdfFragmentShader = R"(
+    #version 420
+    in vec2 v_texcoord;
 
-        out vec2 out_color;
+    out vec2 out_color;
 
-        const float PI = 3.14159265358979323846;
+    const float PI = 3.14159265358979323846;
 
-        uint reverseBits32(uint n) {
-            n = (n << 16) | (n >> 16); // Swap first and last 16 bits
-            n = ((n & 0x00ff00ff) << 8) |
-                ((n & 0xff00ff00) >> 8); // Swap consecutive 8 bits in the first half & second half
-            n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4); // Continue similarly
-            n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
-            n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
-            return n;
-        }
+    uint reverseBits32(uint n) {
+        n = (n << 16) | (n >> 16); // Swap first and last 16 bits
+        n = ((n & 0x00ff00ff) << 8) |
+            ((n & 0xff00ff00) >> 8); // Swap consecutive 8 bits in the first half & second half
+        n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4); // Continue similarly
+        n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
+        n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
+        return n;
+    }
 
-        float radicalInverse(uint n) {
-            n = reverseBits32(n);
-            // Divide by 2^32
-            return float(n) * 2.3283064365386963e-10;
-        }
+    float radicalInverse(uint n) {
+        n = reverseBits32(n);
+        // Divide by 2^32
+        return float(n) * 2.3283064365386963e-10;
+    }
 
-        // Generate low-discrepancy sequence using the Hammersley method
-        vec2 hammersleySample(uint i, uint N) {
-            return vec2(float(i) / float(N), radicalInverse(i));
-        }
+    // Generate low-discrepancy sequence using the Hammersley method
+    vec2 hammersleySample(uint i, uint N) {
+        return vec2(float(i) / float(N), radicalInverse(i));
+    }
 
-        vec3 importanceSampleGgx(vec2 u, vec3 N, float roughness) {
-            float a = roughness * roughness;
-            float phi = 2.0 * PI * u.x;
-            float cos_theta = sqrt((1.0 - u.y) / (1.0 + (a * a - 1.0) * u.y));
-            float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+    vec3 importanceSampleGgx(vec2 u, vec3 N, float roughness) {
+        float a = roughness * roughness;
+        float phi = 2.0 * PI * u.x;
+        float cos_theta = sqrt((1.0 - u.y) / (1.0 + (a * a - 1.0) * u.y));
+        float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-            // Spherical to cartesian coordinates
-            float x = cos(phi) * sin_theta;
-            float y = sin(phi) * sin_theta;
-            float z = cos_theta;
+        // Spherical to cartesian coordinates
+        float x = cos(phi) * sin_theta;
+        float y = sin(phi) * sin_theta;
+        float z = cos_theta;
 
-            // Tangent-space to world-space sample vector
-            vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-            vec3 tangent = normalize(cross(up, N));
-            vec3 bitangent = cross(N, tangent);
+        // Tangent-space to world-space sample vector
+        vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        vec3 tangent = normalize(cross(up, N));
+        vec3 bitangent = cross(N, tangent);
 
-            vec3 sample_vec = tangent * x + bitangent * y + N * z;
-            return normalize(sample_vec);
-        }
+        vec3 sample_vec = tangent * x + bitangent * y + N * z;
+        return normalize(sample_vec);
+    }
 
-        float GSchlickGgx(float NdotV, float roughness) {
-            float r = 1.0 + roughness;
-            float k = (r * r) / 8.0;
+    float GSchlickGgx(float NdotV, float roughness) {
+        float r = 1.0 + roughness;
+        float k = (r * r) / 8.0;
 
-            float numerator = NdotV;
-            float denominator = NdotV * (1.0 - k) + k;
+        float numerator = NdotV;
+        float denominator = NdotV * (1.0 - k) + k;
 
-            return numerator / denominator;
-        }
+        return numerator / denominator;
+    }
 
-        float GSmith(float NdotV, float LdotN, float roughness) {
-            NdotV = max(NdotV, 0.0);
-            LdotN = max(LdotN, 0.0);
-            float ggx1 = GSchlickGgx(LdotN, roughness);
-            float ggx2 = GSchlickGgx(NdotV, roughness);
-            return ggx1 * ggx2;
-        }
+    float GSmith(float NdotV, float LdotN, float roughness) {
+        NdotV = max(NdotV, 0.0);
+        LdotN = max(LdotN, 0.0);
+        float ggx1 = GSchlickGgx(LdotN, roughness);
+        float ggx2 = GSchlickGgx(NdotV, roughness);
+        return ggx1 * ggx2;
+    }
 
-        vec2 integrateBRDF(float NdotV, float roughness) {
-            vec3 V;
-            V.x = sqrt(1.0 - NdotV * NdotV);
-            V.y = 0.0;
-            V.z = NdotV;
+    vec2 integrateBRDF(float NdotV, float roughness) {
+        vec3 V;
+        V.x = sqrt(1.0 - NdotV * NdotV);
+        V.y = 0.0;
+        V.z = NdotV;
 
-            float A = 0.0;
-            float B = 0.0;
+        float A = 0.0;
+        float B = 0.0;
 
-            vec3 N = vec3(0.0, 0.0, 1.0);
+        vec3 N = vec3(0.0, 0.0, 1.0);
 
-            const uint SAMPLE_COUNT = 1024u;
-            for (uint i = 0u; i < SAMPLE_COUNT; ++i)
+        const uint SAMPLE_COUNT = 1024u;
+        for (uint i = 0u; i < SAMPLE_COUNT; ++i)
+        {
+            vec2 Xi = hammersleySample(i, SAMPLE_COUNT);
+            vec3 H = importanceSampleGgx(Xi, N, roughness);
+            vec3 L = normalize(2.0 * dot(V, H) * H - V);
+
+            float LdotN = max(L.z, 0.0);
+            float NdotH = max(H.z, 0.0);
+            float VdotH = max(dot(V, H), 0.0);
+
+            if (LdotN > 0.0)
             {
-                vec2 Xi = hammersleySample(i, SAMPLE_COUNT);
-                vec3 H = importanceSampleGgx(Xi, N, roughness);
-                vec3 L = normalize(2.0 * dot(V, H) * H - V);
+                float G = GSmith(NdotV, LdotN, roughness);
+                float G_Vis = (G * VdotH) / (NdotH * NdotV);
+                float Fc = pow(1.0 - VdotH, 5.0);
 
-                float LdotN = max(L.z, 0.0);
-                float NdotH = max(H.z, 0.0);
-                float VdotH = max(dot(V, H), 0.0);
-
-                if (LdotN > 0.0)
-                {
-                    float G = GSmith(NdotV, LdotN, roughness);
-                    float G_Vis = (G * VdotH) / (NdotH * NdotV);
-                    float Fc = pow(1.0 - VdotH, 5.0);
-
-                    A += (1.0 - Fc) * G_Vis;
-                    B += Fc * G_Vis;
-                }
+                A += (1.0 - Fc) * G_Vis;
+                B += Fc * G_Vis;
             }
-            A /= float(SAMPLE_COUNT);
-            B /= float(SAMPLE_COUNT);
-            return vec2(A, B);
         }
+        A /= float(SAMPLE_COUNT);
+        B /= float(SAMPLE_COUNT);
+        return vec2(A, B);
+    }
 
-        void main() {
-            out_color = integrateBRDF(v_texcoord.x, v_texcoord.y);
-        }
-)");
+    void main() {
+        out_color = integrateBRDF(v_texcoord.x, v_texcoord.y);
+    }
+)";
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -251,12 +244,12 @@ IBLSpecularSplitSum::IBLSpecularSplitSum(unsigned int resolution, int num_sample
     cube_->uploadToGPU();
 
     // Compile the prefilter shader
-    shader_ = ShaderProgram::create(SPECULAR_PREFILTER_VERTEX_SHADER,
-                                    SPECULAR_PREFILTER_FRAGMENT_SHADER, true);
+    shader_ =
+        ShaderProgram::create(SpecularPrefilterVertexShader, SpecularPrefilterFragmentShader, true);
 
     // Compile the brdf shader
     shader_brdf_ =
-        ShaderProgram::create(SPECULAR_BRDF_VERTEX_SHADER, SPECULAR_BRDF_FRAGMENT_SHADER, true);
+        ShaderProgram::create(SpecularBrdfVertexShader, SpecularBrdfFragmentShader, true);
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create(resolution, resolution);

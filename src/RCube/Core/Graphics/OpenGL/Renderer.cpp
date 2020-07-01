@@ -31,7 +31,7 @@ const std::vector<glm::vec3> skybox_vertices = {
     glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, -1.0f),
     glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, 1.0f)};
 
-const static VertexShader skybox_vert({ShaderAttributeDesc("position", GLDataType::Vec3f)}, {}, R"(
+const static std::string skybox_vert = R"(
 #version 420
 
 layout (location = 0) in vec3 position;
@@ -49,10 +49,9 @@ void main() {
     vec4 pos = projection_matrix * mat4(mat3(view_matrix)) * vec4(position, 1.0);
     gl_Position = pos.xyww;
 }
-)");
+)";
 
-const static FragmentShader skybox_frag({}, {}, {ShaderCubemapDesc{"skybox"}}, "out_color",
-                                        R"(
+const static std::string skybox_frag = R"(
 #version 420
 
 out vec4 out_color;
@@ -63,11 +62,9 @@ layout (binding = 2) uniform samplerCube skybox;
 void main() {
     out_color = texture(skybox, texcoords);
 }
-)");
+)";
 
-const static VertexShader quad_vert({ShaderAttributeDesc("vertex", GLDataType::Vec3f),
-                                     ShaderAttributeDesc("texcoord", GLDataType::Vec2f)},
-                                    {}, R"(
+const static std::string quad_vert = R"(
 #version 420
 layout (location = 0) in vec3 vertex;
 layout (location = 2) in vec2 texcoord;
@@ -77,10 +74,9 @@ void main() {
     v_texcoord = texcoord;
     gl_Position = vec4(vertex, 1.0);
 }
-)");
+)";
 
-const static FragmentShader quad_frag({}, {ShaderTextureDesc{"fbo_texture", 2}}, {}, "out_color",
-                                      R"(
+const static std::string quad_frag = R"(
 #version 420
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -89,7 +85,7 @@ layout (binding=0) uniform sampler2D fbo_texture;
 void main() {
    out_color = texture(fbo_texture, v_texcoord);
 }
-)");
+)";
 
 GLRenderer::GLRenderer()
     : top_(0), left_(0), width_(1280), height_(720), clear_color_(glm::vec4(1.f)), init_(false)

@@ -1,5 +1,4 @@
-#ifndef BLUREFFECT_H
-#define BLUREFFECT_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 #include <memory>
@@ -16,5 +15,3 @@ namespace rcube
 std::shared_ptr<ShaderProgram> makeBlurEffect(bool horizonal);
 
 } // namespace rcube
-
-#endif // BLUREFFECT_H

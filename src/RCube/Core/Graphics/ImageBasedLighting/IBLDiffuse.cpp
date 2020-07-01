@@ -5,8 +5,7 @@
 namespace rcube
 {
 
-const static VertexShader
-    DIFFUSE_IRRADIANCE_VERTEX_SHADER({ShaderAttributeDesc{"position", GLDataType::Vec3f}}, {}, R"(
+const static std::string DiffuseIrradianceVertexShader = R"(
 #version 420
 layout (location = 0) in vec3 position;
 
@@ -23,12 +22,10 @@ void main() {
     direction = position;
     gl_Position =  projection_matrix * mat4(mat3(view_matrix)) * vec4(position, 1);
 }
-)");
+)";
 
-const static FragmentShader
-    DIFFUSE_IRRADIANCE_FRAGMENT_SHADER({ShaderUniformDesc{"num_samples", GLDataType::Int}},
-                                       {},
-                                       {ShaderCubemapDesc{"env_map"}}, "frag_color",
+const static std::string
+    DiffuseIrradianceFragmentShader = 
                                        R"(
 #version 420
 
@@ -96,7 +93,7 @@ void main() {
     irradiance *= (1.0 / float(num_samples));
     frag_color = vec4(irradiance, 1.0);
 }
-)");
+)";
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -108,8 +105,8 @@ IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
     cube_->uploadToGPU();
 
     // Compile the irradiance shader
-    shader_ = ShaderProgram::create(DIFFUSE_IRRADIANCE_VERTEX_SHADER,
-                                    DIFFUSE_IRRADIANCE_FRAGMENT_SHADER, true);
+    shader_ = ShaderProgram::create(DiffuseIrradianceVertexShader,
+                                    DiffuseIrradianceFragmentShader, true);
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create(resolution, resolution);
@@ -164,7 +161,8 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
         env_map->use(0);
         rdr_.render(cube_.get(), shader_.get(), eye);
         irradiance_map->use();
-        glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0, static_cast<GLsizei>(fbo_->width()),
+        glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0,
+                            static_cast<GLsizei>(fbo_->width()),
                             static_cast<GLsizei>(fbo_->height()));
     }
     fbo_->done();

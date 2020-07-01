@@ -6,7 +6,7 @@
 namespace rcube
 {
 
-const std::string vert_str =
+const std::string PBRVertexShader =
     R"(
 #version 420
 layout (location = 0) in vec3 vertex;
@@ -44,17 +44,7 @@ void main() {
 }
 )";
 
-const static VertexShader PBRVertexShader = {
-    {ShaderAttributeDesc("vertex", GLDataType::Vec3f),
-     ShaderAttributeDesc("normal", GLDataType::Vec3f),
-     ShaderAttributeDesc("texcoord", GLDataType::Vec2f),
-     ShaderAttributeDesc("normal", GLDataType::Vec3f),
-     ShaderAttributeDesc("tangent", GLDataType::Vec3f)},
-    {ShaderUniformDesc{"model_matrix", GLDataType::Mat4f},
-     ShaderUniformDesc{"normal_matrix", GLDataType::Mat3f}},
-    vert_str}; // namespace rcube
-
-const std::string geom_str =
+const static std::string PBRGeometryShader =
     R"(
 #version 420
 layout (triangles) in;
@@ -132,9 +122,7 @@ void main() {
 }
 )";
 
-const static GeometryShader PBRGeometryShader = {{}, {}, geom_str};
-
-const std::string frag_str =
+const static std::string PBRFragmentShader =
     R"(
 #version 420
 
@@ -361,25 +349,6 @@ void main() {
 }
 )";
 
-const static FragmentShader PBRFragmentShader = {
-    {ShaderUniformDesc{"material.albedo", GLDataType::Vec3f},
-     ShaderUniformDesc{"material.roughness", GLDataType::Float},
-     ShaderUniformDesc{"material.metallic", GLDataType::Float},
-     ShaderUniformDesc{"wireframe.show", GLDataType::Bool},
-     ShaderUniformDesc{"use_albedo_texture", GLDataType::Bool},
-     ShaderUniformDesc{"use_roughness_texture", GLDataType::Bool},
-     ShaderUniformDesc{"use_metallic_texture", GLDataType::Bool},
-     ShaderUniformDesc{"use_normal_texture", GLDataType::Bool},
-     ShaderUniformDesc{"use_image_based_lighting", GLDataType::Bool},
-     ShaderUniformDesc{"line_props.color", GLDataType::Vec3f},
-     ShaderUniformDesc{"line_props.thickness", GLDataType::Float}},
-    {ShaderTextureDesc{"albedo_tex", 2}, ShaderTextureDesc{"roughness_tex", 2},
-     ShaderTextureDesc{"metallic_tex", 2}, ShaderTextureDesc{"normal_tex", 2},
-     ShaderTextureDesc{"brdf_lut", 2}},
-    {ShaderCubemapDesc{"irradiance_map"}, ShaderCubemapDesc{"prefilter_map"}},
-    "out_color",
-    frag_str};
-
 PhysicallyBasedMaterial::PhysicallyBasedMaterial()
 {
     // TODO(pradeep): Shader programs must be re-used among different material objects
@@ -402,7 +371,7 @@ void PhysicallyBasedMaterial::setUniforms()
     shader_->uniform("use_metallic_texture").set(metallic_texture != nullptr);
     shader_->uniform("use_normal_texture").set(normal_texture != nullptr);
     shader_->uniform("use_image_based_lighting").set(use_ibl);
-    
+
     // Bind textures at units
     // TODO(pradeep): these sampler locations can be cached
     if (albedo_texture != nullptr)

@@ -3,8 +3,7 @@
 namespace rcube
 {
 
-const static FragmentShader BLUR_EFFECT_FRAG({ShaderUniformDesc{"horizonal", GLDataType::Bool}},
-                                      "out_color", R"(
+const static std::string BlurEffectFragmentShader = R"(
 #version 420
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -30,13 +29,13 @@ void main() {
     }
     out_color = vec4(result, 1.0);
 }
-)");
+)";
 
 
 
 std::shared_ptr<ShaderProgram> makeBlurEffect(bool horizonal)
 {
-    auto prog = makeEffect(BLUR_EFFECT_FRAG);
+    auto prog = makeEffect(BlurEffectFragmentShader);
     prog->uniform("horizonal").set(horizonal);
     return prog;
 }

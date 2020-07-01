@@ -5,7 +5,7 @@
 namespace rcube
 {
 
-const std::string vert_src = R"(
+const static std::string FlatVertexShader = R"(
 #version 420
 
 layout (location = 0) in vec3 vertex;
@@ -29,12 +29,7 @@ void main() {
 }
 )";
 
-const static VertexShader FlatVertexShader{{ShaderAttributeDesc("vertex", GLDataType::Vec3f),
-                                            ShaderAttributeDesc("colors", GLDataType::Vec3f)},
-                                           {{"model_matrix", GLDataType::Mat4f}},
-                                           vert_src};
-
-const std::string frag_src = R"(
+const static std::string FlatFragmentShader = R"(
 #version 420
 
 in vec3 frag_color;
@@ -44,18 +39,6 @@ void main() {
     out_color = vec4(frag_color, 1.0);
 }
 )";
-
-const static FragmentShader FlatFragmentShader{{}, {}, {}, "out_color", frag_src};
-
-std::shared_ptr<ShaderProgram> makeFlatMaterial()
-{
-    auto prog = ShaderProgram::create(FlatVertexShader, FlatFragmentShader, true);
-    prog->renderState().blending = false;
-    prog->renderState().depth_write = true;
-    prog->renderState().depth_test = true;
-    prog->renderState().culling = false;
-    return prog;
-}
 
 FlatMaterial::FlatMaterial()
 {

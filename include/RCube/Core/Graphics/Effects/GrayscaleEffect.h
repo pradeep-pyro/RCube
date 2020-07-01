@@ -1,5 +1,4 @@
-#ifndef GRAYSCALEEFFECT_H
-#define GRAYSCALEEFFECT_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 namespace rcube
@@ -14,5 +13,3 @@ namespace rcube
 std::shared_ptr<ShaderProgram> makeGrayscaleEffect();
 
 } // namespace rcube
-
-#endif // GRAYSCALEEFFECT_H

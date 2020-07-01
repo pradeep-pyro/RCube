@@ -2,8 +2,7 @@
 namespace rcube
 {
 
-const static FragmentShader GAMMA_CORRECTION_EFFECT_FRAG({}, {ShaderTextureDesc{"fbo_texture"}},
-                                                         "out_color", R"(
+const static std::string GammaCorrectionEffectFragmentShader = R"(
 #version 420
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -14,11 +13,11 @@ void main() {
     vec3 final_color = pow(tex.rgb, gamma);
     out_color = vec4(final_color, 1);
 }
-)");
+)";
 
 std::shared_ptr<ShaderProgram> makeGammaCorrectionEffect()
 {
-    return makeEffect(GAMMA_CORRECTION_EFFECT_FRAG);
+    return makeEffect(GammaCorrectionEffectFragmentShader);
 }
 
 } // namespace rcube

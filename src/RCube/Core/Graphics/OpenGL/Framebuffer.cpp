@@ -282,9 +282,9 @@ Image Framebuffer::getImage(int attachment_index) const
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_index);
-    glReadPixels(0, 0, width_, height_, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+    glReadPixels(0, 0, (GLsizei)width_, (GLsizei)height_, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    im.setPixels(width_, height_, 3, pixel_data);
+    im.setPixels((int)width_, (int)height_, 3, pixel_data);
     free(pixel_data);
     return im;
 }

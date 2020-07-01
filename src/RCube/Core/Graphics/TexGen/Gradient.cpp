@@ -14,9 +14,9 @@ Image gradientV(int width, int height, glm::vec3 color_top, glm::vec3 color_bott
         for (int col = 0; col < width; ++col)
         {
             glm::vec3 color = (1.f - t) * color_top + t * color_bottom;
-            data.push_back(color.r * 255);
-            data.push_back(color.g * 255);
-            data.push_back(color.b * 255);
+            data.push_back(unsigned char(color.r * 255));
+            data.push_back(unsigned char(color.g * 255));
+            data.push_back(unsigned char(color.b * 255));
             data.push_back(255); // Alpha
         }
     }

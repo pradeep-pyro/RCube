@@ -4,7 +4,7 @@
 namespace rcube
 {
 
-const std::string vert_str =
+const std::string BlinnPhongVertexShader =
     R"(
 #version 420
 layout (location = 0) in vec3 vertex;
@@ -42,7 +42,7 @@ void main() {
 }
 )";
 
-const std::string geom_str =
+const std::string BlinnPhongGeometryShader =
     R"(
 #version 420
 layout (triangles) in;
@@ -120,7 +120,7 @@ void main() {
 }
 )";
 
-const std::string frag_str =
+const std::string BlinnPhongFragmentShader =
     R"(
 #version 420
 
@@ -261,48 +261,6 @@ void main() {
     out_color = vec4(result, 1.0);
 }
 )";
-
-const static VertexShader BlinnPhongVertexShader = {
-    /*attributes: */
-    {ShaderAttributeDesc("vertex", GLDataType::Vec3f),
-     ShaderAttributeDesc("normal", GLDataType::Vec3f),
-     ShaderAttributeDesc("color", GLDataType::Vec3f),
-     ShaderAttributeDesc("texcoord", GLDataType::Vec2f),
-     ShaderAttributeDesc("tangent", GLDataType::Vec3f)},
-    /*uniforms: */
-    {{"model_matrix", GLDataType::Mat4f}, {"normal_matrix", GLDataType::Mat3f},
-     /*{"eye_pos", GLDataType::Vec3f}*/},
-    vert_str};
-
-const static GeometryShader BlinnPhongGeometryShader = {
-    /*attributes: */
-    {},
-    /*uniforms: */
-    {},
-    geom_str};
-
-const static FragmentShader BlinnPhongFragmentShader = {
-    /*uniforms: */
-    {{"diffuse", GLDataType::Color3f},
-     {"specular", GLDataType::Color3f},
-     {"shininess", GLDataType::Float},
-     {"reflectivity", GLDataType::Float},
-     {"show_wireframe", GLDataType::Bool},
-     {"show_backface", GLDataType::Bool},
-     {"wireframe_color", GLDataType::Color3f},
-     {"wireframe_thickness", GLDataType::Float},
-     {"use_diffuse_texture", GLDataType::Bool},
-     {"use_specular_texture", GLDataType::Bool},
-     {"use_normal_texture", GLDataType::Bool},
-     {"use_environment_map", GLDataType::Bool},
-     {"blend_environment_map", GLDataType::Int}},
-    /*textures: */
-    {ShaderTextureDesc{"diffuse_tex", 2}, ShaderTextureDesc{"specular_tex", 2},
-     ShaderTextureDesc{"normal_tex", 2}},
-    /*cubemaps: */
-    {ShaderCubemapDesc{"env_map"}},
-    "out_color",
-    frag_str};
 
 std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color,
                                                       glm::vec3 specular_color, float shininess,

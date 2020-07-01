@@ -35,51 +35,9 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     prog->addShader(GL_VERTEX_SHADER, vertex_shader.source, debug);
     prog->addShader(GL_FRAGMENT_SHADER, fragment_shader.source, debug);
     prog->link(debug);
-
-    // Get all attributes
-    for (const ShaderAttributeDesc &attr : vertex_shader.attributes)
-    {
-        prog->attributes_.push_back(attr);
-    }
-
-    // Get all uniforms
-    prog->available_uniforms_.reserve(vertex_shader.uniforms.size() +
-                                      fragment_shader.uniforms.size());
-    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
-                                     vertex_shader.uniforms.begin(), vertex_shader.uniforms.end());
-    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
-                                     fragment_shader.uniforms.begin(),
-                                     fragment_shader.uniforms.end());
-    for (const ShaderUniformDesc &uniform_desc : vertex_shader.uniforms)
-    {
-        GLint id = prog->uniformLocation(uniform_desc.name);
-        prog->uniforms_[uniform_desc.name] =
-            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
-    }
-    for (const ShaderUniformDesc &uniform_desc : fragment_shader.uniforms)
-    {
-        GLint id = prog->uniformLocation(uniform_desc.name);
-        prog->uniforms_[uniform_desc.name] =
-            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
-    }
-
-    // Get all textures
-    for (const ShaderTextureDesc &texture : fragment_shader.textures)
-    {
-        if (texture.dim == 2)
-        {
-            glGetUniformiv(prog->location_,
-                           glGetUniformLocation(prog->location_, texture.name.c_str()),
-                           &(prog->textures_[texture.name].unit));
-            prog->textures_[texture.name].texture = nullptr;
-        }
-    }
-    for (const ShaderCubemapDesc &cubemap : fragment_shader.cubemaps)
-    {
-        glGetUniformiv(prog->location_, glGetUniformLocation(prog->location_, cubemap.name.c_str()),
-                       &(prog->cubemaps_[cubemap.name].unit));
-        prog->cubemaps_[cubemap.name].cubemap = nullptr;
-    }
+    // Get all attributes and uniforms from the program
+    prog->generateAttributes();
+    prog->generateUniforms();
 
     return prog;
 }
@@ -94,65 +52,9 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const VertexShader &vertex_
     prog->addShader(GL_GEOMETRY_SHADER, geometry_shader.source, debug);
     prog->addShader(GL_FRAGMENT_SHADER, fragment_shader.source, debug);
     prog->link();
-
-    // Get all attributes
-    for (const ShaderAttributeDesc &attr : vertex_shader.attributes)
-    {
-        prog->attributes_.push_back(attr);
-    }
-    for (const ShaderAttributeDesc &attr : geometry_shader.attributes)
-    {
-        prog->attributes_.push_back(attr);
-    }
-
-    // Get all uniforms
-    prog->available_uniforms_.reserve(vertex_shader.uniforms.size() +
-                                      geometry_shader.uniforms.size() +
-                                      fragment_shader.uniforms.size());
-    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
-                                     vertex_shader.uniforms.begin(), vertex_shader.uniforms.end());
-    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
-                                     geometry_shader.uniforms.begin(),
-                                     geometry_shader.uniforms.end());
-    prog->available_uniforms_.insert(prog->available_uniforms_.end(),
-                                     fragment_shader.uniforms.begin(),
-                                     fragment_shader.uniforms.end());
-    for (const ShaderUniformDesc &uniform_desc : vertex_shader.uniforms)
-    {
-        GLint id = prog->uniformLocation(uniform_desc.name);
-        prog->uniforms_[uniform_desc.name] =
-            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
-    }
-    for (ShaderUniformDesc uniform_desc : geometry_shader.uniforms)
-    {
-        GLint id = prog->uniformLocation(uniform_desc.name);
-        prog->uniforms_[uniform_desc.name] =
-            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
-    }
-    for (const ShaderUniformDesc &uniform_desc : fragment_shader.uniforms)
-    {
-        GLint id = prog->uniformLocation(uniform_desc.name);
-        prog->uniforms_[uniform_desc.name] =
-            Uniform(uniform_desc.name, uniform_desc.type, prog->location_);
-    }
-
-    // Get all textures
-    for (const ShaderTextureDesc &texture : fragment_shader.textures)
-    {
-        if (texture.dim == 2)
-        {
-            glGetUniformiv(prog->location_,
-                           glGetUniformLocation(prog->location_, texture.name.c_str()),
-                           &(prog->textures_[texture.name].unit));
-            prog->textures_[texture.name].texture = nullptr;
-        }
-    }
-    for (const ShaderCubemapDesc &cubemap : fragment_shader.cubemaps)
-    {
-        glGetUniformiv(prog->location_, glGetUniformLocation(prog->location_, cubemap.name.c_str()),
-                       &(prog->cubemaps_[cubemap.name].unit));
-        prog->cubemaps_[cubemap.name].cubemap = nullptr;
-    }
+    // Get all attributes and uniforms from the program
+    prog->generateAttributes();
+    prog->generateUniforms();
 
     return prog;
 }
@@ -201,23 +103,6 @@ GLuint ShaderProgram::id() const
 void ShaderProgram::use() const
 {
     glUseProgram(location_);
-    for (auto &keyval : textures_)
-    {
-        if (keyval.second.texture != nullptr)
-        {
-            keyval.second.texture->use(keyval.second.unit);
-            // glUniform1i(keyval.second.sampler, texture_unit);
-        }
-    }
-    for (auto &keyval : cubemaps_)
-    {
-        if (keyval.second.cubemap != nullptr)
-        {
-            volatile GLint unittest = keyval.second.unit;
-            keyval.second.cubemap->use(keyval.second.unit);
-            // glUniform1i(keyval.second.sampler, texture_unit);
-        }
-    }
 }
 
 // Done with the shader (glUseProgram(0))
@@ -242,11 +127,6 @@ GLint ShaderProgram::uniformLocation(const std::string &name) const
 void ShaderProgram::showWarnings(bool flag)
 {
     warn_ = flag;
-}
-
-const std::vector<ShaderUniformDesc> &ShaderProgram::availableUniforms() const
-{
-    return available_uniforms_;
 }
 
 RenderSettings &ShaderProgram::renderState()
@@ -311,10 +191,54 @@ void ShaderProgram::addShaderFromFile(GLuint type, const std::string &filename, 
     addShader(type, src, debug);
 }
 
-const std::vector<ShaderAttributeDesc> &ShaderProgram::attributes() const
+void ShaderProgram::generateAttributes()
+{
+    GLint count; // number of attributes
+    GLint size;  // size of the variable
+    GLenum type; // type of the variable (float, vec3 or mat4, etc)
+
+    const GLsizei bufSize = 256; // maximum name length
+    GLchar name[bufSize];        // variable name in GLSL
+    GLsizei length;              // name length
+
+    glGetProgramiv(id(), GL_ACTIVE_ATTRIBUTES, &count);
+    // printf("Active Attributes: %d\n", count);
+
+    for (GLint i = 0; i < count; ++i)
+    {
+        glGetActiveAttrib(id(), (GLuint)i, bufSize, &length, &size, &type, name);
+        // printf("Attribute #%d Type: %u Name: %s\n", i, type, name);
+        attributes_[name] = ShaderAttributeDesc(name, getGLDataType(type), size);
+    }
+}
+
+void ShaderProgram::generateUniforms()
+{
+    GLint count; // number of uniforms
+    GLint size;  // size of the variable
+    GLenum type; // type of the variable (float, vec3 or mat4, etc)
+
+    const GLsizei bufSize = 256; // maximum name length
+    GLchar name[bufSize];        // variable name in GLSL
+    GLsizei length;              // name length
+
+    glGetProgramiv(id(), GL_ACTIVE_UNIFORMS, &count);
+    // printf("Active Uniforms: %d\n", count);
+
+    for (GLint i = 0; i < count; ++i)
+    {
+        glGetActiveUniform(id(), (GLuint)i, bufSize, &length, &size, &type, name);
+        // printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+        GLDataType gldatatype = getGLDataType(type);
+        uniforms_[name] = Uniform(name, gldatatype, id());
+    }
+}
+
+const std::unordered_map<std::string, ShaderAttributeDesc> &ShaderProgram::attributes() const
 {
     return attributes_;
 }
+
 bool ShaderProgram::hasUniform(std::string name, Uniform &uni)
 {
     auto it = uniforms_.find(name);
@@ -325,8 +249,7 @@ bool ShaderProgram::hasUniform(std::string name, Uniform &uni)
     uni = it->second;
     return true;
 }
-const Uniform &ShaderProgram::uniform(
-    std::string name) const
+const Uniform &ShaderProgram::uniform(std::string name) const
 {
     return uniforms_.at(name);
 }
@@ -334,23 +257,6 @@ Uniform &ShaderProgram::uniform(std::string name)
 {
     return uniforms_.at(name);
 }
-const std::shared_ptr<Texture2D> &ShaderProgram::texture(std::string name) const
-{
-    return textures_.at(name).texture;
-}
-std::shared_ptr<Texture2D> &ShaderProgram::texture(std::string name)
-{
-    return textures_.at(name).texture;
-}
-const std::shared_ptr<TextureCubemap> &ShaderProgram::cubemap(std::string name) const
-{
-    return cubemaps_.at(name).cubemap;
-}
-std::shared_ptr<TextureCubemap> &ShaderProgram::cubemap(std::string name)
-{
-    return cubemaps_.at(name).cubemap;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 void Uniform::set(bool val)

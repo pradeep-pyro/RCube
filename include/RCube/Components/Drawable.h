@@ -1,10 +1,10 @@
-#ifndef DRAWABLE_H
-#define DRAWABLE_H
+#pragma once
 
 #include "glm/glm.hpp"
 #include <memory>
 
 #include "RCube/Core/Arch/Component.h"
+#include "RCube/Core/Graphics/Materials/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 namespace rcube
@@ -20,13 +20,11 @@ namespace rcube
 class Drawable : public Component<Drawable>
 {
   public:
-    std::shared_ptr<Mesh> mesh;              /// OpenGL mesh
-    std::shared_ptr<ShaderProgram> material; /// Material describing the rendering appearance
-    bool visible = true;                     /// Whether visible when rendered
+    std::shared_ptr<Mesh> mesh;         /// OpenGL mesh
+    std::shared_ptr<Material> material; /// Material describing the rendering appearance
+    bool visible = true;                /// Whether visible when rendered
 
     void drawGUI();
 };
 
 } // namespace rcube
-
-#endif // DRAWABLE_H

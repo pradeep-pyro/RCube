@@ -34,27 +34,16 @@ int main()
     size_t num_triangles_per_point;
     TriangleMeshData pointcloudMesh = pointsToSpheres(pointcloud, 0.03f, num_triangles_per_point);
     EntityHandle pc_entity = viewer.addSurface("pointcloud", pointcloudMesh);
-    pc_entity.get<Drawable>()->material->uniform("diffuse").set(glm::vec3(0.8, 0.2, 0.0));
+    auto mat =
+        std::dynamic_pointer_cast<PhysicallyBasedMaterial>(pc_entity.get<Drawable>()->material);
+    mat->albedo = glm::vec3(0.8, 0.8, 0.8);
+    mat->roughness = 0.8;
+    mat->metallic = 0.3;
 
     // Make pointcloud pickable with mouse click
     pc_entity.add<viewer::Pickable>();
     pc_entity.get<Drawable>()->mesh->updateBVH();
 
-    // viewer.callInDrawLoop = [&](rcube::viewer::RCubeViewer &v) -> bool {
-    //    glm::dvec2 mouse_pos = v.getMousePosition();
-    //    EntityHandle ent;
-    //    size_t triangle_index;
-    //    if (v.world().getSystem("PickSystem")pick(int(mouse_pos.x), int(mouse_pos.y), ent,
-    //    triangle_index))
-    //    {
-    //        std::cout << "Picked entity '" << ent.get<Name>()->name << "' by selecting triangle "
-    //                  << triangle_index << ", which corresponds to pointcloud index "
-    //                  << (size_t)std::floor((double)triangle_index /
-    //                                        (double)num_triangles_per_point)
-    //                  << std::endl;
-    //    }
-    //    return false; // Return false to process default mouse down stuff in the viewer
-    //};
     viewer.customGUI = [&](viewer::RCubeViewer &v) {
         ImGui::Begin("Pick");
         viewer::Pickable *pick_comp = pc_entity.get<viewer::Pickable>();
@@ -67,6 +56,12 @@ int main()
         }
         ImGui::End();
     };
+
+    // Apply gamma correction to the screen
+    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
+
+    // Compute IBL to all PBR materials
+    viewer.updateImageBasedLighting();
 
     // Show viewer
     viewer.execute();

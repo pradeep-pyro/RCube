@@ -35,7 +35,7 @@ const static FragmentShader
                                        {}, {ShaderCubemapDesc{"env_map"}}, "frag_color",
                                        R"(
         #version 420
-        uniform samplerCube env_map;
+        layout(binding=0) uniform samplerCube env_map;
 
         out vec4 frag_color;
 
@@ -305,7 +305,6 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     prefiltered_map->setFilterModeMin(TextureFilterMode::Trilinear); // enable trilinear filtering
     prefiltered_map->setFilterModeMag(TextureFilterMode::Linear);
     prefiltered_map->setWrapMode(TextureWrapMode::ClampToEdge);
-    shader_->cubemap("env_map") = env_map;
     shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
 
@@ -326,6 +325,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         {
             rdr_.clear();
             rdr_.setCamera(eye_pos, views_[i], projection_, eye);
+            env_map->use(0);
             rdr_.render(cube_.get(), shader_.get(), eye);
             prefiltered_map->use();
             glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mip, 0, 0, 0, 0, mip_width,

@@ -115,7 +115,7 @@ bool TriangleMeshData::valid() const
 //-----------------------------------------------------------------------------
 
 std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>> attributes,
-                                   MeshPrimitive prim)
+                                   MeshPrimitive prim, bool indexed)
 {
     auto mesh = std::make_shared<Mesh>();
     glGenVertexArrays(1, &mesh->vao_);
@@ -130,10 +130,13 @@ std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>>
         mesh->attributes_[attr->name()] = attrbuf;
         mesh->attributes_enabled_[attr->name()] = true;
     }
-    mesh->indices_ = AttributeIndexBuffer::create(
-        prim == MeshPrimitive::Points ? 1 : (prim == MeshPrimitive::Lines ? 2 : 3));
     mesh->primitive_ = prim;
-    mesh->indices_->buffer()->use();
+    if (indexed)
+    {
+        mesh->indices_ = AttributeIndexBuffer::create(
+            prim == MeshPrimitive::Points ? 1 : (prim == MeshPrimitive::Lines ? 2 : 3));
+        mesh->indices_->buffer()->use();
+    }
     mesh->init_ = true;
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -143,22 +146,28 @@ std::shared_ptr<Mesh> Mesh::create(std::vector<std::shared_ptr<AttributeBuffer>>
 
 std::shared_ptr<Mesh> Mesh::create(const LineMeshData &linemesh)
 {
-    auto mesh = Mesh::createLineMesh();
-    mesh->attributes_["positions"]->setData(linemesh.vertices);
-    mesh->attributes_["colors"]->setData(linemesh.colors);
-    mesh->indices_->setData(linemesh.indices);
+    auto mesh = Mesh::createLineMesh(linemesh.indexed);
+    mesh->attribute("positions")->setData(linemesh.vertices);
+    mesh->attribute("colors")->setData(linemesh.colors);
+    if (linemesh.indexed)
+    {
+        mesh->indices_->setData(linemesh.indices);
+    }
     return mesh;
 }
 
 std::shared_ptr<Mesh> Mesh::create(const TriangleMeshData &trimesh)
 {
-    auto mesh = Mesh::createTriangleMesh();
+    auto mesh = Mesh::createTriangleMesh(trimesh.indexed);
     mesh->attributes_["positions"]->setData(trimesh.vertices);
     mesh->attributes_["normals"]->setData(trimesh.normals);
     mesh->attributes_["colors"]->setData(trimesh.colors);
     mesh->attributes_["uvs"]->setData(trimesh.texcoords);
     mesh->attributes_["tangents"]->setData(trimesh.tangents);
-    mesh->indices_->setData(trimesh.indices);
+    if (trimesh.indexed)
+    {
+        mesh->indices_->setData(trimesh.indices);
+    }
     return mesh;
 }
 
@@ -167,18 +176,18 @@ std::shared_ptr<Mesh> Mesh::createPointMesh()
     return Mesh::create(
         {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
-        MeshPrimitive::Points);
+        MeshPrimitive::Points, false);
 }
 
-std::shared_ptr<Mesh> Mesh::createLineMesh()
+std::shared_ptr<Mesh> Mesh::createLineMesh(bool indexed)
 {
     return Mesh::create(
         {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
-        MeshPrimitive::Lines);
+        MeshPrimitive::Lines, indexed);
 }
 
-std::shared_ptr<Mesh> Mesh::createTriangleMesh()
+std::shared_ptr<Mesh> Mesh::createTriangleMesh(bool indexed)
 {
     return Mesh::create(
         {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
@@ -186,7 +195,7 @@ std::shared_ptr<Mesh> Mesh::createTriangleMesh()
          AttributeBuffer::create("uvs", GLuint(AttributeLocation::UV), 2),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
          AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3)},
-        MeshPrimitive::Triangles);
+        MeshPrimitive::Triangles, indexed);
 }
 
 void Mesh::release()
@@ -293,7 +302,10 @@ std::shared_ptr<AttributeIndexBuffer> Mesh::indices()
 void Mesh::uploadToGPU()
 {
     done();
-    indices_->update();
+    if (indices_ != nullptr)
+    {
+        indices_->update();
+    }
     for (auto &kv : attributes_)
     {
         if (kv.second->data().size() / kv.second->dim() !=

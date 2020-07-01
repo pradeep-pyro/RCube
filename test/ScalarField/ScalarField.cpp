@@ -33,7 +33,12 @@ int main()
     colormap(Colormap::Viridis, height_field, vmin, vmax, sphere_mesh->attribute("colors")->data());
     sphere_mesh->uploadToGPU();
     // Set diffuse color to white since it will be multiplied with the colors above
-    sphere.get<Drawable>()->material->uniform("diffuse").set(glm::vec3(1, 1, 1));
+    auto material =
+        std::dynamic_pointer_cast<PhysicallyBasedMaterial>(sphere.get<Drawable>()->material);
+    material->albedo = glm::vec3(1, 1, 1);
+
+    // Gamme correction
+    viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
 
     // Show viewer
     viewer.execute();

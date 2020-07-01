@@ -339,16 +339,52 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     glBindVertexArray(0);
 }
 
+
+void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world)
+{
+#ifdef RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
+    glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
+#else
+    const glm::mat3 normal_matrix(model_to_world);
+#endif
+    assert(material != nullptr);
+
+    // Update settings
+    updateSettings(material->renderState());
+
+    // Use shader and set uniforms
+    material->use();
+    Uniform u_model_matrix, u_normal_matrix;
+    if (material->shader()->hasUniform("model_matrix", u_model_matrix))
+    {
+        u_model_matrix.set(model_to_world);
+    }
+    if (material->shader()->hasUniform("normal_matrix", u_normal_matrix))
+    {
+        u_normal_matrix.set(normal_matrix);
+    }
+    glBindVertexArray(mesh->vao());
+    if (mesh->numIndexData() == 0)
+    {
+        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0,
+                     static_cast<GLsizei>(mesh->numVertexData()));
+    }
+    else
+    {
+        glDrawElements(static_cast<GLint>(mesh->primitive()), (GLsizei)mesh->numIndexData(),
+                       GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
+    }
+    glBindVertexArray(0);
+}
+
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
 {
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     skybox_mesh_->use();
-    skybox_shader_->cubemap("skybox") = cubemap;
+    cubemap->use(2);
     skybox_shader_->use();
-    checkGLError();
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    checkGLError();
     glDepthFunc(GL_LESS);
 }
 

@@ -1,5 +1,6 @@
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include <string>
+#include "imgui.h"
 
 namespace rcube
 {
@@ -54,6 +55,31 @@ std::shared_ptr<ShaderProgram> makeFlatMaterial()
     prog->renderState().depth_test = true;
     prog->renderState().culling = false;
     return prog;
+}
+
+FlatMaterial::FlatMaterial()
+{
+    shader_ = ShaderProgram::create(FlatVertexShader, FlatFragmentShader, true);
+}
+
+void FlatMaterial::setUniforms()
+{
+}
+
+void FlatMaterial::drawGUI()
+{
+    ImGui::Text("Flat Material");
+    ImGui::Text("This material directly renders per-vertex colors without any shading");
+}
+
+const RenderSettings FlatMaterial::renderState() const
+{
+    RenderSettings state;
+    state.blending = false;
+    state.depth_write = true;
+    state.depth_test = true;
+    state.culling = false;
+    return state;
 }
 
 } // namespace rcube

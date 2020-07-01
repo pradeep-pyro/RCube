@@ -1,7 +1,7 @@
-#ifndef FLATMATERIAL_H
-#define FLATMATERIAL_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
+#include "RCube/Core/Graphics/Materials/Material.h"
 
 namespace rcube
 {
@@ -11,6 +11,16 @@ namespace rcube
  */
 std::shared_ptr<ShaderProgram> makeFlatMaterial();
 
-} // namespace rcube
+class FlatMaterial : public Material
+{
+  public:
+    FlatMaterial();
 
-#endif // FLATMATERIAL_H
+    virtual void setUniforms() override;
+
+    virtual void drawGUI() override;
+
+    virtual const RenderSettings renderState() const;
+};
+
+} // namespace rcube

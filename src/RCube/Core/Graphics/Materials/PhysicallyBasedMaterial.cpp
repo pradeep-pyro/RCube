@@ -1,4 +1,7 @@
 #include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
+#include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
+#include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
+#include "imgui.h"
 
 namespace rcube
 {
@@ -175,13 +178,13 @@ layout (std140, binding=2) uniform Lights {
 struct Material {
     vec3 albedo;
     float roughness;
-    float metalness;
+    float metallic;
 };
 uniform Material material;
 
 layout(binding=0) uniform sampler2D albedo_tex;
 layout(binding=1) uniform sampler2D roughness_tex;
-layout(binding=2) uniform sampler2D metalness_tex;
+layout(binding=2) uniform sampler2D metallic_tex;
 layout(binding=3) uniform sampler2D normal_tex;
 
 layout(binding=4) uniform sampler2D brdf_lut;
@@ -189,14 +192,15 @@ layout(binding=5) uniform samplerCube prefilter_map;
 layout(binding=6) uniform samplerCube irradiance_map;
 
 uniform bool show_wireframe;
-uniform bool use_albedo_texture, use_roughness_texture, use_metalness_texture, use_normal_texture;
+uniform bool use_albedo_texture, use_roughness_texture, use_metallic_texture, use_normal_texture;
 uniform bool use_image_based_lighting;
 
-struct Line {
+struct Wireframe {
+    bool show;
     vec3 color;
     float thickness;
 };
-uniform Line line_props;
+uniform Wireframe wireframe;
 
 // Returns the attenuation factor that is multiplied with the light's color
 float falloff(float dist, float radius) {
@@ -262,13 +266,15 @@ vec3 diffuseLambertian(vec3 albedo) {
 
 void main() {
     // Albedo: convert sRGB albedo texture to linear by pow(x, 2.2)
-    vec3 albedo = use_albedo_texture ? pow(texture(albedo_tex, g_texture).rgb, vec3(2.2)) * g_color : material.albedo * g_color;
+    vec3 albedo = use_albedo_texture ? texture(albedo_tex, g_texture).rgb * g_color : material.albedo * g_color;
+    //vec3 albedo = use_albedo_texture ? pow(texture(albedo_tex, g_texture).rgb, vec3(2.2)) * g_color : material.albedo * g_color;
+    albedo = pow(albedo, vec3(2.2));
     // Roughness
     float roughness = use_roughness_texture ? texture(roughness_tex, g_texture).r : material.roughness;
-    //roughness = clamp(roughness, 0.04, 1.0);
-    // metalness
-    float metalness = use_metalness_texture ? texture(metalness_tex, g_texture).r : material.metalness;
-    metalness = clamp(metalness, 0.0, 1.0);
+    roughness = clamp(roughness, 0.04, 1.0);
+    // metallic
+    float metallic = use_metallic_texture ? texture(metallic_tex, g_texture).r : material.metallic;
+    metallic = clamp(metallic, 0.0, 1.0);
     // Surface normal
     vec3 N = use_normal_texture ? g_tbn * (texture(normal_tex, g_texture).rgb * 2.0 - 1.0) : g_normal;
     N = normalize(N);
@@ -277,7 +283,7 @@ void main() {
     float NdotV = max(dot(N, V), 0);
     // Specular color
     vec3 specular_color = vec3(0.04);
-    specular_color = mix(specular_color, albedo, metalness);
+    specular_color = mix(specular_color, albedo, metallic);
 
     vec3 direct_result = vec3(0.0);
     for (int i = 0; i < min(num_lights, MAX_LIGHTS); ++i)
@@ -312,7 +318,7 @@ void main() {
         // Lambertian BRDF
         vec3 diffuse = diffuseLambertian(albedo);
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metalness; // Metallic materials have ~0 diffuse contribution
+        kD *= 1.0 - metallic; // Metallic materials have ~0 diffuse contribution
         direct_result += (kD * diffuse + specular) * radiance * dot(L, N);
     }
 
@@ -322,7 +328,7 @@ void main() {
         vec3 F = FSchlickRoughness(max(dot(N, V), 0.0), specular_color, roughness);
         vec3 kS = F;
         vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metalness;
+        kD *= 1.0 - metallic;
 
         vec3 irradiance = texture(irradiance_map, N).rgb;
         vec3 diffuse = irradiance * albedo;
@@ -338,12 +344,12 @@ void main() {
     vec3 result = direct_result + ambient;
 
     // Wireframe
-    if (show_wireframe) {
+    if (wireframe.show) {
         // Find the smallest distance
         float d = min(dist.x, dist.y);
         d = min(d, dist.z);
-        float mix_val = smoothstep(line_props.thickness - 1.0, line_props.thickness + 1.0, d);
-        result = mix(line_props.color, result, mix_val);
+        float mix_val = smoothstep(wireframe.thickness - 1.0, wireframe.thickness + 1.0, d);
+        result = mix(wireframe.color, result, mix_val);
     }
 
     // Tone mapping using Reinhard operator
@@ -358,42 +364,115 @@ void main() {
 const static FragmentShader PBRFragmentShader = {
     {ShaderUniformDesc{"material.albedo", GLDataType::Vec3f},
      ShaderUniformDesc{"material.roughness", GLDataType::Float},
-     ShaderUniformDesc{"material.metalness", GLDataType::Float},
-     ShaderUniformDesc{"show_wireframe", GLDataType::Bool},
+     ShaderUniformDesc{"material.metallic", GLDataType::Float},
+     ShaderUniformDesc{"wireframe.show", GLDataType::Bool},
      ShaderUniformDesc{"use_albedo_texture", GLDataType::Bool},
      ShaderUniformDesc{"use_roughness_texture", GLDataType::Bool},
-     ShaderUniformDesc{"use_metalness_texture", GLDataType::Bool},
+     ShaderUniformDesc{"use_metallic_texture", GLDataType::Bool},
      ShaderUniformDesc{"use_normal_texture", GLDataType::Bool},
      ShaderUniformDesc{"use_image_based_lighting", GLDataType::Bool},
      ShaderUniformDesc{"line_props.color", GLDataType::Vec3f},
      ShaderUniformDesc{"line_props.thickness", GLDataType::Float}},
     {ShaderTextureDesc{"albedo_tex", 2}, ShaderTextureDesc{"roughness_tex", 2},
-     ShaderTextureDesc{"metalness_tex", 2}, ShaderTextureDesc{"normal_tex", 2},
+     ShaderTextureDesc{"metallic_tex", 2}, ShaderTextureDesc{"normal_tex", 2},
      ShaderTextureDesc{"brdf_lut", 2}},
     {ShaderCubemapDesc{"irradiance_map"}, ShaderCubemapDesc{"prefilter_map"}},
     "out_color",
     frag_str};
 
-std::shared_ptr<ShaderProgram> makePhysicallyBasedMaterial(glm::vec3 albedo, float roughness,
-                                                           float metalness, bool wireframe)
+PhysicallyBasedMaterial::PhysicallyBasedMaterial()
 {
-    auto prog = ShaderProgram::create(PBRVertexShader, PBRGeometryShader, PBRFragmentShader, true);
-    prog->uniform("material.albedo").set(albedo);
-    prog->uniform("material.roughness").set(roughness);
-    prog->uniform("material.metalness").set(metalness);
-    prog->uniform("show_wireframe").set(wireframe);
-    prog->uniform("use_albedo_texture").set(false);
-    prog->uniform("use_roughness_texture").set(false);
-    prog->uniform("use_metalness_texture").set(false);
-    prog->uniform("use_normal_texture").set(false);
+    // TODO(pradeep): Shader programs must be re-used among different material objects
+    shader_ = ShaderProgram::create(PBRVertexShader, PBRGeometryShader, PBRFragmentShader, true);
+}
 
-    prog->renderState().depth_test = true;
-    prog->renderState().depth_write = true;
-    prog->renderState().blending = false;
-    prog->renderState().culling = false;
+void PhysicallyBasedMaterial::setUniforms()
+{
+    const bool use_ibl =
+        irradiance_map != nullptr && prefilter_map != nullptr && brdf_map != nullptr;
+    // Set uniforms
+    shader_->uniform("material.albedo").set(albedo);
+    shader_->uniform("material.roughness").set(roughness);
+    shader_->uniform("material.metallic").set(metallic);
+    shader_->uniform("wireframe.show").set(wireframe);
+    shader_->uniform("wireframe.thickness").set(wireframe_thickness);
+    shader_->uniform("wireframe.color").set(wireframe_color);
+    shader_->uniform("use_albedo_texture").set(albedo_texture != nullptr);
+    shader_->uniform("use_roughness_texture").set(roughness_texture != nullptr);
+    shader_->uniform("use_metallic_texture").set(metallic_texture != nullptr);
+    shader_->uniform("use_normal_texture").set(normal_texture != nullptr);
+    shader_->uniform("use_image_based_lighting").set(use_ibl);
+    
+    // Bind textures at units
+    // TODO(pradeep): these sampler locations can be cached
+    if (albedo_texture != nullptr)
+    {
+        int unit;
+        shader_->uniform("albedo_tex").get(unit);
+        albedo_texture->use(unit);
+    }
+    if (metallic_texture != nullptr)
+    {
+        int unit;
+        shader_->uniform("metallic_tex").get(unit);
+        metallic_texture->use(unit);
+    }
+    if (normal_texture != nullptr)
+    {
+        int unit;
+        shader_->uniform("normal_tex").get(unit);
+        normal_texture->use(unit);
+    }
+    if (use_ibl)
+    {
+        int irr_unit, pre_unit, brdf_unit;
+        shader_->uniform("irradiance_map").get(irr_unit);
+        shader_->uniform("prefilter_map").get(pre_unit);
+        shader_->uniform("brdf_lut").get(brdf_unit);
+        irradiance_map->use(irr_unit);
+        prefilter_map->use(pre_unit);
+        brdf_map->use(brdf_unit);
+    }
+}
 
-    prog->renderPriority() = RenderPriority::Opaque;
-    return prog;
+void PhysicallyBasedMaterial::drawGUI()
+{
+    ImGui::Text("Physically-based Material");
+    ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo));
+    ImGui::SliderFloat("Roughness", &roughness, 0.04f, 1.f);
+    ImGui::SliderFloat("Metallic", &metallic, 0.f, 1.f);
+    ImGui::Text("Wireframe");
+    ImGui::Checkbox("Show", &wireframe);
+    ImGui::InputFloat("Thickness", &wireframe_thickness);
+    ImGui::ColorEdit3("Color", glm::value_ptr(wireframe_color));
+}
+
+void PhysicallyBasedMaterial::setIBLMaps(std::shared_ptr<TextureCubemap> irradiance,
+                                         std::shared_ptr<TextureCubemap> prefilter,
+                                         std::shared_ptr<Texture2D> brdf)
+{
+    irradiance_map = irradiance;
+    prefilter_map = prefilter;
+    brdf_map = brdf;
+}
+
+void PhysicallyBasedMaterial::createIBLMaps(std::shared_ptr<TextureCubemap> environment_map)
+{
+    IBLDiffuse diff;
+    irradiance_map = diff.irradiance(environment_map);
+    IBLSpecularSplitSum spec;
+    prefilter_map = spec.prefilter(environment_map);
+    brdf_map = spec.integrateBRDF();
+}
+
+const RenderSettings PhysicallyBasedMaterial::renderState() const
+{
+    RenderSettings state;
+    state.depth_test = true;
+    state.depth_write = true;
+    state.blending = false;
+    state.culling = false;
+    return state;
 }
 
 } // namespace rcube

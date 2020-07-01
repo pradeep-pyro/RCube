@@ -48,7 +48,7 @@ void Drawable::drawGUI()
     ImGui::Separator();
 
     // Material
-    //material->drawGUI();
+    material->drawGUI();
 }
 
 } // namespace rcube

@@ -34,35 +34,21 @@ int main()
     viewer.camera().get<Camera>()->skybox = env_map;
     viewer.camera().get<Camera>()->use_skybox = true;
 
-    // Precompute image-based lighting cubemaps for indirect lighting in PBR shader
-    // Compute the diffuse irradiance cubemap by importance sampling
-    std::shared_ptr<TextureCubemap> irradiance_map;
-    std::shared_ptr<TextureCubemap> prefilter_map;
-    std::shared_ptr<Texture2D> brdf_lut;
-
-    IBLDiffuse ibl_diffuse;
-    irradiance_map = ibl_diffuse.irradiance(env_map);
-    // Compute the specular prefilter and integrated BRDF using Epic Games split-sum
-    // approximation
-    IBLSpecularSplitSum ibl_specular;
-    prefilter_map = ibl_specular.prefilter(env_map);
-    brdf_lut = ibl_specular.integrateBRDF();
-
     // Add a fancy supershape
     // The returned entity has 2 components in it: (1) a Drawable component holding the mesh and
     // material (a Blinn-Phong material is used by default), (2) a Transform component holding the
     // local position, and local orientation with respect to a parent transform
     EntityHandle s = viewer.addSurface(
         "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 3.f, 6.f, 1.f, 1.f, 1.f));
-    s.get<Drawable>()->material =
-        makePhysicallyBasedMaterial(glm::vec3(0.953, 0.788, 0.408), 0.1f, 1.f);
-
+    auto mat = std::dynamic_pointer_cast<PhysicallyBasedMaterial>(s.get<Drawable>()->material);
+    mat->albedo = glm::vec3(0.953, 0.788, 0.408);
+    mat->roughness = 0.1f;
+    mat->metallic = 1.f;
     // Assign image based lighting textures to supershape's material
-    std::shared_ptr<ShaderProgram> &material = s.get<Drawable>()->material;
-    material->cubemap("irradiance_map") = irradiance_map;
-    material->cubemap("prefilter_map") = prefilter_map;
-    material->texture("brdf_lut") = brdf_lut;
-    material->uniform("use_image_based_lighting").set(true);
+    // The IBL maps are precomputed as:
+    // (1) diffuse irradiance cubemap using importance sampling, and
+    // (2, 3) prefiltered specular cubmapand BRDF 2D LUT using the split-sum approximation.
+    mat->createIBLMaps(env_map);
 
     // Apply gamma correction to the screen
     viewer.camera().get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());

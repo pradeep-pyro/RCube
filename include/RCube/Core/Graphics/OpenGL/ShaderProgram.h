@@ -17,13 +17,14 @@ namespace rcube
 
 struct ShaderAttributeDesc
 {
+    ShaderAttributeDesc() = default;
     ShaderAttributeDesc(std::string attribute_name, GLDataType data_type, int array_count = 1)
         : name(attribute_name), type(data_type), count(array_count)
     {
     }
-    const std::string name;
-    const GLDataType type;
-    const int count;
+    std::string name;
+    GLDataType type;
+    int count;
 };
 
 struct ShaderUniformDesc
@@ -214,8 +215,9 @@ class ShaderProgram
     GLuint location_;
     std::vector<GLint> shaders_;
     bool warn_ = true;
-    std::vector<ShaderAttributeDesc> attributes_;
-    std::vector<ShaderUniformDesc> available_uniforms_;
+    // std::vector<ShaderAttributeDesc> attributes_;
+    std::unordered_map<std::string, ShaderAttributeDesc> attributes_;
+    // std::vector<ShaderUniformDesc> available_uniforms_;
     std::unordered_map<std::string, Uniform> uniforms_;
     struct TextureSampler
     {
@@ -229,6 +231,8 @@ class ShaderProgram
     };
     std::unordered_map<std::string, TextureSampler> textures_;
     std::unordered_map<std::string, CubemapSampler> cubemaps_;
+    std::unordered_map<std::string, GLint> texture_unit_;
+    std::unordered_map<std::string, GLint> cubemap_unit_;
     RenderSettings render_state_;
     RenderPriority render_priority_ = RenderPriority::Opaque;
 
@@ -244,14 +248,10 @@ class ShaderProgram
                                                  const GeometryShader &geometry_shader,
                                                  const FragmentShader &fragment_shader,
                                                  bool debug = false);
-    const std::vector<ShaderAttributeDesc> &attributes() const;
+    const std::unordered_map<std::string, ShaderAttributeDesc> &attributes() const;
     const Uniform &uniform(std::string name) const;
     Uniform &uniform(std::string name);
     bool hasUniform(std::string name, Uniform &uni);
-    const std::shared_ptr<Texture2D> &texture(std::string name) const;
-    std::shared_ptr<Texture2D> &texture(std::string name);
-    const std::shared_ptr<TextureCubemap> &cubemap(std::string name) const;
-    std::shared_ptr<TextureCubemap> &cubemap(std::string name);
     bool link(bool debug = false);
     GLuint id() const;
     void use() const;
@@ -266,6 +266,8 @@ class ShaderProgram
   private:
     void addShader(GLuint type, const std::string &source, bool debug = false);
     void addShaderFromFile(GLuint type, const std::string &filename, bool debug = false);
+    void generateAttributes();
+    void generateUniforms();
 };
 
 } // namespace rcube

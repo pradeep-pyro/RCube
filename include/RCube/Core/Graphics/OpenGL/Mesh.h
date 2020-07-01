@@ -78,16 +78,16 @@ class Mesh
 
     static std::shared_ptr<Mesh> createPointMesh();
 
-    static std::shared_ptr<Mesh> createLineMesh();
+    static std::shared_ptr<Mesh> createLineMesh(bool indexed);
 
-    static std::shared_ptr<Mesh> createTriangleMesh();
+    static std::shared_ptr<Mesh> createTriangleMesh(bool indexed);
 
     static std::shared_ptr<Mesh> create(const LineMeshData &linemesh);
 
     static std::shared_ptr<Mesh> create(const TriangleMeshData &trimesh);
 
     static std::shared_ptr<Mesh> create(std::vector<std::shared_ptr<AttributeBuffer>> attributes,
-                                        MeshPrimitive prim);
+                                        MeshPrimitive prim, bool indexed=false);
 
     void release();
 

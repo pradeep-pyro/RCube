@@ -152,7 +152,6 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
 {
     auto irradiance_map =
         TextureCubemap::create(resolution_, resolution_, 1, true, TextureInternalFormat::RGB16F);
-    shader_->cubemap("env_map") = env_map;
     shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
     glm::mat4 eye(1.0);
@@ -162,10 +161,11 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
     {
         rdr_.clear();
         rdr_.setCamera(eye_pos, views_[i], projection_, eye);
+        env_map->use(0);
         rdr_.render(cube_.get(), shader_.get(), eye);
         irradiance_map->use();
-        glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0, fbo_->width(),
-                            fbo_->height());
+        glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0, static_cast<GLsizei>(fbo_->width()),
+                            static_cast<GLsizei>(fbo_->height()));
     }
     fbo_->done();
 

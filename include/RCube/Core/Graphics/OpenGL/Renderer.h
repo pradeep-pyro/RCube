@@ -11,6 +11,7 @@
 #include "RCube/Core/Graphics/OpenGL/Light.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
+#include "RCube/Core/Graphics/Materials/Material.h"
 
 namespace rcube
 {
@@ -37,7 +38,7 @@ class GLRenderer
      * @param width width of the viewport
      * @param height height if the viewport
      */
-    void resize(int top, int left, int width, int height);
+    void resize(int top, int left, size_t width, size_t height);
 
     void setLights(const std::vector<Light> &lights);
 
@@ -46,6 +47,8 @@ class GLRenderer
                    const glm::mat4 &projection_to_viewport);
 
     void render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world);
+
+    void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
 
     void renderSkyBox(std::shared_ptr<TextureCubemap> cubemap);
 

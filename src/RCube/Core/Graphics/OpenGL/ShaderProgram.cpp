@@ -148,7 +148,7 @@ void ShaderProgram::addShader(GLuint type, const std::string &source, bool debug
     }
     GLuint shader = glCreateShader(type);
     const char *c_str = source.c_str();
-    GLint length = source.size();
+    GLint length = (GLint)source.size();
     glShaderSource(shader, 1, &c_str, &length);
     // Try to compile the shader
     glCompileShader(shader);

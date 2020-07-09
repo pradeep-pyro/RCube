@@ -189,8 +189,8 @@ void colormap(const float palette[256][3], float value, glm::vec3 &rgb)
     const float one = 1.0;
     float value_clamped = static_cast<float>(std::max(zero, std::min(one, value)));
 
-    unsigned int least = std::floor(value_clamped * static_cast<float>(255));
-    unsigned int most = std::ceil(value_clamped * static_cast<float>(255));
+    unsigned int least = static_cast<unsigned int>(std::floor(value_clamped * static_cast<float>(255)));
+    unsigned int most = static_cast<unsigned int>(std::ceil(value_clamped * static_cast<float>(255)));
 
     const float r_min = palette[least][0];
     const float r_max = palette[most][0];

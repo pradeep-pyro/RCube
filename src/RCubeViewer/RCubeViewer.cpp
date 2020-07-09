@@ -1,9 +1,9 @@
 #include "RCubeViewer/RCubeViewer.h"
 #include "RCube/Core/Arch/World.h"
+#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
 #include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/TexGen/Gradient.h"
 #include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Name.h"
@@ -59,9 +59,9 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
         glm::pow(glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f), glm::vec3(2.2f));
     glm::vec3 color_bot =
         glm::pow(glm::vec3(100.f / 255.f, 93 / 255.f, 86.f / 255.f), glm::vec3(2.2f));
-    Image front_back = gradientV(256, 256, color_top, color_bot);
-    Image top = gradientV(256, 256, color_top, color_top);
-    Image bottom = gradientV(256, 256, color_bot, color_bot);
+    Image front_back = gradientV(256, 256, color_top, color_bot, 10.f);
+    Image top = gradientV(256, 256, color_top, color_top, 10.f);
+    Image bottom = gradientV(256, 256, color_bot, color_bot, 10.f);
     camera_.get<Camera>()->skybox->setFilterMode(rcube::TextureFilterMode::Trilinear);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveY, top);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeY, bottom);

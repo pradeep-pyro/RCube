@@ -184,8 +184,8 @@ void GLRenderer::resize(int top, int left, size_t width, size_t height)
 {
     top_ = top;
     left_ = left;
-    width_ = width;
-    height_ = height;
+    width_ = (int)width;
+    height_ = (int)height;
 
     glEnable(GL_SCISSOR_TEST);
     glViewport(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));

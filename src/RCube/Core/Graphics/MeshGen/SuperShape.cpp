@@ -85,8 +85,8 @@ TriangleMeshData superShape(float radius, unsigned int rows, unsigned int cols, 
         }
     }
 
-    unsigned int npole_idx = data.vertices.size() - 2;
-    unsigned int spole_idx = data.vertices.size() - 1;
+    unsigned int npole_idx = static_cast<unsigned int>(data.vertices.size()) - 2;
+    unsigned int spole_idx = static_cast<unsigned int>(data.vertices.size()) - 1;
     for (unsigned int j = 0; j < cols; ++j)
     {
         // bottom cap

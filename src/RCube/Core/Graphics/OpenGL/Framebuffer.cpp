@@ -224,7 +224,8 @@ void Framebuffer::blit(Framebuffer &target_fbo, bool color, bool depth, bool ste
     {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBlitFramebuffer(0, 0, width_, height_, 0, 0, target_fbo.width(), target_fbo.height(), bits,
+    glBlitFramebuffer(0, 0, (GLint)width_, (GLint)height_, 0, 0, (GLint)target_fbo.width(),
+                      (GLint)target_fbo.height(), bits,
                       GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -248,7 +249,8 @@ void Framebuffer::blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color, boo
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
-    glBlitFramebuffer(0, 0, width_, height_, dst0.x, dst0.y, dst1.x, dst1.y, bits, GL_NEAREST);
+    glBlitFramebuffer(0, 0, (GLint)width_, (GLint)height_, dst0.x, dst0.y, dst1.x, dst1.y, bits,
+                      GL_NEAREST);
 }
 
 void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1,

@@ -72,7 +72,7 @@ BVHNodePtr buildBVH(std::vector<PrimitivePtr> &prims, size_t depth)
     std::vector<PrimitivePtr> right_primitives;
 
     // split along midpoint of longest axis
-    size_t axis = node->aabb.longestAxis();
+    glm::length_t axis = (glm::length_t)node->aabb.longestAxis();
     for (int i = 0; i < prims.size(); ++i)
     {
         const glm::vec3 &curr_midpt = prims[i]->position();

@@ -27,7 +27,7 @@ std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t
     tex->target_ = GL_TEXTURE_2D;
     glGenTextures(1, &tex->id_);
     tex->use();
-    glTexStorage2D(tex->target_, levels, (GLenum)internal_format, (GLsizei)width, (GLsizei)height);
+    glTexStorage2D(tex->target_, (GLsizei)levels, (GLenum)internal_format, (GLsizei)width, (GLsizei)height);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
     tex->done();
@@ -46,7 +46,7 @@ std::shared_ptr<Texture2D> Texture2D::createMS(size_t width, size_t height, size
     tex->target_ = GL_TEXTURE_2D_MULTISAMPLE;
     glGenTextures(1, &tex->id_);
     tex->use();
-    glTexStorage2DMultisample(tex->target_, tex->num_samples_, (GLenum)internal_format,
+    glTexStorage2DMultisample(tex->target_, (GLsizei)tex->num_samples_, (GLenum)internal_format,
                               (GLsizei)width, (GLsizei)height, GL_TRUE);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
@@ -166,7 +166,7 @@ void Texture2D::setWrapModeT(TextureWrapMode mode)
 void Texture2D::setData(const unsigned char *data, TextureFormat format, size_t level)
 {
     use();
-    glTexSubImage2D(target_, level, 0, 0, (GLsizei)width_, (GLsizei)height_, (GLenum)format,
+    glTexSubImage2D(target_, (GLint)level, 0, 0, (GLsizei)width_, (GLsizei)height_, (GLenum)format,
                     GL_UNSIGNED_BYTE, data);
     generateMipMap();
     done();
@@ -175,7 +175,7 @@ void Texture2D::setData(const unsigned char *data, TextureFormat format, size_t 
 void Texture2D::setData(const float *data, TextureFormat format, size_t level)
 {
     use();
-    glTexSubImage2D(target_, level, 0, 0, (GLsizei)width_, (GLsizei)height_, (GLenum)format,
+    glTexSubImage2D(target_, (GLint)level, 0, 0, (GLsizei)width_, (GLsizei)height_, (GLenum)format,
                     GL_FLOAT, data);
     generateMipMap();
     done();
@@ -258,7 +258,7 @@ void Texture2D::use(size_t unit)
         throw std::runtime_error(ERROR_TEXTURE_UNINITIALIZED);
     }
     unit_ = unit;
-    glActiveTexture(GL_TEXTURE0 + unit);
+    glActiveTexture(GL_TEXTURE0 + (GLenum)unit);
     glBindTexture(target_, id_);
 }
 
@@ -266,7 +266,7 @@ void Texture2D::done()
 {
     if (in_use_)
     {
-        glActiveTexture(GL_TEXTURE0 + unit_);
+        glActiveTexture(GL_TEXTURE0 + (GLenum)unit_);
         glBindTexture(target_, 0);
         in_use_ = false;
     }
@@ -292,7 +292,7 @@ std::shared_ptr<TextureCubemap> TextureCubemap::create(size_t width, size_t heig
     tex->seamless_ = seamless;
     glGenTextures(1, &tex->id_);
     tex->use();
-    glTexStorage2D(GL_TEXTURE_CUBE_MAP, levels, (GLenum)internal_format, (GLsizei)width,
+    glTexStorage2D(GL_TEXTURE_CUBE_MAP, (GLsizei)levels, (GLenum)internal_format, (GLsizei)width,
                    (GLsizei)height);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
@@ -348,7 +348,7 @@ void TextureCubemap::setData(int i, const unsigned char *data, size_t width, siz
         throw std::runtime_error(ERROR_IMAGE_TEXTURE_MISMATCH);
     }
     use();
-    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, 0, 0, (GLsizei)width_,
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, (GLint)level, 0, 0, (GLsizei)width_,
                     (GLsizei)height_,
                     (GLenum)format, GL_UNSIGNED_BYTE, data);
     width_ = width;
@@ -415,7 +415,7 @@ void TextureCubemap::use(size_t unit)
         glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
     unit_ = unit;
-    glActiveTexture(GL_TEXTURE0 + unit);
+    glActiveTexture(GL_TEXTURE0 + (GLenum)unit);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id_);
 }
 
@@ -423,7 +423,7 @@ void TextureCubemap::done()
 {
     if (in_use_)
     {
-        glActiveTexture(GL_TEXTURE0 + unit_);
+        glActiveTexture(GL_TEXTURE0 + (GLenum)unit_);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         in_use_ = false;
     }

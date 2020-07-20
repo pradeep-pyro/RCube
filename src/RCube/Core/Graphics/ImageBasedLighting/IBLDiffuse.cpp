@@ -110,8 +110,8 @@ IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create(resolution, resolution);
-    fbo_->addColorAttachment(TextureInternalFormat::RGB16F);
-    fbo_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    fbo_->setColorAttachment(0, TextureInternalFormat::RGB16F);
+    fbo_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8);
 
     // Matrices for rendering the cubemap from cameras set pointing at the
     // cube faces

@@ -106,19 +106,19 @@ void GLRenderer::cleanup()
     }
 }
 
-const glm::vec4 &GLRenderer::clearColor() const
+const glm::vec3 &GLRenderer::clearColor() const
 {
     return clear_color_;
 }
 
-void GLRenderer::setClearColor(const glm::vec4 &color)
+void GLRenderer::setClearColor(const glm::vec3 &color)
 {
     clear_color_ = color;
 }
 
 void GLRenderer::clear(bool color, bool depth, bool stencil)
 {
-    glClearColor(clear_color_[0], clear_color_[1], clear_color_[2], clear_color_[3]);
+    glClearColor(clear_color_[0], clear_color_[1], clear_color_[2], 1.0);
     GLbitfield clear_bits = 0;
     if (color)
     {
@@ -307,9 +307,6 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
 #endif
     assert(program != nullptr);
 
-    // Update settings
-    updateSettings(program->renderState());
-
     // Use shader and set uniforms
     program->use();
     Uniform u_model_matrix, u_normal_matrix;
@@ -325,7 +322,8 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     glBindVertexArray(mesh->vao());
     if (mesh->numIndexData() == 0)
     {
-        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0, static_cast<GLsizei>(mesh->numVertexData()));
+        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0,
+                     static_cast<GLsizei>(mesh->numVertexData()));
     }
     else
     {
@@ -334,7 +332,6 @@ void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &mod
     }
     glBindVertexArray(0);
 }
-
 
 void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world)
 {
@@ -373,6 +370,68 @@ void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_t
     glBindVertexArray(0);
 }
 
+void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls)
+{
+    // TODO(pradeep): Optimize redundant state changes
+    // Bind framebuffer
+    render_target.framebuffer->useForWrite();
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer->id());
+    // Clear buffers
+    if (render_target.clear_color_buffer || render_target.clear_depth_buffer ||
+        render_target.clear_stencil_buffer)
+    {
+        glClearColor(render_target.clear_color[0], render_target.clear_color[1],
+                     render_target.clear_color[2], render_target.clear_color[3]);
+        GLbitfield clear_bits = 0;
+        if (render_target.clear_color_buffer)
+        {
+            clear_bits |= GL_COLOR_BUFFER_BIT;
+        }
+        if (render_target.clear_depth_buffer)
+        {
+            clear_bits |= GL_DEPTH_BUFFER_BIT;
+        }
+        if (render_target.clear_stencil_buffer)
+        {
+            clear_bits |= GL_STENCIL_BUFFER_BIT;
+        }
+        glClear(clear_bits);
+    }
+
+    // Draw
+    for (const DrawCall& dc : drawcalls)
+    {
+        // Change state
+        updateSettings(dc.state);
+        // Bind shader
+        dc.shader->use();
+        // Set uniforms
+        dc.update_uniforms(dc.shader);
+        // Bind textures
+        for (const DrawCall::DrawCallTexture2D & dctex : dc.textures)
+        {
+            dctex.texture->use(dctex.unit);
+        }
+        for (const DrawCall::DrawCallTextureCubemap &dccub : dc.cubemaps)
+        {
+            dccub.texture->use(dccub.unit);
+        }
+        // Draw
+        glBindVertexArray(dc.mesh->vao());
+        if (dc.mesh->numIndexData() == 0)
+        {
+            glDrawArrays(static_cast<GLint>(dc.mesh->primitive()), 0,
+                         static_cast<GLsizei>(dc.mesh->numVertexData()));
+        }
+        else
+        {
+            glDrawElements(static_cast<GLint>(dc.mesh->primitive()),
+                           (GLsizei)dc.mesh->numIndexData(),
+                           GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
+        }
+    }
+}
+
 void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
 {
     glDepthMask(GL_FALSE);
@@ -388,7 +447,7 @@ void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
 {
     effect->use();
     // Bind the input framebuffer's texture
-    input->colorAttachment(0)->use(0);
+    // input->colorAttachment(0)->use(0);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     quad_mesh_->use();

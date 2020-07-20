@@ -129,16 +129,6 @@ void ShaderProgram::showWarnings(bool flag)
     warn_ = flag;
 }
 
-RenderSettings &ShaderProgram::renderState()
-{
-    return render_state_;
-}
-
-RenderPriority &ShaderProgram::renderPriority()
-{
-    return render_priority_;
-}
-
 void ShaderProgram::addShader(GLuint type, const std::string &source, bool debug)
 {
     // Create a new program if not already done

@@ -16,7 +16,8 @@ void main() {
 }
 )";
 
-std::shared_ptr<ShaderProgram> makeEffect(const std::string &fragment_shader)
+std::shared_ptr<ShaderProgram> makeEffect(const std::string
+    &fragment_shader)
 {
     return ShaderProgram::create(EffectVertexShader, fragment_shader, true);
 }

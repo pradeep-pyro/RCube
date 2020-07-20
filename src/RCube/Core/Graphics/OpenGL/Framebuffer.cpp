@@ -20,6 +20,24 @@ GLuint Framebuffer::id() const
     return id_;
 }
 
+void Framebuffer::setDrawBuffers(const std::vector<int> &attachment_indices)
+{
+    use();
+    std::vector<GLenum> draw_bufs;
+    draw_bufs.reserve(attachment_indices.size());
+    for (int att : attachment_indices)
+    {
+        draw_bufs.push_back(GL_COLOR_ATTACHMENT0 + att);
+    }
+    glDrawBuffers((GLsizei)draw_bufs.size(), draw_bufs.data());
+    done();
+}
+
+void Framebuffer::setReadBuffer(int attachment_index)
+{
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_index);
+}
+
 size_t Framebuffer::width() const
 {
     return width_;
@@ -37,6 +55,7 @@ std::shared_ptr<Framebuffer> Framebuffer::create(size_t width, size_t height)
     fbo->width_ = width;
     fbo->height_ = height;
     fbo->has_depth_stencil_ = false;
+    fbo->colors_.resize(8, nullptr);
     return fbo;
 }
 
@@ -53,11 +72,6 @@ bool Framebuffer::initialized() const
 void Framebuffer::release()
 {
     glDeleteFramebuffers(1, &id_);
-    clearColorAttachments();
-    if (hasDepthStencilAttachment())
-    {
-        depth_stencil_->release();
-    }
     id_ = 0;
 }
 
@@ -67,13 +81,34 @@ void Framebuffer::use()
     {
         throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
     }
+    glBindFramebuffer(GL_FRAMEBUFFER, id_);
+}
+
+void Framebuffer::useForWrite()
+{
+    if (!initialized())
+    {
+        throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
+    }
     /*if (!isComplete())
     {
         throw std::runtime_error(ERROR_FRAMEBUFFER_NOT_COMPLETE);
     }*/
-    glBindFramebuffer(GL_FRAMEBUFFER, id_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id_);
 }
 
+void Framebuffer::useForRead()
+{
+    if (!initialized())
+    {
+        throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
+    }
+    /*if (!isComplete())
+    {
+        throw std::runtime_error(ERROR_FRAMEBUFFER_NOT_COMPLETE);
+    }*/
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
+}
 void Framebuffer::done() const
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -87,8 +122,8 @@ bool Framebuffer::isComplete()
     return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
-void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size_t levels,
-                                     size_t samples)
+void Framebuffer::setColorAttachment(size_t index, TextureInternalFormat internal_format,
+                                     size_t levels, size_t samples)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, id_);
     std::shared_ptr<Texture2D> tex;
@@ -101,23 +136,23 @@ void Framebuffer::addColorAttachment(TextureInternalFormat internal_format, size
     {
         tex = Texture2D::createMS(width_, height_, samples, internal_format);
     }
-    colors_.push_back(tex);
-    unsigned int index = static_cast<unsigned int>(colors_.size() - 1);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(),
-                           colors_[colors_.size() - 1]->id(), 0);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
-    glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(), tex->id(),
+                           0);
+    colors_[index] = tex;
+    // glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
+    // glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::addColorAttachment(std::shared_ptr<Texture2D> tex, int index)
+void Framebuffer::setColorAttachment(size_t index, std::shared_ptr<Texture2D> tex)
 {
     assert(tex->valid());
     glBindFramebuffer(GL_FRAMEBUFFER, id_);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(), tex->id(),
                            0);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
-    glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+    colors_[index] = tex;
+    // glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
+    // glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -125,6 +160,10 @@ void Framebuffer::clearColorAttachments()
 {
     for (auto &tex : colors_)
     {
+        if (tex == nullptr)
+        {
+            continue;
+        }
         tex->release();
     }
 }
@@ -139,6 +178,10 @@ void Framebuffer::resize(size_t width, size_t height)
     height_ = height;
     for (size_t i = 0; i < colors_.size(); ++i)
     {
+        if (colors_[i] == nullptr)
+        {
+            continue;
+        }
         auto new_tex =
             Texture2D::create(width, height, colors_[i]->levels(), colors_[i]->internalFormat());
         colors_[i]->release();
@@ -153,7 +196,7 @@ void Framebuffer::resize(size_t width, size_t height)
     }
 }
 
-void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size_t samples)
+void Framebuffer::setDepthAttachment(TextureInternalFormat internal_format, size_t samples)
 {
     use();
     assert(internal_format == TextureInternalFormat::Depth16 ||
@@ -171,6 +214,33 @@ void Framebuffer::addDepthAttachment(TextureInternalFormat internal_format, size
     {
         depth_stencil_ = Texture2D::createMS(width_, height_, samples, internal_format);
     }
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_stencil_->target(),
+                           depth_stencil_->id(), 0);
+    has_depth_stencil_ = true;
+    done();
+}
+
+void Framebuffer::setDepthAttachment(std::shared_ptr<Texture2D> tex)
+{
+    auto internal_format = tex->internalFormat();
+    assert(internal_format == TextureInternalFormat::Depth16 ||
+           internal_format == TextureInternalFormat::Depth24 ||
+           internal_format == TextureInternalFormat::Depth32 ||
+           internal_format == TextureInternalFormat::Depth32F);
+    use();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->target(), tex->id(), 0);
+    depth_stencil_ = tex;
+    has_depth_stencil_ = true;
+    done();
+}
+
+void Framebuffer::setDepthStencilAttachment(std::shared_ptr<Texture2D> tex)
+{
+    auto internal_format = tex->internalFormat();
+    assert(internal_format == TextureInternalFormat::Depth24Stencil8 ||
+           internal_format == TextureInternalFormat::Depth32FStencil8);
+    use();
+    depth_stencil_ = tex;
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_stencil_->target(),
                            depth_stencil_->id(), 0);
     has_depth_stencil_ = true;
@@ -225,8 +295,7 @@ void Framebuffer::blit(Framebuffer &target_fbo, bool color, bool depth, bool ste
         bits |= GL_STENCIL_BUFFER_BIT;
     }
     glBlitFramebuffer(0, 0, (GLint)width_, (GLint)height_, 0, 0, (GLint)target_fbo.width(),
-                      (GLint)target_fbo.height(), bits,
-                      GL_NEAREST);
+                      (GLint)target_fbo.height(), bits, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -246,7 +315,7 @@ void Framebuffer::blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color, boo
     {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
     glBlitFramebuffer(0, 0, (GLint)width_, (GLint)height_, dst0.x, dst0.y, dst1.x, dst1.y, bits,

@@ -13,6 +13,7 @@ namespace rcube
 
 class CameraSystem;
 class RenderSystem;
+class DeferredRenderSystem;
 
 constexpr glm::vec3 XAXIS_POSITIVE = glm::vec3(+1, 0, 0);
 constexpr glm::vec3 XAXIS_NEGATIVE = glm::vec3(-1, 0, 0);
@@ -46,15 +47,18 @@ class Camera : public Component<Camera>
     float orthographic_size =
         2; /// Used to control field of view indirectly when using orthographic projection
     glm::vec3 target = glm::vec3(0.f, 0.f, 0.f);
-    bool rendering =
-        true;                                   /// Whether the camera is actively rendering
+    bool rendering = true;                      /// Whether the camera is actively rendering
     glm::ivec2 viewport_origin = glm::ivec2(0); /// Origin of the viewport where the scene is drawn
     glm::ivec2 viewport_size =
         glm::ivec2(1280, 720); /// Size of the viewport where the scene is drawn
-    glm::vec4 background_color =
-        glm::vec4(1); /// Background color for the scene when viewed from this camera
+    glm::vec3 background_color =
+        glm::vec3(1); /// Background color for the scene when viewed from this camera
     std::shared_ptr<TextureCubemap> skybox; /// Skybox texture
     bool use_skybox = false;                /// Whether to draw a skybox
+    std::shared_ptr<TextureCubemap> irradiance;
+    std::shared_ptr<TextureCubemap> prefilter;
+    std::shared_ptr<Texture2D> brdfLUT;
+
     std::vector<std::shared_ptr<ShaderProgram>>
         postprocess; /// Postprocessing effects applied to the scene in order
 
@@ -82,11 +86,12 @@ class Camera : public Component<Camera>
     void drawGUI();
 
   private:
-    friend class CameraSystem;        // This will update the camera matrices
-    friend class RenderSystem;        // This will make use of the matrices
-    glm::mat4 world_to_view;          /// World to camera transformation
-    glm::mat4 view_to_projection;     /// Camera to projection transformation
-    glm::mat4 projection_to_viewport; /// Projectin to viewport transformation
+    friend class CameraSystem;         // This will update the camera matrices
+    friend class RenderSystem;         // This will make use of the matrices
+    friend class DeferredRenderSystem; // This will make use of the matrices
+    glm::mat4 world_to_view;           /// World to camera transformation
+    glm::mat4 view_to_projection;      /// Camera to projection transformation
+    glm::mat4 projection_to_viewport;  /// Projectin to viewport transformation
 };
 
 } // namespace rcube

@@ -12,9 +12,9 @@ void initGL(procAddress p)
         throw std::runtime_error("Failed to initialize OpenGL context");
     }
 
-    if (GLVersion.major != 4 || GLVersion.minor < 2)
+    if (GLVersion.major != 4 || GLVersion.minor < 5)
     {
-        throw std::runtime_error("RCube requires OpenGL 4.2");
+        throw std::runtime_error("RCube requires OpenGL 4.5");
     }
 }
 

@@ -52,15 +52,15 @@ void RenderSystem::drawEntity(Entity ent)
 void RenderSystem::initialize()
 {
     framebufferms_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    framebufferms_->addColorAttachment(TextureInternalFormat::RGBA16, 1, msaa_);
-    framebufferms_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8, msaa_);
+    framebufferms_->setColorAttachment(0, TextureInternalFormat::RGBA16, 1, msaa_);
+    framebufferms_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8, msaa_);
     assert(framebufferms_->isComplete());
     framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    framebuffer_->addColorAttachment(TextureInternalFormat::RGBA16);
-    framebuffer_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    framebuffer_->setColorAttachment(0, TextureInternalFormat::RGBA16);
+    framebuffer_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8);
     assert(framebuffer_->isComplete());
     effect_framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    effect_framebuffer_->addColorAttachment(TextureInternalFormat::RGBA16);
+    effect_framebuffer_->setColorAttachment(0, TextureInternalFormat::RGBA16);
     assert(effect_framebuffer_->isComplete());
     renderer.initialize();
 }

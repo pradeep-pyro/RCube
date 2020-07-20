@@ -253,8 +253,8 @@ IBLSpecularSplitSum::IBLSpecularSplitSum(unsigned int resolution, int num_sample
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create(resolution, resolution);
-    fbo_->addColorAttachment(TextureInternalFormat::RGB16F);
-    fbo_->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    fbo_->setColorAttachment(0, TextureInternalFormat::RGB16F);
+    fbo_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8);
 
     // Matrices for rendering the cubemap from cameras set pointing at the
     // cube faces
@@ -332,13 +332,15 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
 
 std::shared_ptr<Texture2D> IBLSpecularSplitSum::integrateBRDF(unsigned int resolution)
 {
-    auto brdf_lut = Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RG16F);
+    std::shared_ptr<Texture2D> brdf_lut =
+        Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RG16F);
     brdf_lut->setWrapMode(TextureWrapMode::ClampToEdge);
     brdf_lut->setFilterMode(TextureFilterMode::Linear);
 
     auto fbo = Framebuffer::create(resolution, resolution);
-    fbo->addColorAttachment(brdf_lut, 0);
-    fbo->addDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    fbo->setColorAttachment(0, brdf_lut);
+    fbo->setDrawBuffers({0});
+    fbo->setDepthAttachment(TextureInternalFormat::Depth32F);
     fbo->use();
     rdr_.resize(0, 0, resolution, resolution);
     rdr_.clear();

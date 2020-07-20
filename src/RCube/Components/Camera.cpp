@@ -43,7 +43,7 @@ void Camera::drawGUI()
     }
     ImGui::InputFloat("Near Plane", &near_plane);
     ImGui::InputFloat("Far Plane", &far_plane);
-    ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color));
+    ImGui::ColorEdit3("Background Color", glm::value_ptr(background_color));
     ImGui::Checkbox("Skybox", &use_skybox);
 }
 

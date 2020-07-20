@@ -1,20 +1,52 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#pragma once
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include <memory>
 #include <vector>
-
+#include <functional>
+#include "RCube/Core/Graphics/Materials/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 #include "RCube/Core/Graphics/OpenGL/Image.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
-#include "RCube/Core/Graphics/Materials/Material.h"
 
 namespace rcube
 {
+
+struct RenderTarget
+{
+    std::shared_ptr<Framebuffer> framebuffer;
+    glm::vec3 clear_color;
+    bool clear_color_buffer = true;
+    bool clear_depth_buffer = true;
+    bool clear_stencil_buffer = true;
+    glm::ivec2 viewport_origin;
+    glm::ivec2 viewport_size;
+};
+
+struct DrawCall
+{
+    struct DrawCallTexture2D
+    {
+        std::shared_ptr<Texture2D> texture = nullptr;
+        int unit = 0;
+    };
+
+    struct DrawCallTextureCubemap
+    {
+        std::shared_ptr<TextureCubemap> texture = nullptr;
+        int unit = 0;
+    };
+
+    std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<ShaderProgram> shader;
+    std::function<void(std::shared_ptr<ShaderProgram>)> update_uniforms;
+    std::vector<DrawCallTexture2D> textures;
+    std::vector<DrawCallTextureCubemap> cubemaps;
+    RenderSettings state;
+};
 
 class GLRenderer
 {
@@ -43,12 +75,13 @@ class GLRenderer
     void setLights(const std::vector<Light> &lights);
 
     void setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
-                   const glm::mat4 &view_to_projection,
-                   const glm::mat4 &projection_to_viewport);
+                   const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
 
     void render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world);
 
     void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
+
+    void draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls);
 
     void renderSkyBox(std::shared_ptr<TextureCubemap> cubemap);
 
@@ -63,14 +96,14 @@ class GLRenderer
      * passed to glClearColor()
      * @return clear color
      */
-    const glm::vec4 &clearColor() const;
+    const glm::vec3 &clearColor() const;
 
     /**
      * @brief setClearColor Sets the color that is used to clear the screen i.e.,
      * passed to glClearColor()
      * @param color clear color
      */
-    void setClearColor(const glm::vec4 &color);
+    void setClearColor(const glm::vec3 &color);
 
     /**
      * @brief clear Clear the screen (calls glClear()) with set clear bits
@@ -94,7 +127,7 @@ class GLRenderer
     int top_, left_, width_, height_;
 
     // Clear settings
-    glm::vec4 clear_color_;
+    glm::vec3 clear_color_;
 
     // Dirty flags
     bool init_;
@@ -105,5 +138,3 @@ class GLRenderer
 };
 
 } // namespace rcube
-
-#endif // RENDERER_H

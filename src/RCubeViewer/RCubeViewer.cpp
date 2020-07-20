@@ -4,7 +4,10 @@
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
 #include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
+#include "RCube/Core/Graphics/MeshGen/Plane.h"
+#include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Core/Graphics/TexGen/Gradient.h"
+#include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Systems/CameraControllerSystem.h"
@@ -42,7 +45,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    world_.addSystem(std::make_unique<RenderSystem>(props.resolution, props.MSAA));
+    // world_.addSystem(std::make_unique<RenderSystem>(props.resolution, props.MSAA));
+    world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution, props.MSAA));
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
 
@@ -55,10 +59,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Make a default skybox
     camera_.get<Camera>()->skybox = TextureCubemap::create(256, 256);
-    glm::vec3 color_top =
-        glm::pow(glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f), glm::vec3(2.2f));
-    glm::vec3 color_bot =
-        glm::pow(glm::vec3(100.f / 255.f, 93 / 255.f, 86.f / 255.f), glm::vec3(2.2f));
+    glm::vec3 color_top = glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f);
+    glm::vec3 color_bot = glm::vec3(100.f / 255.f, 93 / 255.f, 86.f / 255.f);
     Image front_back = gradientV(256, 256, color_top, color_bot, 10.f);
     Image top = gradientV(256, 256, color_top, color_top, 10.f);
     Image bottom = gradientV(256, 256, color_bot, color_bot, 10.f);
@@ -71,7 +73,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveZ, front_back);
     camera_.get<Camera>()->use_skybox = true;
     // Add gamma correction
-    camera_.get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
+    // camera_.get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
     // Put a directional light on the camera
     camera_.add<DirectionalLight>();
     // Create a ground plane
@@ -318,30 +320,14 @@ void RCubeViewer::updateImageBasedLighting()
     auto skybox = camera_.get<Camera>()->skybox;
     if (skybox != nullptr)
     {
-        std::shared_ptr<TextureCubemap> irradiance_map;
-        std::shared_ptr<TextureCubemap> prefilter_map;
-        std::shared_ptr<Texture2D> brdf_lut;
-        {
-            IBLDiffuse diff;
-            irradiance_map = diff.irradiance(skybox);
-            IBLSpecularSplitSum spec;
-            prefilter_map = spec.prefilter(skybox);
-            brdf_lut = spec.integrateBRDF();
-        }
-
-        for (auto ent_it = world_.entities(); ent_it.hasNext();)
-        {
-            auto ent = ent_it.next();
-            if (ent.has<Drawable>())
-            {
-                auto mat = ent.get<Drawable>()->material;
-                auto pbrmat = std::dynamic_pointer_cast<PhysicallyBasedMaterial>(mat);
-                if (pbrmat != nullptr)
-                {
-                    pbrmat->setIBLMaps(irradiance_map, prefilter_map, brdf_lut);
-                }
-            }
-        }
+        IBLDiffuse diff;
+        std::shared_ptr<TextureCubemap> irradiance_map = diff.irradiance(skybox);
+        IBLSpecularSplitSum spec;
+        std::shared_ptr<TextureCubemap> prefilter_map = spec.prefilter(skybox);
+        std::shared_ptr<Texture2D> brdf_lut = spec.integrateBRDF();
+        camera_.get<Camera>()->irradiance = irradiance_map;
+        camera_.get<Camera>()->prefilter = prefilter_map;
+        camera_.get<Camera>()->brdfLUT = brdf_lut;
     }
 }
 
@@ -369,11 +355,21 @@ EntityHandle RCubeViewer::createGroundPlane()
     /*std::shared_ptr<Mesh> gridMesh =
         Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
                           glm::vec3(0.0, 0.0, 0.0)));*/
-    std::shared_ptr<Mesh> mesh =
+    /*std::shared_ptr<Mesh> mesh =
         Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
-                          glm::vec3(0.0, 0.0, 0.0)));
+                          glm::vec3(0.0, 0.0, 0.0)));*/
+    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 2, 2, Orientation::PositiveY));
     mesh->uploadToGPU();
-    auto mat = std::make_shared<FlatMaterial>();
+    /*auto mat = std::make_shared<FlatMaterial>();
+    ground_ = createSurface();
+    ground_.get<Drawable>()->mesh = mesh;
+    ground_.get<Drawable>()->material = mat;
+    return ground_;*/
+    auto mat = std::make_shared<PhysicallyBasedMaterial>();
+    mat->albedo = glm::vec3(1);
+    mat->roughness = 0.5f;
+    mat->albedo_texture = Texture2D::create(1024, 1024, 1);
+    mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.5f)));
     ground_ = createSurface();
     ground_.get<Drawable>()->mesh = mesh;
     ground_.get<Drawable>()->material = mat;

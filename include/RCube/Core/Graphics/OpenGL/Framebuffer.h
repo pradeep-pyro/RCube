@@ -40,6 +40,14 @@ class Framebuffer
      */
     void use();
     /**
+     * Bind and use the framebuffer for writing
+     */
+    void useForWrite();
+    /**
+     * Bind and use the framebuffer for reading
+     */
+    void useForRead();
+    /**
      * Unbind the framebuffer
      */
     void done() const;
@@ -49,13 +57,18 @@ class Framebuffer
      */
     GLuint id() const;
 
+    void setDrawBuffers(const std::vector<int> &attachment_indices);
+
+    void setReadBuffer(int attachment_index);
+
     /**
      * Add another color attachment
      * @param format Format of the color buffer in the GPU
      */
-    void addColorAttachment(TextureInternalFormat format, size_t levels = 1, size_t samples = 0);
+    void setColorAttachment(size_t index, TextureInternalFormat format, size_t levels = 1,
+                            size_t samples = 0);
 
-    void addColorAttachment(std::shared_ptr<Texture2D> tex, int index);
+    void setColorAttachment(size_t index, std::shared_ptr<Texture2D> tex);
 
     void clearColorAttachments();
 
@@ -67,7 +80,14 @@ class Framebuffer
      * Add/replace the depth attachment
      * @param format Format of the depth buffer in the GPU
      */
-    void addDepthAttachment(TextureInternalFormat format, size_t samples = 0);
+    void setDepthAttachment(TextureInternalFormat format, size_t samples = 0);
+
+    void setDepthAttachment(std::shared_ptr<Texture2D> tex);
+
+    /**
+     * Add/replace the depth-stencil attachment
+     */
+    void setDepthStencilAttachment(std::shared_ptr<Texture2D> tex);
 
     /**
      * Returns the ith color attachment

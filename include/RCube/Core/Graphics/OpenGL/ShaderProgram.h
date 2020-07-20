@@ -215,26 +215,8 @@ class ShaderProgram
     GLuint location_;
     std::vector<GLint> shaders_;
     bool warn_ = true;
-    // std::vector<ShaderAttributeDesc> attributes_;
     std::unordered_map<std::string, ShaderAttributeDesc> attributes_;
-    // std::vector<ShaderUniformDesc> available_uniforms_;
     std::unordered_map<std::string, Uniform> uniforms_;
-    struct TextureSampler
-    {
-        GLint unit;
-        std::shared_ptr<Texture2D> texture;
-    };
-    struct CubemapSampler
-    {
-        GLint unit;
-        std::shared_ptr<TextureCubemap> cubemap;
-    };
-    std::unordered_map<std::string, TextureSampler> textures_;
-    std::unordered_map<std::string, CubemapSampler> cubemaps_;
-    std::unordered_map<std::string, GLint> texture_unit_;
-    std::unordered_map<std::string, GLint> cubemap_unit_;
-    RenderSettings render_state_;
-    RenderPriority render_priority_ = RenderPriority::Opaque;
 
   public:
     ShaderProgram();
@@ -259,9 +241,6 @@ class ShaderProgram
     GLint attributeLocation(const std::string &name) const;
     GLint uniformLocation(const std::string &name) const;
     void showWarnings(bool flag);
-    const std::vector<ShaderUniformDesc> &availableUniforms() const;
-    RenderSettings &renderState();
-    RenderPriority &renderPriority();
 
   private:
     void addShader(GLuint type, const std::string &source, bool debug = false);

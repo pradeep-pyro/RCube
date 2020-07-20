@@ -261,25 +261,25 @@ void main() {
     out_color = vec4(result, 1.0);
 }
 )";
-
-std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color,
-                                                      glm::vec3 specular_color, float shininess,
-                                                      bool wireframe)
-{
-    auto prog = ShaderProgram::create(BlinnPhongVertexShader, BlinnPhongGeometryShader,
-                                      BlinnPhongFragmentShader, true);
-    prog->renderPriority() = RenderPriority::Opaque;
-    prog->uniform("diffuse").set(diffuse_color);
-    prog->uniform("specular").set(specular_color);
-    prog->uniform("shininess").set(shininess);
-    prog->uniform("show_wireframe").set(wireframe);
-    prog->uniform("wireframe_thickness").set(1.f);
-    prog->uniform("blend_environment_map").set(1);
-    prog->renderState().depth_test = true;
-    prog->renderState().depth_write = true;
-    prog->renderState().blending = false;
-    prog->renderState().culling = false;
-    return prog;
-}
+//
+//std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color,
+//                                                      glm::vec3 specular_color, float shininess,
+//                                                      bool wireframe)
+//{
+//    auto prog = ShaderProgram::create(BlinnPhongVertexShader, BlinnPhongGeometryShader,
+//                                      BlinnPhongFragmentShader, true);
+//    prog->renderPriority() = RenderPriority::Opaque;
+//    prog->uniform("diffuse").set(diffuse_color);
+//    prog->uniform("specular").set(specular_color);
+//    prog->uniform("shininess").set(shininess);
+//    prog->uniform("show_wireframe").set(wireframe);
+//    prog->uniform("wireframe_thickness").set(1.f);
+//    prog->uniform("blend_environment_map").set(1);
+//    prog->renderState().depth_test = true;
+//    prog->renderState().depth_write = true;
+//    prog->renderState().blending = false;
+//    prog->renderState().culling = false;
+//    return prog;
+//}
 
 } // namespace rcube

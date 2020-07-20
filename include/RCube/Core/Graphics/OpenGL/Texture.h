@@ -76,6 +76,7 @@ class Texture2D
   public:
     Texture2D() = default;
     ~Texture2D();
+    Texture2D(const Texture2D &other) = delete;
     static std::shared_ptr<Texture2D>
     create(size_t width, size_t height, size_t levels,
            TextureInternalFormat internal_format = TextureInternalFormat::RGBA8);

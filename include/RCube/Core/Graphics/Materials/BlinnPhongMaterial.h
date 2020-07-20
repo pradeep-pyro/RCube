@@ -11,10 +11,10 @@ namespace rcube
  * BlinnPhongMaterial is for displaying shiny surfaces with specular highlights.
  * It uses a Blinn-Phong per-pixel shading model which is not physically-based.
  */
-std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color = glm::vec3(1.0),
-                                                      glm::vec3 specular_color = glm::vec3(0.5f),
-                                                      float shininess = 4.f,
-                                                      bool wireframe = false);
+//std::shared_ptr<ShaderProgram> makeBlinnPhongMaterial(glm::vec3 diffuse_color = glm::vec3(1.0),
+//                                                      glm::vec3 specular_color = glm::vec3(0.5f),
+//                                                      float shininess = 4.f,
+//                                                      bool wireframe = false);
 
 } // namespace rcube
 

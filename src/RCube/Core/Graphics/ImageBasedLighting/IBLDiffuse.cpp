@@ -109,9 +109,9 @@ IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
                                     DiffuseIrradianceFragmentShader, true);
 
     // Create framebuffer to hold result
-    fbo_ = Framebuffer::create(resolution, resolution);
-    fbo_->setColorAttachment(0, TextureInternalFormat::RGB16F);
-    fbo_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    fbo_ = Framebuffer::create();
+    fbo_->setColorAttachment(0, Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RGB16F));
+    fbo_->setDepthAttachment(Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth24Stencil8));
 
     // Matrices for rendering the cubemap from cameras set pointing at the
     // cube faces
@@ -162,8 +162,7 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
         rdr_.render(cube_.get(), shader_.get(), eye);
         irradiance_map->use();
         glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0,
-                            static_cast<GLsizei>(fbo_->width()),
-                            static_cast<GLsizei>(fbo_->height()));
+                            static_cast<GLsizei>(resolution_), static_cast<GLsizei>(resolution_));
     }
     fbo_->done();
 

@@ -279,7 +279,7 @@ void main()
 
 std::shared_ptr<Framebuffer> createGBuffer(size_t width, size_t height)
 {
-    auto fbo = Framebuffer::create(width, height);
+    auto fbo = Framebuffer::create();
     // Positions
     auto positions = Texture2D::create(width, height, 1, TextureInternalFormat::RGBA16F);
     positions->setFilterMode(TextureFilterMode::Nearest);
@@ -325,8 +325,9 @@ void DeferredRenderSystem::initialize()
     gbuffer_ = createGBuffer(resolution_.x, resolution_.y);
     gbuffer_shader_ = ShaderProgram::create(GBufferVertexShader, GBufferFragmentShader, true);
     lighting_shader_ = makeEffect(PBRLightingPassShader);
-    framebuffer_hdr_ = Framebuffer::create(resolution_.x, resolution_.y);
-    framebuffer_hdr_->setColorAttachment(0, TextureInternalFormat::RGB16F, 1);
+    framebuffer_hdr_ = Framebuffer::create();
+    auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
+    framebuffer_hdr_->setColorAttachment(0, color);
     auto depth =
         Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32FStencil8);
     framebuffer_hdr_->setDepthStencilAttachment(depth);
@@ -380,7 +381,7 @@ void DeferredRenderSystem::update(bool force)
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_DEPTH_TEST);
         glStencilMask(0xFF);
-                        
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glCullFace(GL_BACK);
         glDepthMask(GL_TRUE);
@@ -426,7 +427,8 @@ void DeferredRenderSystem::update(bool force)
             renderer_.render(mesh, gbuffer_shader_.get(), tr->worldTransform());
         }
         gbuffer_->done();
-        gbuffer_->blit(*framebuffer_hdr_, false, true, true);
+        gbuffer_->blit(*framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
+                       true);
         framebuffer_hdr_->useForWrite();
         glClear(GL_COLOR_BUFFER_BIT);
         glDisable(GL_STENCIL_TEST);

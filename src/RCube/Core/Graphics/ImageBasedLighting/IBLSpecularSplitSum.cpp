@@ -251,11 +251,6 @@ IBLSpecularSplitSum::IBLSpecularSplitSum(unsigned int resolution, int num_sample
     shader_brdf_ =
         ShaderProgram::create(SpecularBrdfVertexShader, SpecularBrdfFragmentShader, true);
 
-    // Create framebuffer to hold result
-    fbo_ = Framebuffer::create(resolution, resolution);
-    fbo_->setColorAttachment(0, TextureInternalFormat::RGB16F);
-    fbo_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8);
-
     // Matrices for rendering the cubemap from cameras set pointing at the
     // cube faces
     projection_ = glm::perspective(glm::radians(90.f), 1.f, 0.1f, 10.f);
@@ -274,7 +269,6 @@ IBLSpecularSplitSum::~IBLSpecularSplitSum()
 {
     cube_->release();
     rdr_.cleanup();
-    fbo_->release();
     shader_->release();
     shader_brdf_->release();
 }
@@ -301,6 +295,22 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
 
+    std::vector<std::shared_ptr<Framebuffer>> fbos;
+    fbos.reserve(num_mipmaps);
+    for (unsigned int mip = 0; mip < num_mipmaps; ++mip)
+    {
+        // Resize framebuffer tetures according to mipmap size
+        unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
+        unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
+        auto color = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::RGB16F);
+        auto depth = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::Depth24Stencil8);
+        auto fbo = Framebuffer::create();
+        fbo->setColorAttachment(0, color);
+        fbo->setDepthStencilAttachment(depth);
+        std::cout << "complete: " << fbo->isComplete() << std::endl;
+        fbos.push_back(fbo);
+    }
+
     glm::mat4 eye(1.0);
     const glm::vec3 eye_pos(0., 0., 0.);
     for (unsigned int mip = 0; mip < num_mipmaps; ++mip)
@@ -308,9 +318,8 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         // Resize framebuffer and viewport according to mipmap size
         unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
-        fbo_->resize(mip_width, mip_height);
         rdr_.resize(0, 0, mip_width, mip_height);
-        fbo_->use();
+        fbos[mip]->use();
 
         float roughness = static_cast<float>(mip) / static_cast<float>(num_mipmaps - 1);
         shader_->uniform("roughness").set(roughness);
@@ -324,7 +333,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
             glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mip, 0, 0, 0, 0, mip_width,
                                 mip_height);
         }
-        fbo_->done();
+        fbos[mip]->done();
     }
 
     return prefiltered_map;
@@ -337,10 +346,10 @@ std::shared_ptr<Texture2D> IBLSpecularSplitSum::integrateBRDF(unsigned int resol
     brdf_lut->setWrapMode(TextureWrapMode::ClampToEdge);
     brdf_lut->setFilterMode(TextureFilterMode::Linear);
 
-    auto fbo = Framebuffer::create(resolution, resolution);
+    auto fbo = Framebuffer::create();
     fbo->setColorAttachment(0, brdf_lut);
     fbo->setDrawBuffers({0});
-    fbo->setDepthAttachment(TextureInternalFormat::Depth32F);
+    fbo->setDepthAttachment(Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth32F));
     fbo->use();
     rdr_.resize(0, 0, resolution, resolution);
     rdr_.clear();

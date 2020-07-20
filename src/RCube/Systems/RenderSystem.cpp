@@ -51,16 +51,21 @@ void RenderSystem::drawEntity(Entity ent)
 
 void RenderSystem::initialize()
 {
-    framebufferms_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    framebufferms_->setColorAttachment(0, TextureInternalFormat::RGBA16, 1, msaa_);
-    framebufferms_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8, msaa_);
+    framebufferms_ = Framebuffer::create();
+    framebufferms_->setColorAttachment(
+        0, Texture2D::createMS(resolution_.x, resolution_.y, msaa_, TextureInternalFormat::RGBA16));
+    framebufferms_->setDepthStencilAttachment(Texture2D::createMS(
+        resolution_.x, resolution_.y, msaa_, TextureInternalFormat::Depth24Stencil8));
     assert(framebufferms_->isComplete());
-    framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    framebuffer_->setColorAttachment(0, TextureInternalFormat::RGBA16);
-    framebuffer_->setDepthAttachment(TextureInternalFormat::Depth24Stencil8);
+    framebuffer_ = Framebuffer::create();
+    framebuffer_->setColorAttachment(
+        0, Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGBA16));
+    framebuffer_->setDepthAttachment(
+        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth24Stencil8));
     assert(framebuffer_->isComplete());
-    effect_framebuffer_ = Framebuffer::create(resolution_[0], resolution_[1]);
-    effect_framebuffer_->setColorAttachment(0, TextureInternalFormat::RGBA16);
+    effect_framebuffer_ = Framebuffer::create();
+    effect_framebuffer_->setColorAttachment(
+        0, Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGBA16));
     assert(effect_framebuffer_->isComplete());
     renderer.initialize();
 }
@@ -120,7 +125,8 @@ void RenderSystem::update(bool /* force */)
 
         // Set and clear draw area
         render_fbo->use();
-        renderer.resize(0, 0, render_fbo->width(), render_fbo->height());
+        renderer.resize(0, 0, render_fbo->colorAttachment(0)->width(),
+                        render_fbo->colorAttachment(0)->height());
         renderer.setClearColor(cam->background_color);
         renderer.clear(true, true, true);
 
@@ -144,7 +150,7 @@ void RenderSystem::update(bool /* force */)
         // Blit multisample framebuffer content to regular framebuffer
         if (msaa_ > 0)
         {
-            framebufferms_->blit(*framebuffer_);
+            framebufferms_->blit(*framebuffer_, {0, 0}, resolution_, {0, 0}, resolution_);
         }
 
         // Postprocess

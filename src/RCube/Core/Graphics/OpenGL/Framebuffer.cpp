@@ -1,8 +1,7 @@
 #include "RCube/Core/Graphics/OpenGL/Framebuffer.h"
-#include <iostream>
 #include <stdexcept>
-using std::cout;
-using std::endl;
+#include <iostream>
+
 namespace rcube
 {
 
@@ -11,8 +10,8 @@ const std::string ERROR_FRAMEBUFFER_NOT_COMPLETE = "Cannot use Framebuffer that 
 
 Framebuffer::Framebuffer()
 {
-    has_depth_stencil_ = false;
     colors_.reserve(8);
+    depth_stencil_ = nullptr;
 }
 
 GLuint Framebuffer::id() const
@@ -22,39 +21,24 @@ GLuint Framebuffer::id() const
 
 void Framebuffer::setDrawBuffers(const std::vector<int> &attachment_indices)
 {
-    use();
     std::vector<GLenum> draw_bufs;
     draw_bufs.reserve(attachment_indices.size());
     for (int att : attachment_indices)
     {
         draw_bufs.push_back(GL_COLOR_ATTACHMENT0 + att);
     }
-    glDrawBuffers((GLsizei)draw_bufs.size(), draw_bufs.data());
-    done();
+    glNamedFramebufferDrawBuffers(id_, (GLsizei)draw_bufs.size(), draw_bufs.data());
 }
 
 void Framebuffer::setReadBuffer(int attachment_index)
 {
-    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_index);
+    glNamedFramebufferReadBuffer(id_, GL_COLOR_ATTACHMENT0 + attachment_index);
 }
 
-size_t Framebuffer::width() const
-{
-    return width_;
-}
-
-size_t Framebuffer::height() const
-{
-    return height_;
-}
-
-std::shared_ptr<Framebuffer> Framebuffer::create(size_t width, size_t height)
+std::shared_ptr<Framebuffer> Framebuffer::create()
 {
     auto fbo = std::make_shared<Framebuffer>();
-    glGenFramebuffers(1, &fbo->id_);
-    fbo->width_ = width;
-    fbo->height_ = height;
-    fbo->has_depth_stencil_ = false;
+    glCreateFramebuffers(1, &fbo->id_);
     fbo->colors_.resize(8, nullptr);
     return fbo;
 }
@@ -90,10 +74,6 @@ void Framebuffer::useForWrite()
     {
         throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
     }
-    /*if (!isComplete())
-    {
-        throw std::runtime_error(ERROR_FRAMEBUFFER_NOT_COMPLETE);
-    }*/
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id_);
 }
 
@@ -103,10 +83,6 @@ void Framebuffer::useForRead()
     {
         throw std::runtime_error(ERROR_FRAMEBUFFER_UNINITIALIZED);
     }
-    /*if (!isComplete())
-    {
-        throw std::runtime_error(ERROR_FRAMEBUFFER_NOT_COMPLETE);
-    }*/
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
 }
 void Framebuffer::done() const
@@ -116,66 +92,23 @@ void Framebuffer::done() const
 
 bool Framebuffer::isComplete()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, id_);
-    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    auto status = glCheckNamedFramebufferStatus(id_, GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cout << "Framebuffer not complete: " << status << std::endl;
+    }
     return status == GL_FRAMEBUFFER_COMPLETE;
-}
-
-void Framebuffer::setColorAttachment(size_t index, TextureInternalFormat internal_format,
-                                     size_t levels, size_t samples)
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, id_);
-    std::shared_ptr<Texture2D> tex;
-    levels = std::max(static_cast<size_t>(1), levels);
-    if (samples == 0)
-    {
-        tex = Texture2D::create(width_, height_, levels, internal_format);
-    }
-    else
-    {
-        tex = Texture2D::createMS(width_, height_, samples, internal_format);
-    }
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(), tex->id(),
-                           0);
-    colors_[index] = tex;
-    // glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
-    // glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Framebuffer::setColorAttachment(size_t index, std::shared_ptr<Texture2D> tex)
 {
     assert(tex->valid());
-    glBindFramebuffer(GL_FRAMEBUFFER, id_);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, tex->target(), tex->id(),
-                           0);
+    glNamedFramebufferTexture(id_, GL_COLOR_ATTACHMENT0 + (GLenum)index, tex->id(), 0);
     colors_[index] = tex;
-    // glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
-    // glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void Framebuffer::clearColorAttachments()
-{
-    for (auto &tex : colors_)
-    {
-        if (tex == nullptr)
-        {
-            continue;
-        }
-        tex->release();
-    }
 }
 
 void Framebuffer::resize(size_t width, size_t height)
 {
-    if (width_ == width && height_ == height)
-    {
-        return;
-    }
-    width_ = width;
-    height_ = height;
     for (size_t i = 0; i < colors_.size(); ++i)
     {
         if (colors_[i] == nullptr)
@@ -185,39 +118,15 @@ void Framebuffer::resize(size_t width, size_t height)
         auto new_tex =
             Texture2D::create(width, height, colors_[i]->levels(), colors_[i]->internalFormat());
         colors_[i]->release();
-        colors_[i] = new_tex;
+        setColorAttachment(i, new_tex);
     }
-    if (has_depth_stencil_)
+    if (depth_stencil_ != nullptr)
     {
         auto new_tex = Texture2D::create(width, height, 1 /*mipmap is always 1*/,
                                          depth_stencil_->internalFormat());
         depth_stencil_->release();
-        depth_stencil_ = new_tex;
+        setDepthAttachment(new_tex);
     }
-}
-
-void Framebuffer::setDepthAttachment(TextureInternalFormat internal_format, size_t samples)
-{
-    use();
-    assert(internal_format == TextureInternalFormat::Depth16 ||
-           internal_format == TextureInternalFormat::Depth24 ||
-           internal_format == TextureInternalFormat::Depth32 ||
-           internal_format == TextureInternalFormat::Depth32F ||
-           internal_format == TextureInternalFormat::Depth24Stencil8 ||
-           internal_format == TextureInternalFormat::Depth32FStencil8);
-
-    if (samples == 0)
-    {
-        depth_stencil_ = Texture2D::create(width_, height_, 1, internal_format);
-    }
-    else
-    {
-        depth_stencil_ = Texture2D::createMS(width_, height_, samples, internal_format);
-    }
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_stencil_->target(),
-                           depth_stencil_->id(), 0);
-    has_depth_stencil_ = true;
-    done();
 }
 
 void Framebuffer::setDepthAttachment(std::shared_ptr<Texture2D> tex)
@@ -227,11 +136,8 @@ void Framebuffer::setDepthAttachment(std::shared_ptr<Texture2D> tex)
            internal_format == TextureInternalFormat::Depth24 ||
            internal_format == TextureInternalFormat::Depth32 ||
            internal_format == TextureInternalFormat::Depth32F);
-    use();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->target(), tex->id(), 0);
+    glNamedFramebufferTexture(id_, GL_DEPTH_ATTACHMENT, tex->id(), 0);
     depth_stencil_ = tex;
-    has_depth_stencil_ = true;
-    done();
 }
 
 void Framebuffer::setDepthStencilAttachment(std::shared_ptr<Texture2D> tex)
@@ -239,31 +145,26 @@ void Framebuffer::setDepthStencilAttachment(std::shared_ptr<Texture2D> tex)
     auto internal_format = tex->internalFormat();
     assert(internal_format == TextureInternalFormat::Depth24Stencil8 ||
            internal_format == TextureInternalFormat::Depth32FStencil8);
-    use();
+    glNamedFramebufferTexture(id_, GL_DEPTH_STENCIL_ATTACHMENT, tex->id(), 0);
     depth_stencil_ = tex;
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, depth_stencil_->target(),
-                           depth_stencil_->id(), 0);
-    has_depth_stencil_ = true;
-    done();
-}
-
-void Framebuffer::clearDepthAttachment()
-{
-    if (has_depth_stencil_)
-    {
-        depth_stencil_->release();
-        has_depth_stencil_ = false;
-    }
 }
 
 size_t Framebuffer::numColorAttachments() const
 {
-    return colors_.size();
+    size_t count = 0;
+    for (auto tex : colors_)
+    {
+        if (tex != nullptr)
+        {
+            ++count;
+        }
+    }
+    return count;
 }
 
 bool Framebuffer::hasDepthStencilAttachment() const
 {
-    return has_depth_stencil_;
+    return depth_stencil_ != nullptr;
 }
 
 Texture2D *Framebuffer::colorAttachment(size_t i)
@@ -277,7 +178,9 @@ Texture2D *Framebuffer::colorAttachment(size_t i)
     return colors_[i].get();
 }
 
-void Framebuffer::blit(Framebuffer &target_fbo, bool color, bool depth, bool stencil)
+void Framebuffer::blit(Framebuffer &target_fbo, glm::ivec2 src_origin, glm::ivec2 src_size,
+                       glm::ivec2 dst_origin, glm::ivec2 dst_size, bool color, bool depth,
+                       bool stencil)
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_fbo.id());
@@ -294,12 +197,13 @@ void Framebuffer::blit(Framebuffer &target_fbo, bool color, bool depth, bool ste
     {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBlitFramebuffer(0, 0, (GLint)width_, (GLint)height_, 0, 0, (GLint)target_fbo.width(),
-                      (GLint)target_fbo.height(), bits, GL_NEAREST);
+    glBlitFramebuffer((GLint)src_origin.x, (GLint)src_origin.y, (GLint)src_size.x,
+                      (GLint)src_size.y, (GLint)dst_origin.x, (GLint)dst_origin.y,
+                      (GLint)dst_size.x, (GLint)dst_size.y, bits, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color, bool depth,
+void Framebuffer::blitToScreen(glm::ivec2 dst_origin, glm::ivec2 dst_size, bool color, bool depth,
                                bool stencil)
 {
     GLbitfield bits = 0;
@@ -318,12 +222,13 @@ void Framebuffer::blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color, boo
     // glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
-    glBlitFramebuffer(0, 0, (GLint)width_, (GLint)height_, dst0.x, dst0.y, dst1.x, dst1.y, bits,
-                      GL_NEAREST);
+    glBlitFramebuffer((GLint)dst_origin.x, (GLint)dst_origin.y, (GLint)dst_size.x,
+                      (GLint)dst_size.y, (GLint)dst_origin.x, (GLint)dst_origin.y,
+                      (GLint)dst_size.x, (GLint)dst_size.y, bits, GL_NEAREST);
 }
 
-void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1,
-                               bool color, bool depth, bool stencil)
+void Framebuffer::blitToScreen(glm::ivec2 src_origin, glm::ivec2 src_size, glm::ivec2 dst_origin,
+                               glm::ivec2 dst_size, bool color, bool depth, bool stencil)
 {
     GLbitfield bits = 0;
     if (color)
@@ -341,21 +246,23 @@ void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
-    glBlitFramebuffer(src0.x, src0.y, src1.x, src1.y, dst0.x, dst0.y, dst1.x, dst1.y, bits,
-                      GL_NEAREST);
+    glBlitFramebuffer(src_origin.x, src_origin.y, src_size.x, src_size.y, dst_origin.x,
+                      dst_origin.y, dst_size.x, dst_size.y, bits, GL_NEAREST);
 }
 
 Image Framebuffer::getImage(int attachment_index) const
 {
     assert(attachment_index < colors_.size());
     Image im;
-    unsigned char *pixel_data = (unsigned char *)malloc(3 * width_ * height_);
+    const size_t width = colors_[attachment_index]->width();
+    const size_t height = colors_[attachment_index]->height();
+    unsigned char *pixel_data = (unsigned char *)malloc(3 * width * height);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_index);
-    glReadPixels(0, 0, (GLsizei)width_, (GLsizei)height_, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+    glReadPixels(0, 0, (GLsizei)width, (GLsizei)height, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    im.setPixels((int)width_, (int)height_, 3, pixel_data);
+    im.setPixels((int)width, (int)height, 3, pixel_data);
     free(pixel_data);
     return im;
 }

@@ -1,5 +1,4 @@
-#ifndef FRAMEBUFFER_H
-#define FRAMEBUFFER_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
 #include "glad/glad.h"
@@ -25,7 +24,7 @@ class Framebuffer
      * @param height Height of color and depth buffers
      * @return Shared pointer to Framebuffer
      */
-    static std::shared_ptr<Framebuffer> create(size_t width, size_t height);
+    static std::shared_ptr<Framebuffer> create();
     /**
      * Returns whether the Framebuffer is actually created and initialized on the GPU
      * @return Whether initialized on GPU
@@ -61,26 +60,9 @@ class Framebuffer
 
     void setReadBuffer(int attachment_index);
 
-    /**
-     * Add another color attachment
-     * @param format Format of the color buffer in the GPU
-     */
-    void setColorAttachment(size_t index, TextureInternalFormat format, size_t levels = 1,
-                            size_t samples = 0);
-
     void setColorAttachment(size_t index, std::shared_ptr<Texture2D> tex);
 
-    void clearColorAttachments();
-
-    void clearDepthAttachment();
-
     void resize(size_t width, size_t height);
-
-    /**
-     * Add/replace the depth attachment
-     * @param format Format of the depth buffer in the GPU
-     */
-    void setDepthAttachment(TextureInternalFormat format, size_t samples = 0);
 
     void setDepthAttachment(std::shared_ptr<Texture2D> tex);
 
@@ -109,18 +91,6 @@ class Framebuffer
     bool hasDepthStencilAttachment() const;
 
     /**
-     * Width of the framebuffer
-     * @return Width
-     */
-    size_t width() const;
-
-    /**
-     * Height of the framebuffer
-     * @return Height
-     */
-    size_t height() const;
-
-    /**
      * Returns whether the framebuffer is completely defined
      * @return Whether complete
      */
@@ -137,7 +107,8 @@ class Framebuffer
      * Only works if both framebuffers match in dimensions
      * @param target_fbo
      */
-    void blit(Framebuffer &target_fbo, bool color = true, bool depth = true, bool stencil = true);
+    void blit(Framebuffer &target_fbo, glm::ivec2 src_origin, glm::ivec2 src_size,
+              glm::ivec2 dst_origin, glm::ivec2 dst_size, bool color = true, bool depth = true, bool stencil = true);
 
     /**
      * Blits (copies) data from the current framebuffer to the default framebuffer
@@ -166,13 +137,8 @@ class Framebuffer
 
   private:
     unsigned int id_ = 0;
-    size_t width_ = 0;
-    size_t height_ = 0;
     std::vector<std::shared_ptr<Texture2D>> colors_;
     std::shared_ptr<Texture2D> depth_stencil_;
-    bool has_depth_stencil_ = false;
 };
 
 } // namespace rcube
-
-#endif // FRAMEBUFFER_H

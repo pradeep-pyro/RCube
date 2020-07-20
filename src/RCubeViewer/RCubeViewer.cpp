@@ -64,7 +64,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     Image front_back = gradientV(256, 256, color_top, color_bot, 10.f);
     Image top = gradientV(256, 256, color_top, color_top, 10.f);
     Image bottom = gradientV(256, 256, color_bot, color_bot, 10.f);
-    camera_.get<Camera>()->skybox->setFilterMode(rcube::TextureFilterMode::Trilinear);
+    camera_.get<Camera>()->skybox->setFilterModeMin(rcube::TextureFilterMode::Trilinear);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveY, top);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeY, bottom);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveX, front_back);

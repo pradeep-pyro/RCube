@@ -307,7 +307,6 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         auto fbo = Framebuffer::create();
         fbo->setColorAttachment(0, color);
         fbo->setDepthStencilAttachment(depth);
-        std::cout << "complete: " << fbo->isComplete() << std::endl;
         fbos.push_back(fbo);
     }
 

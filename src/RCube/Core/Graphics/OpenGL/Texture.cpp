@@ -25,12 +25,11 @@ std::shared_ptr<Texture2D> Texture2D::create(size_t width, size_t height, size_t
     tex->internal_format_ = internal_format;
     tex->num_samples_ = 0;
     tex->target_ = GL_TEXTURE_2D;
-    glGenTextures(1, &tex->id_);
-    tex->use();
-    glTexStorage2D(tex->target_, (GLsizei)levels, (GLenum)internal_format, (GLsizei)width, (GLsizei)height);
+    glCreateTextures(GL_TEXTURE_2D, 1, &tex->id_);
+    glTextureStorage2D(tex->id_, (GLsizei)levels, (GLenum)internal_format, (GLsizei)width,
+                       (GLsizei)height);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
-    tex->done();
     return tex;
 }
 
@@ -44,13 +43,11 @@ std::shared_ptr<Texture2D> Texture2D::createMS(size_t width, size_t height, size
     tex->internal_format_ = internal_format;
     tex->num_samples_ = num_samples;
     tex->target_ = GL_TEXTURE_2D_MULTISAMPLE;
-    glGenTextures(1, &tex->id_);
-    tex->use();
-    glTexStorage2DMultisample(tex->target_, (GLsizei)tex->num_samples_, (GLenum)internal_format,
-                              (GLsizei)width, (GLsizei)height, GL_TRUE);
+    glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &tex->id_);
+    glTextureStorage2DMultisample(tex->id_, (GLsizei)tex->num_samples_, (GLenum)internal_format,
+                                  (GLsizei)width, (GLsizei)height, GL_TRUE);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
-    tex->done();
     return tex;
 }
 
@@ -79,9 +76,7 @@ void Texture2D::setBorderColor(const glm::vec4 &color)
     {
         return;
     }
-    use();
-    glTexParameterfv(target_, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
-    done();
+    glTextureParameterfv(id_, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(color));
 }
 
 void Texture2D::setFilterMode(TextureFilterMode mode)
@@ -90,10 +85,8 @@ void Texture2D::setFilterMode(TextureFilterMode mode)
     {
         return;
     }
-    use();
-    glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
-    glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    glTextureParameteri(id_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
 }
 
 void Texture2D::setFilterModeMin(TextureFilterMode mode)
@@ -102,9 +95,7 @@ void Texture2D::setFilterModeMin(TextureFilterMode mode)
     {
         return;
     }
-    use();
-    glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
 }
 
 void Texture2D::setFilterModeMag(TextureFilterMode mode)
@@ -113,9 +104,7 @@ void Texture2D::setFilterModeMag(TextureFilterMode mode)
     {
         return;
     }
-    use();
-    glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_MAG_FILTER, (GLint)mode);
 }
 
 void Texture2D::generateMipMap()
@@ -124,9 +113,7 @@ void Texture2D::generateMipMap()
     {
         return;
     }
-    use();
-    glGenerateMipmap(target_);
-    done();
+    glGenerateTextureMipmap(id_);
 }
 
 void Texture2D::setWrapMode(TextureWrapMode mode)
@@ -135,10 +122,8 @@ void Texture2D::setWrapMode(TextureWrapMode mode)
     {
         return;
     }
-    use();
-    glTexParameteri(target_, GL_TEXTURE_WRAP_S, (GLint)mode);
-    glTexParameteri(target_, GL_TEXTURE_WRAP_T, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_S, (GLint)mode);
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_T, (GLint)mode);
 }
 
 void Texture2D::setWrapModeS(TextureWrapMode mode)
@@ -147,9 +132,7 @@ void Texture2D::setWrapModeS(TextureWrapMode mode)
     {
         return;
     }
-    use();
-    glTexParameteri(target_, GL_TEXTURE_WRAP_S, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_S, (GLint)mode);
 }
 
 void Texture2D::setWrapModeT(TextureWrapMode mode)
@@ -158,9 +141,7 @@ void Texture2D::setWrapModeT(TextureWrapMode mode)
     {
         return;
     }
-    use();
-    glTexParameteri(target_, GL_TEXTURE_WRAP_T, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_T, (GLint)mode);
 }
 
 void Texture2D::setData(const unsigned char *data, TextureFormat format, size_t level)
@@ -258,8 +239,7 @@ void Texture2D::use(size_t unit)
         throw std::runtime_error(ERROR_TEXTURE_UNINITIALIZED);
     }
     unit_ = unit;
-    glActiveTexture(GL_TEXTURE0 + (GLenum)unit);
-    glBindTexture(target_, id_);
+    glBindTextureUnit((GLint)unit, id_);
 }
 
 void Texture2D::done()
@@ -290,10 +270,9 @@ std::shared_ptr<TextureCubemap> TextureCubemap::create(size_t width, size_t heig
     tex->levels_ = levels;
     tex->internal_format_ = internal_format;
     tex->seamless_ = seamless;
-    glGenTextures(1, &tex->id_);
-    tex->use();
-    glTexStorage2D(GL_TEXTURE_CUBE_MAP, (GLsizei)levels, (GLenum)internal_format, (GLsizei)width,
-                   (GLsizei)height);
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex->id_);
+    glTextureStorage2D(tex->id_, (GLsizei)levels, (GLenum)internal_format, (GLsizei)width,
+                       (GLsizei)height);
     tex->setWrapMode(TextureWrapMode::ClampToEdge);
     tex->setFilterMode(TextureFilterMode::Linear);
     tex->done();
@@ -311,32 +290,24 @@ void TextureCubemap::release()
 
 void TextureCubemap::setWrapMode(TextureWrapMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(mode));
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(mode));
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(mode));
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_S, GLint(mode));
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_T, GLint(mode));
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_R, GLint(mode));
 }
 
 void TextureCubemap::setWrapModeS(TextureWrapMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(mode));
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_S, GLint(mode));
 }
 
 void TextureCubemap::setWrapModeT(TextureWrapMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(mode));
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_T, GLint(mode));
 }
 
 void TextureCubemap::setWrapModeR(TextureWrapMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(mode));
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_WRAP_R, GLint(mode));
 }
 
 void TextureCubemap::setData(int i, const unsigned char *data, size_t width, size_t height,
@@ -349,8 +320,7 @@ void TextureCubemap::setData(int i, const unsigned char *data, size_t width, siz
     }
     use();
     glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, (GLint)level, 0, 0, (GLsizei)width_,
-                    (GLsizei)height_,
-                    (GLenum)format, GL_UNSIGNED_BYTE, data);
+                    (GLsizei)height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
     width_ = width;
     height_ = height;
     done();
@@ -415,8 +385,7 @@ void TextureCubemap::use(size_t unit)
         glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
     unit_ = unit;
-    glActiveTexture(GL_TEXTURE0 + (GLenum)unit);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, id_);
+    glBindTextureUnit((GLenum)unit, id_);
 }
 
 void TextureCubemap::done()
@@ -431,31 +400,23 @@ void TextureCubemap::done()
 
 void TextureCubemap::setFilterModeMin(TextureFilterMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
 }
 
 void TextureCubemap::setFilterModeMag(TextureFilterMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_MAG_FILTER, (GLint)mode);
 }
 
 void TextureCubemap::setFilterMode(TextureFilterMode mode)
 {
-    use();
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, (GLint)mode);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, (GLint)mode);
-    done();
+    glTextureParameteri(id_, GL_TEXTURE_MIN_FILTER, (GLint)mode);
+    glTextureParameteri(id_, GL_TEXTURE_MAG_FILTER, (GLint)mode);
 }
 
 void TextureCubemap::generateMipMap()
 {
-    use();
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    done();
+    glGenerateTextureMipmap(id_);
 }
 
 bool TextureCubemap::valid() const

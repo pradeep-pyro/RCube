@@ -25,7 +25,7 @@ template <BufferType Type> class Buffer
     static std::shared_ptr<Buffer> create(size_t num_elements)
     {
         auto buf = std::make_shared<Buffer>();
-        glGenBuffers(1, &buf->id_);
+        glCreateBuffers(1, &buf->id_);
         buf->reserve(num_elements);
         return buf;
     }
@@ -42,11 +42,8 @@ template <BufferType Type> class Buffer
     }
     void reserve(size_t num_elements)
     {
-        use();
-        glBufferData(GLenum(Type), num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
-        //glNamedBufferData(id_, num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+        glNamedBufferData(id_, num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
         size_ = num_elements;
-        done();
     }
     void release()
     {
@@ -57,10 +54,7 @@ template <BufferType Type> class Buffer
     void setData(const float *buf, size_t size)
     {
         assert(size == size_);
-        use();
-        glBufferSubData(GLenum(Type), 0, size * sizeof(float), buf);
-        //glNamedBufferSubData(id_, 0, size * sizeof(float), buf);
-        done();
+        glNamedBufferSubData(id_, 0, size * sizeof(float), buf);
     }
     template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
     void setData(const std::vector<float> &buf)
@@ -81,10 +75,7 @@ template <BufferType Type> class Buffer
     void setData(const unsigned int *buf, size_t size)
     {
         assert(size == size_);
-        use();
-        glBufferSubData(GLenum(Type), 0, size * sizeof(unsigned int), buf);
-        //glNamedBufferSubData(id_, 0, size * sizeof(unsigned int), buf);
-        done();
+        glNamedBufferSubData(id_, 0, size * sizeof(unsigned int), buf);
     }
     template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
     void setData(const std::vector<unsigned int> &buf)

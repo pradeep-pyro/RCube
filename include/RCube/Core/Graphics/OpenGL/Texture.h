@@ -139,9 +139,9 @@ class TextureCubemap
     void setWrapModeS(TextureWrapMode wrap_s);
     void setWrapModeT(TextureWrapMode wrap_t);
     void setWrapModeR(TextureWrapMode mode);
-    void setData(int i, const unsigned char *data, size_t width, size_t height, size_t level,
+    void setData(Side i, const unsigned char *data, size_t width, size_t height, size_t level,
                  TextureFormat format);
-    void setData(int i, const Image &im, size_t level = 0);
+    void setData(Side i, const Image &im, size_t level = 0);
     size_t width() const;
     size_t height() const;
     size_t levels() const;

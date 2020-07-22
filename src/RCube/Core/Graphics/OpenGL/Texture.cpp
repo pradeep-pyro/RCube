@@ -310,7 +310,7 @@ void TextureCubemap::setWrapModeR(TextureWrapMode mode)
     glTextureParameteri(id_, GL_TEXTURE_WRAP_R, GLint(mode));
 }
 
-void TextureCubemap::setData(int i, const unsigned char *data, size_t width, size_t height,
+void TextureCubemap::setData(Side i, const unsigned char *data, size_t width, size_t height,
                              size_t level, TextureFormat format)
 {
     assert(i >= 0 && i < 6);
@@ -318,15 +318,13 @@ void TextureCubemap::setData(int i, const unsigned char *data, size_t width, siz
     {
         throw std::runtime_error(ERROR_IMAGE_TEXTURE_MISMATCH);
     }
-    use();
-    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, (GLint)level, 0, 0, (GLsizei)width_,
-                    (GLsizei)height_, (GLenum)format, GL_UNSIGNED_BYTE, data);
+    glTextureSubImage3D(id_, (GLint)level, 0, 0, i, (GLsizei)width_, (GLsizei)height_, 1,
+                        (GLenum)format, GL_UNSIGNED_BYTE, data);
     width_ = width;
     height_ = height;
-    done();
 }
 
-void TextureCubemap::setData(int i, const Image &im, size_t level)
+void TextureCubemap::setData(Side i, const Image &im, size_t level)
 {
     TextureFormat format = TextureFormat::RGB;
     if (im.channels() == 1)

@@ -18,7 +18,8 @@ enum class MeshPrimitive
 {
     Points = GL_POINTS,
     Lines = GL_LINES,
-    Triangles = GL_TRIANGLES
+    Triangles = GL_TRIANGLES,
+    TriangleStrip = GL_TRIANGLE_STRIP
 };
 
 struct LineMeshData
@@ -80,7 +81,7 @@ class Mesh
 
     static std::shared_ptr<Mesh> createLineMesh(bool indexed);
 
-    static std::shared_ptr<Mesh> createTriangleMesh(bool indexed);
+    static std::shared_ptr<Mesh> createTriangleMesh(bool indexed, bool strip = false);
 
     static std::shared_ptr<Mesh> create(const LineMeshData &linemesh);
 

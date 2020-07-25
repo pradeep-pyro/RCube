@@ -229,7 +229,7 @@ void RCubeViewer::drawGUI()
         while (it.hasNext())
         {
             EntityHandle ent = it.next();
-            if (ent.entity == ground_.entity || ent.entity == camera_.entity)
+            if (ent.entity == camera_.entity)
             {
                 continue;
             }
@@ -352,19 +352,8 @@ EntityHandle RCubeViewer::createCamera()
 
 EntityHandle RCubeViewer::createGroundPlane()
 {
-    /*std::shared_ptr<Mesh> gridMesh =
-        Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
-                          glm::vec3(0.0, 0.0, 0.0)));*/
-    /*std::shared_ptr<Mesh> mesh =
-        Mesh::create(grid(20, 20, 100, 100, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0),
-                          glm::vec3(0.0, 0.0, 0.0)));*/
     std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 2, 2, Orientation::PositiveY));
     mesh->uploadToGPU();
-    /*auto mat = std::make_shared<FlatMaterial>();
-    ground_ = createSurface();
-    ground_.get<Drawable>()->mesh = mesh;
-    ground_.get<Drawable>()->material = mat;
-    return ground_;*/
     auto mat = std::make_shared<PhysicallyBasedMaterial>();
     mat->albedo = glm::vec3(1);
     mat->roughness = 0.5f;
@@ -373,6 +362,7 @@ EntityHandle RCubeViewer::createGroundPlane()
     ground_ = createSurface();
     ground_.get<Drawable>()->mesh = mesh;
     ground_.get<Drawable>()->material = mat;
+    ground_.add(Name("ground"));
     return ground_;
 }
 

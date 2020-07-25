@@ -437,10 +437,10 @@ void PhysicallyBasedMaterial::createIBLMaps(std::shared_ptr<TextureCubemap> envi
 const RenderSettings PhysicallyBasedMaterial::renderState() const
 {
     RenderSettings state;
-    state.depth_test = true;
-    state.depth_write = true;
-    state.blending = false;
-    state.culling = false;
+    state.depth.test = true;
+    state.depth.write = true;
+    state.blend.enabled = false;
+    state.cull.enabled = false;
     return state;
 }
 

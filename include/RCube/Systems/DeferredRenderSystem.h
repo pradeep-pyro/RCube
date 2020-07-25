@@ -7,58 +7,6 @@
 
 namespace rcube
 {
-
-// class GBuffer
-//{
-//    std::shared_ptr<Framebuffer> fbo_;
-//    std::shared_ptr<Texture2D> textures_[4];
-//
-//  public:
-//    enum GBufferTexture
-//    {
-//        POSITION_ROUGHNESS,
-//        NORMALS_METALLIC,
-//        ALBEDO,
-//        DEPTH
-//    };
-//    static GBuffer create(size_t width, size_t height);
-//    void useForWrite();
-//    void useForRead();
-//    void done();
-//    void setReadBuffer(GBufferTexture texture);
-//    bool isComplete() const;
-//    std::shared_ptr<Framebuffer> fbo();
-//};
-
-class GBuffer
-{
-  public:
-    enum GBUFFER_TEXTURE_TYPE
-    {
-        GBUFFER_TEXTURE_TYPE_POSITION,
-        GBUFFER_TEXTURE_TYPE_NORMAL,
-        GBUFFER_TEXTURE_TYPE_DIFFUSE,
-        GBUFFER_TEXTURE_TYPE_TEXCOORD,
-        GBUFFER_NUM_TEXTURES
-    };
-
-    GBuffer() = default;
-
-    ~GBuffer() = default;
-
-    bool Init(unsigned int WindowWidth, unsigned int WindowHeight);
-
-    void BindForWriting();
-
-    void BindForReading();
-
-    void SetReadBuffer(GBUFFER_TEXTURE_TYPE TextureType);
-  private:
-    GLuint m_fbo;
-    GLuint m_textures[GBUFFER_NUM_TEXTURES];
-    GLuint m_depthTexture;
-};
-
 struct PBRMaterial
 {
     glm::vec3 albedo = glm::vec3(0.5f, 0.5f, 0.5f);
@@ -95,10 +43,11 @@ class DeferredRenderSystem : public System
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
     GLRenderer renderer_;
     std::shared_ptr<Framebuffer> gbuffer_;
+    std::shared_ptr<Framebuffer> framebuffer_hdr_;
     std::shared_ptr<ShaderProgram> gbuffer_shader_;
     std::shared_ptr<ShaderProgram> lighting_shader_;
-    std::shared_ptr<Framebuffer> framebuffer_hdr_;
-    std::shared_ptr<Framebuffer> framebuffer2_;
+    std::shared_ptr<ShaderProgram> skybox_shader_;
+    std::shared_ptr<Mesh> skybox_mesh_;
     unsigned int msaa_;
 };
 

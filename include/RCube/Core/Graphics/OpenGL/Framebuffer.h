@@ -76,7 +76,7 @@ class Framebuffer
      * @param i Index of the color attachment
      * @return Pointer to Texture2D
      */
-    Texture2D *colorAttachment(size_t i = 0);
+    std::shared_ptr<Texture2D> colorAttachment(size_t i = 0);
 
     /**
      * Returns the number of color attachments in this framebuffer

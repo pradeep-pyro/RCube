@@ -349,10 +349,19 @@ std::shared_ptr<Texture2D> IBLSpecularSplitSum::integrateBRDF(unsigned int resol
     fbo->setColorAttachment(0, brdf_lut);
     fbo->setDrawBuffers({0});
     fbo->setDepthAttachment(Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth32F));
-    fbo->use();
-    rdr_.resize(0, 0, resolution, resolution);
-    rdr_.clear();
-    rdr_.renderFullscreenQuad(shader_brdf_.get(), fbo.get());
+    
+    RenderTarget rt;
+    rt.framebuffer = fbo->id();
+    rt.clear_color_buffer = true;
+    rt.clear_depth_buffer = true;
+    rt.clear_stencil_buffer = false;
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = glm::ivec2(resolution, resolution);
+    DrawCall dc;
+    dc.settings.depth.test = false;
+    dc.mesh = GLRenderer::getDrawCallMeshInfo(rdr_.fullscreenQuadMesh());
+    dc.shader = shader_brdf_;
+    rdr_.draw(rt, {dc});
     return brdf_lut;
 }
 

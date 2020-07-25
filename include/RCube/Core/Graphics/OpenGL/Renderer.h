@@ -1,24 +1,24 @@
 #pragma once
 
-#include "glad/glad.h"
-#include "glm/glm.hpp"
-#include <memory>
-#include <vector>
-#include <functional>
 #include "RCube/Core/Graphics/Materials/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 #include "RCube/Core/Graphics/OpenGL/Image.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
+#include "glad/glad.h"
+#include "glm/glm.hpp"
+#include <functional>
+#include <memory>
+#include <vector>
 
 namespace rcube
 {
 
 struct RenderTarget
 {
-    std::shared_ptr<Framebuffer> framebuffer;
-    glm::vec3 clear_color;
+    GLuint framebuffer;
+    glm::vec4 clear_color = glm::vec4(1);
     bool clear_color_buffer = true;
     bool clear_depth_buffer = true;
     bool clear_stencil_buffer = true;
@@ -28,24 +28,33 @@ struct RenderTarget
 
 struct DrawCall
 {
-    struct DrawCallTexture2D
+    struct Texture2DInfo
     {
-        std::shared_ptr<Texture2D> texture = nullptr;
+        GLuint texture = 0;
         int unit = 0;
     };
 
-    struct DrawCallTextureCubemap
+    struct TextureCubemapInfo
     {
-        std::shared_ptr<TextureCubemap> texture = nullptr;
+        GLuint texture;
         int unit = 0;
     };
 
-    std::shared_ptr<Mesh> mesh;
+    struct MeshInfo
+    {
+        GLuint vao;
+        GLenum primitive;
+        bool indexed = false;
+        GLsizei num_data;
+    };
+
     std::shared_ptr<ShaderProgram> shader;
-    std::function<void(std::shared_ptr<ShaderProgram>)> update_uniforms;
-    std::vector<DrawCallTexture2D> textures;
-    std::vector<DrawCallTextureCubemap> cubemaps;
-    RenderSettings state;
+    std::function<void(std::shared_ptr<ShaderProgram>)> update_uniforms =
+        [](std::shared_ptr<ShaderProgram>) {};
+    std::vector<Texture2DInfo> textures;
+    std::vector<TextureCubemapInfo> cubemaps;
+    MeshInfo mesh;
+    RenderSettings settings;
 };
 
 class GLRenderer
@@ -83,9 +92,14 @@ class GLRenderer
 
     void draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls);
 
+    void drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture);
+
+    void drawSkybox(const RenderTarget &render_target, std::shared_ptr<TextureCubemap> texture,
+                    DrawCall dc = DrawCall{});
+
     void renderSkyBox(std::shared_ptr<TextureCubemap> cubemap);
 
-    void renderTextureToScreen(Texture2D *tex);
+    void renderTextureToScreen(std::shared_ptr<Texture2D> tex);
 
     void renderEffect(ShaderProgram *effect, Framebuffer *input);
 
@@ -110,8 +124,31 @@ class GLRenderer
      */
     void clear(bool color = true, bool depth = true, bool stencil = false);
 
+    std::shared_ptr<Mesh> fullscreenQuadMesh()
+    {
+        return quad_mesh_;
+    }
+
+    std::shared_ptr<ShaderProgram> fullscreenQuadShader()
+    {
+        return quad_shader_;
+    }
+
+    std::shared_ptr<Mesh> skyboxMesh()
+    {
+        return skybox_mesh_;
+    }
+
+    std::shared_ptr<ShaderProgram> skyboxShader()
+    {
+        return skybox_shader_;
+    }
+
+    static DrawCall::MeshInfo getDrawCallMeshInfo(std::shared_ptr<Mesh> mesh);
+
   private:
     void updateSettings(const RenderSettings &settings);
+    void updateSettings(const RenderSettings &settings, const RenderSettings &prev_settings);
 
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;
@@ -133,6 +170,7 @@ class GLRenderer
     bool init_;
 
     // Fullscreen quad
+    GLuint quad_vao_;
     std::shared_ptr<Mesh> quad_mesh_;
     std::shared_ptr<ShaderProgram> quad_shader_;
 };

@@ -1,6 +1,6 @@
 #include "RCube/Core/Graphics/OpenGL/Framebuffer.h"
-#include <stdexcept>
 #include <iostream>
+#include <stdexcept>
 
 namespace rcube
 {
@@ -167,7 +167,7 @@ bool Framebuffer::hasDepthStencilAttachment() const
     return depth_stencil_ != nullptr;
 }
 
-Texture2D *Framebuffer::colorAttachment(size_t i)
+std::shared_ptr<Texture2D> Framebuffer::colorAttachment(size_t i)
 {
     if (i >= colors_.size() + 1)
     {
@@ -175,7 +175,7 @@ Texture2D *Framebuffer::colorAttachment(size_t i)
             "Invalid (out-of-range) index " + std::to_string(i) +
             "for color attachments; expected <= " + std::to_string(colors_.size()));
     }
-    return colors_[i].get();
+    return colors_[i];
 }
 
 void Framebuffer::blit(Framebuffer &target_fbo, glm::ivec2 src_origin, glm::ivec2 src_size,

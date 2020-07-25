@@ -8,6 +8,8 @@
 #include "RCube/Core/Graphics/OpenGL/Light.h"
 #include "RCube/Systems/RenderSystem.h"
 #include "glm/gtx/string_cast.hpp"
+#include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
+#include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 
 namespace rcube
 {
@@ -324,7 +326,7 @@ void DeferredRenderSystem::initialize()
 {
     gbuffer_ = createGBuffer(resolution_.x, resolution_.y);
     gbuffer_shader_ = ShaderProgram::create(GBufferVertexShader, GBufferFragmentShader, true);
-    lighting_shader_ = makeEffect(PBRLightingPassShader);
+    
     framebuffer_hdr_ = Framebuffer::create();
     auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
     framebuffer_hdr_->setColorAttachment(0, color);
@@ -333,6 +335,11 @@ void DeferredRenderSystem::initialize()
     framebuffer_hdr_->setDepthStencilAttachment(depth);
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
+
+    skybox_mesh_ = common::skyboxMesh();
+    skybox_shader_ = common::skyboxShader();
+
+    lighting_shader_ = common::fullScreenQuadShader(PBRLightingPassShader);
 }
 
 void DeferredRenderSystem::cleanup()
@@ -377,8 +384,84 @@ void DeferredRenderSystem::update(bool force)
         gbuffer_->useForWrite();
         renderer_.resize(0, 0, resolution_.x, resolution_.y);
 
+        //////////////////////////////////////////////////////////////////////////////////////
         // Geometry pass
-        glEnable(GL_STENCIL_TEST);
+        //////////////////////////////////////////////////////////////////////////////////////
+        RenderTarget rt_geom_pass;
+        rt_geom_pass.clear_color_buffer = true;
+        rt_geom_pass.clear_depth_buffer = true;
+        rt_geom_pass.clear_stencil_buffer = true;
+        rt_geom_pass.framebuffer = gbuffer_->id();
+        rt_geom_pass.viewport_origin = glm::ivec2(0, 0);
+        rt_geom_pass.viewport_size = resolution_;
+
+        RenderSettings state;
+        state.depth.test = true;
+        state.depth.write = true;
+        state.stencil.test = true;
+        state.stencil.func = StencilFunc::Always;
+        state.stencil.func_ref = 1;
+        state.stencil.func_mask = 0xFF;
+        state.stencil.write = 0xFF;
+        state.stencil.op_pass = StencilOp::Replace;
+        state.stencil.op_depth_fail = StencilOp::Replace;
+        state.stencil.op_stencil_fail = StencilOp::Replace;
+
+        std::vector<DrawCall> drawcalls_geom_pass;
+        drawcalls_geom_pass.reserve(renderable_entities.size());
+        for (const auto &render_entity : renderable_entities)
+        {
+            Drawable *dr = world_->getComponent<Drawable>(render_entity);
+            if (!dr->visible)
+            {
+                continue;
+            }
+            Mesh *mesh = dr->mesh.get();
+            Transform *tr = world_->getComponent<Transform>(render_entity);
+            auto pbr = std::dynamic_pointer_cast<PhysicallyBasedMaterial>(dr->material);
+
+            DrawCall dc;
+            dc.settings = state;
+            dc.mesh.vao = dr->mesh->vao();
+            dc.mesh.indexed = dr->mesh->numIndexData() > 0;
+            dc.mesh.num_data =
+                dc.mesh.indexed ? dr->mesh->numIndexData() : dr->mesh->numVertexData();
+            dc.mesh.primitive = static_cast<GLenum>(dr->mesh->primitive());
+            if (pbr->albedo_texture != nullptr)
+            {
+                dc.textures.push_back({pbr->albedo_texture->id(), 0});
+            }
+            if (pbr->roughness_texture != nullptr)
+            {
+                dc.textures.push_back({pbr->roughness_texture->id(), 1});
+            }
+            if (pbr->metallic_texture != nullptr)
+            {
+                dc.textures.push_back({pbr->metallic_texture->id(), 2});
+            }
+            if (pbr->normal_texture != nullptr)
+            {
+                dc.textures.push_back({pbr->normal_texture->id(), 3});
+            }
+            dc.shader = gbuffer_shader_;
+            dc.update_uniforms = [tr, pbr](std::shared_ptr<ShaderProgram> shader) {
+                shader->uniform("albedo").set(pbr->albedo);
+                shader->uniform("roughness").set(pbr->roughness);
+                shader->uniform("metallic").set(pbr->metallic);
+                shader->uniform("use_albedo_texture").set(pbr->albedo_texture != nullptr);
+                shader->uniform("use_roughness_texture").set(pbr->roughness_texture != nullptr);
+                shader->uniform("use_normal_texture").set(pbr->normal_texture != nullptr);
+                shader->uniform("use_metallic_texture").set(pbr->metallic_texture != nullptr);
+                shader->uniform("model_matrix").set(tr->worldTransform());
+                shader->uniform("normal_matrix").set(glm::mat3(tr->worldTransform()));
+            };
+            drawcalls_geom_pass.push_back(dc);
+        }
+        renderer_.draw(rt_geom_pass, drawcalls_geom_pass);
+        gbuffer_->done();
+        gbuffer_->blit(*framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
+                       true);
+        /*glEnable(GL_STENCIL_TEST);
         glEnable(GL_DEPTH_TEST);
         glStencilMask(0xFF);
 
@@ -428,40 +511,85 @@ void DeferredRenderSystem::update(bool force)
         }
         gbuffer_->done();
         gbuffer_->blit(*framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
-                       true);
-        framebuffer_hdr_->useForWrite();
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_STENCIL_TEST);
-        glEnable(GL_DEPTH_TEST);
-        lighting_shader_->use();
-        bool use_ibl = (cam->irradiance != nullptr) && (cam->prefilter != nullptr) &&
-                       (cam->brdfLUT != nullptr);
-        lighting_shader_->uniform("use_image_based_lighting").set(use_ibl);
+                       true);*/
+        //////////////////////////////////////////////////////////////////////////////////////
+        // Lighting pass
+        //////////////////////////////////////////////////////////////////////////////////////
+        std::vector<DrawCall> dcs;
+        RenderTarget rtl;
+        rtl.framebuffer = framebuffer_hdr_->id();
+        rtl.clear_color_buffer = true;
+        rtl.clear_depth_buffer = false;
+        rtl.clear_stencil_buffer = false;
+        rtl.viewport_origin = glm::ivec2(0, 0);
+        rtl.viewport_size = resolution_;
+        if (!cam->use_skybox || cam->skybox == nullptr)
+        {
+            rtl.clear_color[0] = cam->background_color[0];
+            rtl.clear_color[1] = cam->background_color[1];
+            rtl.clear_color[2] = cam->background_color[2];
+        }
+        DrawCall dc_light;
+        RenderSettings &sl = dc_light.settings;
+        sl.depth.test = true;
+        sl.depth.write = false;
+        sl.stencil.test = false;
+        sl.cull.enabled = false;
+        dc_light.shader = lighting_shader_;
+        dc_light.textures.push_back({gbuffer_->colorAttachment(0)->id(), 0});
+        dc_light.textures.push_back({gbuffer_->colorAttachment(1)->id(), 1});
+        dc_light.textures.push_back({gbuffer_->colorAttachment(2)->id(), 2});
+        const bool use_ibl =
+            cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
         if (use_ibl)
         {
-            cam->brdfLUT->use(4);
-            cam->prefilter->use(5);
-            cam->irradiance->use(6);
+            dc_light.textures.push_back({cam->brdfLUT->id(), 4});
+            dc_light.cubemaps.push_back({cam->prefilter->id(), 5});
+            dc_light.cubemaps.push_back({cam->irradiance->id(), 6});
         }
-        gbuffer_->colorAttachment(0)->use(0);
-        gbuffer_->colorAttachment(1)->use(1);
-        gbuffer_->colorAttachment(2)->use(2);
-        renderer_.renderEffect(lighting_shader_.get(), gbuffer_.get());
+        dc_light.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("use_image_based_lighting").set(use_ibl);
+        };
+        // Fullscreen quad shader expects empty vao and drawcall with 6 vertices
+        dc_light.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
+        dcs.push_back(dc_light);
+        //renderer_.renderEffect(lighting_shader_.get(), gbuffer_.get());
         if (cam->use_skybox)
         {
-            glEnable(GL_STENCIL_TEST);
-            glDisable(GL_DEPTH_TEST);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-            glStencilMask(0x00);
-            renderer_.renderSkyBox(cam->skybox);
+            DrawCall dc_skybox;
+            RenderSettings &s = dc_skybox.settings;
+            s.depth.write = false;
+            s.depth.func = DepthFunc::LessOrEqual;
+            s.stencil.test = true;
+            s.stencil.op_stencil_fail = StencilOp::Keep;
+            s.stencil.op_depth_fail = StencilOp::Keep;
+            s.stencil.op_pass = StencilOp::Keep;
+            s.stencil.func = StencilFunc::NotEqual;
+            s.stencil.func_ref = 1;
+            s.stencil.func_mask = 0xFF;
+            s.stencil.write = 0x00;
+            dc_skybox.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.skyboxMesh());
+            dc_skybox.shader = renderer_.skyboxShader();
+            dc_skybox.cubemaps.push_back({cam->skybox->id(), 0});
+            dcs.push_back(dc_skybox);
         }
-
-        renderer_.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x,
-                         cam->viewport_size.y);
-        renderer_.renderTextureToScreen(framebuffer_hdr_->colorAttachment(0));
+        renderer_.draw(rtl, dcs);
+        RenderTarget rtsc;
+        rtsc.viewport_origin = cam->viewport_origin;
+        rtsc.viewport_size = cam->viewport_size;
+        rtsc.framebuffer = 0;
+        rtsc.clear_color_buffer = false;
+        rtsc.clear_depth_buffer = false;
+        rtsc.clear_stencil_buffer = false;
+        DrawCall dcsc;
+        dcsc.settings.depth.test = false;
+        dcsc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
+        dcsc.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
+        dcsc.shader = renderer_.fullscreenQuadShader();
+        dcsc.settings.cull.enabled = false;
+        renderer_.draw(rtsc, {dcsc});
     }
-}
+} // namespace rcube
 
 unsigned int DeferredRenderSystem::priority() const
 {

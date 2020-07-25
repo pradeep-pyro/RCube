@@ -1,5 +1,4 @@
-#ifndef SHADERPROGRAM_H
-#define SHADERPROGRAM_H
+#pragma once
 
 #include "RCube/Core/Graphics/OpenGL/GLDataType.h"
 #include "RCube/Core/Graphics/OpenGL/Texture.h"
@@ -197,16 +196,73 @@ enum class DepthFunc
     Always = GL_ALWAYS,         /// Always passes
 };
 
+enum class StencilFunc
+{
+    Less = GL_LESS,   /// Passes if the incoming depth value is less than the stored depth value.
+    Equal = GL_EQUAL, /// Passes if the incoming depth value is equal to the stored depth value.
+    LessOrEqual = GL_LEQUAL, /// Passes if the incoming depth value is less than or equal to the
+                             /// stored depth value.
+    Greater =
+        GL_GREATER, /// Passes if the incoming depth value is greater than the stored depth value.
+    NotEqual =
+        GL_NOTEQUAL, /// Passes if the incoming depth value is not equal to the stored depth value.
+    GreaterOrEqual = GL_GEQUAL, /// Passes if the incoming depth value is greater than or equal to
+                                /// the stored depth value.
+    Never = GL_NEVER,           /// Never passes
+    Always = GL_ALWAYS,         /// Always passes
+};
+
+enum class StencilOp
+{
+    Keep = GL_KEEP,
+    Zero = GL_ZERO,
+    Replace = GL_REPLACE,
+    Incr = GL_INCR,
+    IncrWrap = GL_INCR_WRAP,
+    Decr = GL_DECR,
+    DecrWrap = GL_DECR_WRAP,
+    Invert = GL_INVERT,
+};
+
 struct RenderSettings
 {
-    bool culling = false;
-    Cull cull_mode = Cull::Back;
-    bool depth_test = true;
-    bool depth_write = true;
-    bool blending = false;
+    struct Culling
+    {
+        bool enabled = false;
+        Cull mode = Cull::Back;
+    };
+
+    struct Depth
+    {
+        bool test = true;
+        bool write = true;
+        DepthFunc func = DepthFunc::Less;
+        double near = 0.0;
+        double far = 1.0;
+    };
+
+    struct Stencil
+    {
+        bool test = false;
+        GLuint write = 0xFF;
+        StencilFunc func = StencilFunc::Always;
+        StencilOp op_stencil_fail = StencilOp::Keep, op_depth_fail = StencilOp::Keep,
+                  op_pass = StencilOp::Keep;
+        GLint func_ref = 0;
+        GLint func_mask = 1;
+    };
+
+    struct Blend
+    {
+        bool enabled = false;
+        BlendFunc func_src = BlendFunc::One, func_dst = BlendFunc::Zero;
+    };
+
+    Culling cull;
+    Depth depth;
+    Stencil stencil;
+    Blend blend;
     bool dither = false;
-    BlendFunc blendfunc_src, blendfunc_dst;
-    DepthFunc depthfunc = DepthFunc::Less;
 };
 
 class ShaderProgram
@@ -250,5 +306,3 @@ class ShaderProgram
 };
 
 } // namespace rcube
-
-#endif // SHADERPROGRAM_H

@@ -187,7 +187,7 @@ std::shared_ptr<Mesh> Mesh::createLineMesh(bool indexed)
         MeshPrimitive::Lines, indexed);
 }
 
-std::shared_ptr<Mesh> Mesh::createTriangleMesh(bool indexed)
+std::shared_ptr<Mesh> Mesh::createTriangleMesh(bool indexed, bool strip)
 {
     return Mesh::create(
         {AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
@@ -195,7 +195,7 @@ std::shared_ptr<Mesh> Mesh::createTriangleMesh(bool indexed)
          AttributeBuffer::create("uvs", GLuint(AttributeLocation::UV), 2),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
          AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3)},
-        MeshPrimitive::Triangles, indexed);
+        strip ? MeshPrimitive::TriangleStrip : MeshPrimitive::Triangles, indexed);
 }
 
 void Mesh::release()

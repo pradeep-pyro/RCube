@@ -58,10 +58,10 @@ void FlatMaterial::drawGUI()
 const RenderSettings FlatMaterial::renderState() const
 {
     RenderSettings state;
-    state.blending = false;
-    state.depth_write = true;
-    state.depth_test = true;
-    state.culling = false;
+    state.blend.enabled = false;
+    state.depth.write = true;
+    state.depth.test = true;
+    state.cull.enabled = false;
     return state;
 }
 

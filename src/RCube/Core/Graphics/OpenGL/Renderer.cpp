@@ -1,6 +1,8 @@
 #include "RCube/Core/Graphics/OpenGL/Renderer.h"
 #include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
+#include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
+#include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include <iostream>
@@ -11,81 +13,6 @@
 
 namespace rcube
 {
-
-const std::vector<glm::vec3> skybox_vertices = {
-    glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec3(-1.0f, 1.0f, -1.0f),
-
-    glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, 1.0f, -1.0f),
-    glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec3(-1.0f, -1.0f, 1.0f),
-
-    glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec3(1.0f, 1.0f, 1.0f),
-    glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec3(1.0f, -1.0f, -1.0f),
-
-    glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec3(1.0f, 1.0f, 1.0f),
-    glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec3(-1.0f, -1.0f, 1.0f),
-
-    glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec3(1.0f, 1.0f, 1.0f),
-    glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec3(-1.0f, 1.0f, -1.0f),
-
-    glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, -1.0f),
-    glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, -1.0f, 1.0f)};
-
-const static std::string skybox_vert = R"(
-#version 420
-
-layout (location = 0) in vec3 position;
-out vec3 texcoords;
-
-layout (std140, binding=0) uniform Camera {
-    mat4 view_matrix;
-    mat4 projection_matrix;
-    mat4 viewport_matrix;
-    vec3 eye_pos;
-};
-
-void main() {
-    texcoords = position;
-    vec4 pos = projection_matrix * mat4(mat3(view_matrix)) * vec4(position, 1.0);
-    gl_Position = pos.xyww;
-}
-)";
-
-const static std::string skybox_frag = R"(
-#version 420
-
-out vec4 out_color;
-in vec3 texcoords;
-
-layout (binding = 2) uniform samplerCube skybox;
-
-void main() {
-    out_color = texture(skybox, texcoords);
-}
-)";
-
-const static std::string quad_vert = R"(
-#version 420
-layout (location = 0) in vec3 vertex;
-layout (location = 2) in vec2 texcoord;
-out vec2 v_texcoord;
-
-void main() {
-    v_texcoord = texcoord;
-    gl_Position = vec4(vertex, 1.0);
-}
-)";
-
-const static std::string quad_frag = R"(
-#version 420
-in vec2 v_texcoord;
-out vec4 out_color;
-layout (binding=0) uniform sampler2D fbo_texture;
-
-void main() {
-   out_color = texture(fbo_texture, v_texcoord);
-}
-)";
 
 GLRenderer::GLRenderer()
     : top_(0), left_(0), width_(1280), height_(720), clear_color_(glm::vec4(1.f)), init_(false)
@@ -155,25 +82,13 @@ void GLRenderer::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Full screen quad
-    quad_mesh_ = Mesh::create({AttributeBuffer::create("positions", AttributeLocation::POSITION, 3),
-                               AttributeBuffer::create("uvs", AttributeLocation::UV, 2)},
-                              MeshPrimitive::Triangles);
-    quad_mesh_->attribute("positions")
-        ->setData(std::vector<glm::vec3>{glm::vec3(-1.0f, 1.0f, 0.0f),
-                                         glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f),
-                                         glm::vec3(1.0f, -1.0f, 0.0f)});
-    quad_mesh_->attribute("uvs")->setData(
-        std::vector<glm::vec2>{glm::vec2(0, 1), glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(1, 0)});
-    quad_mesh_->uploadToGPU();
-    quad_shader_ = ShaderProgram::create(quad_vert, quad_frag, true);
+    quad_mesh_ = common::fullScreenQuadMesh();
+    quad_shader_ = common::fullScreenQuadShader(common::FULLSCREEN_QUAD_TEXTURE_FRAGMENT_SHADER);
 
     // Skybox
-    skybox_mesh_ =
-        Mesh::create({AttributeBuffer::create("positions", AttributeLocation::POSITION, 3)},
-                     MeshPrimitive::Triangles);
-    skybox_mesh_->attribute("positions")->setData(skybox_vertices);
+    skybox_mesh_ = common::skyboxMesh();
     skybox_mesh_->uploadToGPU();
-    skybox_shader_ = ShaderProgram::create(skybox_vert, skybox_frag, true);
+    skybox_shader_ = common::skyboxShader();
 
     // Lights data
     light_data_.reserve(99 * 12);
@@ -190,8 +105,6 @@ void GLRenderer::resize(int top, int left, size_t width, size_t height)
     glEnable(GL_SCISSOR_TEST);
     glViewport(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
     glScissor(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
-
-    quad_shader_->use();
 }
 
 void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
@@ -253,7 +166,7 @@ void GLRenderer::setLights(const std::vector<Light> &lights)
 void GLRenderer::updateSettings(const RenderSettings &settings)
 {
     // Depth test
-    if (settings.depth_test)
+    if (settings.depth.test)
     {
         glEnable(GL_DEPTH_TEST);
     }
@@ -261,21 +174,37 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     {
         glDisable(GL_DEPTH_TEST);
     }
+    glDepthMask(static_cast<GLboolean>(settings.depth.write));
+    glDepthFunc(static_cast<GLenum>(settings.depth.func));
 
-    // Depth write
-    glDepthMask(static_cast<GLboolean>(settings.depth_write));
+    // Stencil test
+    if (settings.stencil.test)
+    {
+        glEnable(GL_STENCIL_TEST);
+    }
+    else
+    {
+        glDisable(GL_STENCIL_TEST);
+    }
+    glStencilMask(settings.stencil.write);
+    glStencilFunc(static_cast<GLenum>(settings.stencil.func),
+                  static_cast<GLenum>(settings.stencil.func_ref),
+                  static_cast<GLenum>(settings.stencil.func_mask));
+    glStencilOp(static_cast<GLenum>(settings.stencil.op_stencil_fail),
+                static_cast<GLenum>(settings.stencil.op_depth_fail),
+                static_cast<GLenum>(settings.stencil.op_pass));
 
     // Blending
-    if (settings.blending)
+    if (settings.blend.enabled)
     {
         glEnable(GL_BLEND);
-        glBlendFunc(static_cast<GLenum>(settings.blendfunc_src),
-                    static_cast<GLenum>(settings.blendfunc_dst));
     }
     else
     {
         glDisable(GL_BLEND);
     }
+    glBlendFunc(static_cast<GLenum>(settings.blend.func_src),
+                static_cast<GLenum>(settings.blend.func_dst));
 
     // Dithering
     if (settings.dither)
@@ -287,14 +216,118 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
         glDisable(GL_DITHER);
     }
     // Face Culling
-    if (settings.culling)
+    glCullFace(static_cast<GLenum>(settings.cull.mode));
+    if (settings.cull.enabled)
     {
         glEnable(GL_CULL_FACE);
-        glCullFace(static_cast<GLenum>(settings.cull_mode));
     }
     else
     {
         glDisable(GL_CULL_FACE);
+    }
+}
+
+void GLRenderer::updateSettings(const RenderSettings &settings, const RenderSettings &prev_settings)
+{
+    // Depth test
+    if (settings.depth.test != prev_settings.depth.test)
+    {
+        if (settings.depth.test)
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+    }
+    if (settings.depth.write != prev_settings.depth.write)
+    {
+        glDepthMask(static_cast<GLboolean>(settings.depth.write));
+    }
+    if (settings.depth.func != prev_settings.depth.func)
+    {
+        glDepthFunc(static_cast<GLenum>(settings.depth.func));
+    }
+
+    // Stencil test
+    if (settings.stencil.test != prev_settings.stencil.test)
+    {
+        if (settings.stencil.test)
+        {
+            glEnable(GL_STENCIL_TEST);
+        }
+        else
+        {
+            glDisable(GL_STENCIL_TEST);
+        }
+    }
+    if (settings.stencil.write != prev_settings.stencil.write)
+    {
+        glStencilMask(settings.stencil.write);
+    }
+    if (settings.stencil.func != prev_settings.stencil.func ||
+        settings.stencil.func_ref != prev_settings.stencil.func_ref ||
+        settings.stencil.func_mask != prev_settings.stencil.func_mask)
+    {
+        glStencilFunc(static_cast<GLenum>(settings.stencil.func),
+                      static_cast<GLenum>(settings.stencil.func_ref),
+                      static_cast<GLenum>(settings.stencil.func_mask));
+    }
+    if (settings.stencil.op_stencil_fail != prev_settings.stencil.op_stencil_fail ||
+        settings.stencil.op_depth_fail != prev_settings.stencil.op_depth_fail ||
+        settings.stencil.op_pass != prev_settings.stencil.op_pass)
+    {
+        glStencilOp(static_cast<GLenum>(settings.stencil.op_stencil_fail),
+                    static_cast<GLenum>(settings.stencil.op_depth_fail),
+                    static_cast<GLenum>(settings.stencil.op_pass));
+    }
+    // Blending
+    if (settings.blend.enabled != prev_settings.blend.enabled)
+    {
+        if (settings.blend.enabled)
+        {
+            glEnable(GL_BLEND);
+        }
+        else
+        {
+            glDisable(GL_BLEND);
+        }
+    }
+    if (settings.blend.func_src != prev_settings.blend.func_src ||
+        settings.blend.func_dst != prev_settings.blend.func_dst)
+    {
+        glBlendFunc(static_cast<GLenum>(settings.blend.func_src),
+                    static_cast<GLenum>(settings.blend.func_dst));
+    }
+
+    // Dithering
+    if (settings.dither != prev_settings.dither)
+    {
+        if (settings.dither)
+        {
+            glEnable(GL_DITHER);
+        }
+        else
+        {
+            glDisable(GL_DITHER);
+        }
+    }
+    // Face Culling
+    if (settings.cull.mode != prev_settings.cull.mode)
+    {
+        glCullFace(static_cast<GLenum>(settings.cull.mode));
+    }
+    if (settings.cull.enabled != prev_settings.cull.enabled)
+    {
+        if (settings.cull.enabled)
+        {
+            glEnable(GL_CULL_FACE);
+        }
+        else
+        {
+            glDisable(GL_CULL_FACE);
+        }
     }
 }
 
@@ -374,65 +407,92 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
 {
     // TODO(pradeep): Optimize redundant state changes
     // Bind framebuffer
-    render_target.framebuffer->useForWrite();
-    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer->id());
+    resize(render_target.viewport_origin[0], render_target.viewport_origin[1],
+           render_target.viewport_size[0], render_target.viewport_size[1]);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer);
+
+    // Enable writing in all buffers for clearing state
     // Clear buffers
-    if (render_target.clear_color_buffer || render_target.clear_depth_buffer ||
-        render_target.clear_stencil_buffer)
+    if (render_target.clear_color_buffer)
     {
         glClearColor(render_target.clear_color[0], render_target.clear_color[1],
                      render_target.clear_color[2], render_target.clear_color[3]);
-        GLbitfield clear_bits = 0;
-        if (render_target.clear_color_buffer)
-        {
-            clear_bits |= GL_COLOR_BUFFER_BIT;
-        }
-        if (render_target.clear_depth_buffer)
-        {
-            clear_bits |= GL_DEPTH_BUFFER_BIT;
-        }
-        if (render_target.clear_stencil_buffer)
-        {
-            clear_bits |= GL_STENCIL_BUFFER_BIT;
-        }
-        glClear(clear_bits);
     }
+    GLbitfield clear_bits = 0;
+    if (render_target.clear_color_buffer)
+    {
+        clear_bits |= GL_COLOR_BUFFER_BIT;
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    }
+    if (render_target.clear_depth_buffer)
+    {
+        clear_bits |= GL_DEPTH_BUFFER_BIT;
+        glDepthMask(GL_TRUE);
+    }
+    if (render_target.clear_stencil_buffer)
+    {
+        clear_bits |= GL_STENCIL_BUFFER_BIT;
+        glStencilMask(0xFF);
+    }
+    glClear(clear_bits);
 
     // Draw
-    for (const DrawCall& dc : drawcalls)
+    for (const DrawCall &dc : drawcalls)
     {
         // Change state
-        updateSettings(dc.state);
+        updateSettings(dc.settings);
         // Bind shader
         dc.shader->use();
         // Set uniforms
         dc.update_uniforms(dc.shader);
         // Bind textures
-        for (const DrawCall::DrawCallTexture2D & dctex : dc.textures)
+        for (const DrawCall::Texture2DInfo &dctex : dc.textures)
         {
-            dctex.texture->use(dctex.unit);
+            glBindTextureUnit(dctex.unit, dctex.texture);
         }
-        for (const DrawCall::DrawCallTextureCubemap &dccub : dc.cubemaps)
+        for (const DrawCall::TextureCubemapInfo &dccub : dc.cubemaps)
         {
-            dccub.texture->use(dccub.unit);
+            glBindTextureUnit(dccub.unit, dccub.texture);
         }
         // Draw
-        glBindVertexArray(dc.mesh->vao());
-        if (dc.mesh->numIndexData() == 0)
+        glBindVertexArray(dc.mesh.vao);
+        if (!dc.mesh.indexed)
         {
-            glDrawArrays(static_cast<GLint>(dc.mesh->primitive()), 0,
-                         static_cast<GLsizei>(dc.mesh->numVertexData()));
+            glDrawArrays(dc.mesh.primitive, 0, dc.mesh.num_data);
         }
         else
         {
-            glDrawElements(static_cast<GLint>(dc.mesh->primitive()),
-                           (GLsizei)dc.mesh->numIndexData(),
-                           GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
+            glDrawElements(dc.mesh.primitive, dc.mesh.num_data, GL_UNSIGNED_INT,
+                           (void *)(0 * sizeof(uint32_t)));
         }
     }
 }
 
-void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
+void GLRenderer::drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture)
+{
+    DrawCall dc;
+    dc.settings.depth.test = false;
+    dc.settings.depth.write = true;
+    dc.shader = quad_shader_;
+    dc.textures.push_back({texture->id(), 0});
+    dc.mesh = getDrawCallMeshInfo(quad_mesh_);
+    dc.settings.depth.test = false;
+    dc.settings.depth.write = true;
+    draw(render_target, {dc});
+}
+
+void GLRenderer::drawSkybox(const RenderTarget &render_target,
+                            std::shared_ptr<TextureCubemap> texture, DrawCall dc)
+{
+    dc.settings.depth.write = false;
+    dc.settings.depth.test = true;
+    dc.settings.depth.func = DepthFunc::LessOrEqual;
+    dc.cubemaps.push_back({texture->id(), 0});
+    dc.shader = skybox_shader_;
+    dc.mesh = getDrawCallMeshInfo(skybox_mesh_);
+    draw(render_target, {dc});
+}
+    void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
 {
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
@@ -452,7 +512,7 @@ void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     // Apply the effect on the input and render in bound framebuffer
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
     effect->done();
 }
 
@@ -463,13 +523,38 @@ void GLRenderer::renderFullscreenQuad(ShaderProgram *prog, Framebuffer *output)
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     output->use();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
     output->done();
     prog->done();
 }
 
-void GLRenderer::renderTextureToScreen(Texture2D *tex)
+DrawCall::MeshInfo GLRenderer::getDrawCallMeshInfo(std::shared_ptr<Mesh> mesh)
 {
+    DrawCall::MeshInfo mesh_info;
+    mesh_info.indexed = mesh->numIndexData() > 0;
+    mesh_info.num_data = mesh_info.indexed ? mesh->numIndexData() : mesh->numVertexData();
+    mesh_info.primitive = static_cast<GLenum>(mesh->primitive());
+    mesh_info.vao = mesh->vao();
+    return mesh_info;
+}
+
+void GLRenderer::renderTextureToScreen(std::shared_ptr<Texture2D> tex)
+{
+   /* RenderTarget rt;
+    rt.clear_color_buffer = false;
+    rt.clear_depth_buffer = false;
+    rt.clear_stencil_buffer = false;
+    rt.framebuffer = 0;
+    DrawCall dc;
+    dc.shader = quad_shader_;
+    dc.textures.push_back({tex->id(), 0});
+    dc.mesh.indexed = false;
+    dc.mesh.num_data = 3;
+    dc.mesh.primitive = GL_TRIANGLES;
+    dc.mesh.vao = 0;
+    dc.settings.depth.test = false;
+    dc.settings.depth.write = true;
+    draw(rt, {dc});*/
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     tex->use(0);
     clear();
@@ -477,7 +562,7 @@ void GLRenderer::renderTextureToScreen(Texture2D *tex)
     glDepthMask(GL_TRUE);
     quad_mesh_->use();
     quad_shader_->use();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
 }
 
 } // namespace rcube

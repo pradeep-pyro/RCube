@@ -24,13 +24,17 @@ int main()
     viewer::RCubeViewer viewer(props);
 
     // Load environment cubemap and set as skybox
-    std::shared_ptr<TextureCubemap> env_map = TextureCubemap::create(2000, 2000, 1, true, TextureInternalFormat::sRGBA8);
-    env_map->setData(0, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "px.jpg", 3));
-    env_map->setData(1, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "nx.jpg", 3));
-    env_map->setData(2, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "py.jpg", 3));
-    env_map->setData(3, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "ny.jpg", 3));
-    env_map->setData(4, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "pz.jpg", 3));
-    env_map->setData(5, Image::fromFile(std::string(RESOURCE_PATH) + "/" + "nz.jpg", 3));
+    // sRGBA format is necessary when loading textures from non-linear color space
+    // formats like JPG so that OpenGL can convert them to linear space automatically.
+    std::shared_ptr<TextureCubemap> env_map =
+        TextureCubemap::create(2000, 2000, 1, true, TextureInternalFormat::sRGBA8);
+    std::vector<std::string> filenames = {"px.jpg", "nx.jpg", "py.jpg",
+                                          "ny.jpg", "pz.jpg", "nz.jpg"};
+    for (int i = 0; i < 6; ++i)
+    {
+        env_map->setData(TextureCubemap::Side(i),
+                         Image::fromFile(std::string(RESOURCE_PATH) + "/" + filenames[i], 3));
+    }
     viewer.camera().get<Camera>()->skybox = env_map;
     viewer.camera().get<Camera>()->use_skybox = true;
 
@@ -44,12 +48,14 @@ int main()
     mat->albedo = glm::vec3(0.953, 0.788, 0.408);
     mat->roughness = 0.1f;
     mat->metallic = 1.f;
-    // Assign image based lighting textures to supershape's material
-    // The IBL maps are precomputed as:
+    // Image based lighting
     // (1) diffuse irradiance cubemap using importance sampling, and
-    // (2, 3) prefiltered specular cubmapand BRDF 2D LUT using the split-sum approximation.
-    // mat->createIBLMaps(env_map);
-    // This is not required in practice since the viewer updates all image-based lighting maps during initialization
+    // (2) prefiltered specular cubmap and
+    // (3) BRDF 2D LUT using the split-sum approximation
+    // are automatically precomputed based on
+    // on the subemap's skybox when the viewer is initialized.
+    // To manually update IBL, call:
+    // viewer.updateImageBasedLighting);
 
     // Show viewer
     viewer.execute();

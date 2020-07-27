@@ -24,9 +24,8 @@ void main() {
 }
 )";
 
-const static std::string
-    DiffuseIrradianceFragmentShader = 
-                                       R"(
+const static std::string DiffuseIrradianceFragmentShader =
+    R"(
 #version 420
 
 out vec4 frag_color;
@@ -105,13 +104,15 @@ IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
     cube_->uploadToGPU();
 
     // Compile the irradiance shader
-    shader_ = ShaderProgram::create(DiffuseIrradianceVertexShader,
-                                    DiffuseIrradianceFragmentShader, true);
+    shader_ =
+        ShaderProgram::create(DiffuseIrradianceVertexShader, DiffuseIrradianceFragmentShader, true);
 
     // Create framebuffer to hold result
     fbo_ = Framebuffer::create();
-    fbo_->setColorAttachment(0, Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RGB16F));
-    fbo_->setDepthAttachment(Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth24Stencil8));
+    fbo_->setColorAttachment(
+        0, Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RGB16F));
+    fbo_->setDepthAttachment(
+        Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth24Stencil8));
 
     // Matrices for rendering the cubemap from cameras set pointing at the
     // cube faces
@@ -149,22 +150,28 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
 {
     auto irradiance_map =
         TextureCubemap::create(resolution_, resolution_, 1, true, TextureInternalFormat::RGB16F);
-    shader_->uniform("num_samples").set(num_samples_);
     rdr_.resize(0, 0, resolution_, resolution_);
     glm::mat4 eye(1.0);
     glm::vec3 eye_pos(0., 0., 0.);
-    fbo_->use();
+    RenderTarget rt;
+    rt.framebuffer = fbo_->id();
+    rt.clear_color_buffer = true;
+    rt.clear_depth_buffer = true;
+    rt.clear_stencil_buffer = false;
+    DrawCall dc;
+    dc.cubemaps.push_back({env_map->id(), 0});
+    dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
+    dc.shader = shader_;
+    dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+        shader->uniform("num_samples").set(num_samples_);
+    };
     for (unsigned int i = 0; i < 6; ++i)
     {
-        rdr_.clear();
         rdr_.setCamera(eye_pos, views_[i], projection_, eye);
-        env_map->use(0);
-        rdr_.render(cube_.get(), shader_.get(), eye);
-        irradiance_map->use();
-        glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, 0, 0,
-                            static_cast<GLsizei>(resolution_), static_cast<GLsizei>(resolution_));
+        rdr_.draw(rt, {dc});
+        fbo_->copySubImage(0, irradiance_map, TextureCubemap::Side(i), 0, glm::ivec2(0),
+                           glm::ivec2(resolution_));
     }
-    fbo_->done();
 
     return irradiance_map;
 }

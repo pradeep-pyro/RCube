@@ -299,7 +299,6 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     fbos.reserve(num_mipmaps);
     for (unsigned int mip = 0; mip < num_mipmaps; ++mip)
     {
-        // Resize framebuffer tetures according to mipmap size
         unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         auto color = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::RGB16F);
@@ -314,25 +313,32 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     const glm::vec3 eye_pos(0., 0., 0.);
     for (unsigned int mip = 0; mip < num_mipmaps; ++mip)
     {
-        // Resize framebuffer and viewport according to mipmap size
         unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
-        rdr_.resize(0, 0, mip_width, mip_height);
-        fbos[mip]->use();
 
         float roughness = static_cast<float>(mip) / static_cast<float>(num_mipmaps - 1);
-        shader_->uniform("roughness").set(roughness);
+        RenderTarget rt;
+        rt.framebuffer = fbos[mip]->id();
+        rt.clear_color_buffer = true;
+        rt.clear_depth_buffer = true;
+        rt.clear_stencil_buffer = true;
+        rt.viewport_origin = glm::ivec2(0, 0);
+        rt.viewport_size = glm::ivec2(mip_width, mip_height);
+        DrawCall dc;
+        dc.cubemaps.push_back({env_map->id(), 0});
+        dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
+        dc.cubemaps.push_back({env_map->id(), 0});
+        dc.shader = shader_;
+        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader){
+            shader->uniform("roughness").set(roughness);
+        };
         for (unsigned int i = 0; i < 6; ++i)
         {
-            rdr_.clear();
             rdr_.setCamera(eye_pos, views_[i], projection_, eye);
-            env_map->use(0);
-            rdr_.render(cube_.get(), shader_.get(), eye);
-            prefiltered_map->use();
-            glCopyTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mip, 0, 0, 0, 0, mip_width,
-                                mip_height);
+            rdr_.draw(rt, {dc});
+            fbos[mip]->copySubImage(0, prefiltered_map, TextureCubemap::Side(i), mip,
+                                    glm::ivec2(0, 0), glm::ivec2(mip_width, mip_height));
         }
-        fbos[mip]->done();
     }
 
     return prefiltered_map;

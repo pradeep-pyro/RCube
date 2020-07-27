@@ -45,7 +45,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    // world_.addSystem(std::make_unique<RenderSystem>(props.resolution, props.MSAA));
     world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution, props.MSAA));
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
@@ -72,8 +71,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeZ, front_back);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveZ, front_back);
     camera_.get<Camera>()->use_skybox = true;
-    // Add gamma correction
-    // camera_.get<Camera>()->postprocess.push_back(makeGammaCorrectionEffect());
     // Put a directional light on the camera
     camera_.add<DirectionalLight>();
     // Create a ground plane
@@ -352,7 +349,7 @@ EntityHandle RCubeViewer::createCamera()
 
 EntityHandle RCubeViewer::createGroundPlane()
 {
-    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 2, 2, Orientation::PositiveY));
+    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 100, 100, Orientation::PositiveY));
     mesh->uploadToGPU();
     auto mat = std::make_shared<PhysicallyBasedMaterial>();
     mat->albedo = glm::vec3(1);
@@ -360,6 +357,7 @@ EntityHandle RCubeViewer::createGroundPlane()
     mat->albedo_texture = Texture2D::create(1024, 1024, 1);
     mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.5f)));
     ground_ = createSurface();
+    ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
     ground_.get<Drawable>()->material = mat;
     ground_.add(Name("ground"));

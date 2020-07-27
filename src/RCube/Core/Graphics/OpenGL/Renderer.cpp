@@ -33,35 +33,6 @@ void GLRenderer::cleanup()
     }
 }
 
-const glm::vec3 &GLRenderer::clearColor() const
-{
-    return clear_color_;
-}
-
-void GLRenderer::setClearColor(const glm::vec3 &color)
-{
-    clear_color_ = color;
-}
-
-void GLRenderer::clear(bool color, bool depth, bool stencil)
-{
-    glClearColor(clear_color_[0], clear_color_[1], clear_color_[2], 1.0);
-    GLbitfield clear_bits = 0;
-    if (color)
-    {
-        clear_bits |= GL_COLOR_BUFFER_BIT;
-    }
-    if (depth)
-    {
-        clear_bits |= GL_DEPTH_BUFFER_BIT;
-    }
-    if (stencil)
-    {
-        clear_bits |= GL_STENCIL_BUFFER_BIT;
-    }
-    glClear(clear_bits);
-}
-
 void GLRenderer::initialize()
 {
     if (init_)
@@ -87,7 +58,6 @@ void GLRenderer::initialize()
 
     // Skybox
     skybox_mesh_ = common::skyboxMesh();
-    skybox_mesh_->uploadToGPU();
     skybox_shader_ = common::skyboxShader();
 
     // Lights data
@@ -227,182 +197,6 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     }
 }
 
-void GLRenderer::updateSettings(const RenderSettings &settings, const RenderSettings &prev_settings)
-{
-    // Depth test
-    if (settings.depth.test != prev_settings.depth.test)
-    {
-        if (settings.depth.test)
-        {
-            glEnable(GL_DEPTH_TEST);
-        }
-        else
-        {
-            glDisable(GL_DEPTH_TEST);
-        }
-    }
-    if (settings.depth.write != prev_settings.depth.write)
-    {
-        glDepthMask(static_cast<GLboolean>(settings.depth.write));
-    }
-    if (settings.depth.func != prev_settings.depth.func)
-    {
-        glDepthFunc(static_cast<GLenum>(settings.depth.func));
-    }
-
-    // Stencil test
-    if (settings.stencil.test != prev_settings.stencil.test)
-    {
-        if (settings.stencil.test)
-        {
-            glEnable(GL_STENCIL_TEST);
-        }
-        else
-        {
-            glDisable(GL_STENCIL_TEST);
-        }
-    }
-    if (settings.stencil.write != prev_settings.stencil.write)
-    {
-        glStencilMask(settings.stencil.write);
-    }
-    if (settings.stencil.func != prev_settings.stencil.func ||
-        settings.stencil.func_ref != prev_settings.stencil.func_ref ||
-        settings.stencil.func_mask != prev_settings.stencil.func_mask)
-    {
-        glStencilFunc(static_cast<GLenum>(settings.stencil.func),
-                      static_cast<GLenum>(settings.stencil.func_ref),
-                      static_cast<GLenum>(settings.stencil.func_mask));
-    }
-    if (settings.stencil.op_stencil_fail != prev_settings.stencil.op_stencil_fail ||
-        settings.stencil.op_depth_fail != prev_settings.stencil.op_depth_fail ||
-        settings.stencil.op_pass != prev_settings.stencil.op_pass)
-    {
-        glStencilOp(static_cast<GLenum>(settings.stencil.op_stencil_fail),
-                    static_cast<GLenum>(settings.stencil.op_depth_fail),
-                    static_cast<GLenum>(settings.stencil.op_pass));
-    }
-    // Blending
-    if (settings.blend.enabled != prev_settings.blend.enabled)
-    {
-        if (settings.blend.enabled)
-        {
-            glEnable(GL_BLEND);
-        }
-        else
-        {
-            glDisable(GL_BLEND);
-        }
-    }
-    if (settings.blend.func_src != prev_settings.blend.func_src ||
-        settings.blend.func_dst != prev_settings.blend.func_dst)
-    {
-        glBlendFunc(static_cast<GLenum>(settings.blend.func_src),
-                    static_cast<GLenum>(settings.blend.func_dst));
-    }
-
-    // Dithering
-    if (settings.dither != prev_settings.dither)
-    {
-        if (settings.dither)
-        {
-            glEnable(GL_DITHER);
-        }
-        else
-        {
-            glDisable(GL_DITHER);
-        }
-    }
-    // Face Culling
-    if (settings.cull.mode != prev_settings.cull.mode)
-    {
-        glCullFace(static_cast<GLenum>(settings.cull.mode));
-    }
-    if (settings.cull.enabled != prev_settings.cull.enabled)
-    {
-        if (settings.cull.enabled)
-        {
-            glEnable(GL_CULL_FACE);
-        }
-        else
-        {
-            glDisable(GL_CULL_FACE);
-        }
-    }
-}
-
-void GLRenderer::render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world)
-{
-#ifdef RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
-    glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
-#else
-    const glm::mat3 normal_matrix(model_to_world);
-#endif
-    assert(program != nullptr);
-
-    // Use shader and set uniforms
-    program->use();
-    Uniform u_model_matrix, u_normal_matrix;
-    if (program->hasUniform("model_matrix", u_model_matrix))
-    {
-        u_model_matrix.set(model_to_world);
-    }
-    if (program->hasUniform("normal_matrix", u_normal_matrix))
-    {
-        u_normal_matrix.set(normal_matrix);
-    }
-    // mesh->use();
-    glBindVertexArray(mesh->vao());
-    if (mesh->numIndexData() == 0)
-    {
-        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0,
-                     static_cast<GLsizei>(mesh->numVertexData()));
-    }
-    else
-    {
-        glDrawElements(static_cast<GLint>(mesh->primitive()), (GLsizei)mesh->numIndexData(),
-                       GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
-    }
-    glBindVertexArray(0);
-}
-
-void GLRenderer::render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world)
-{
-#ifdef RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
-    glm::mat3 normal_matrix = glm::mat3(glm::inverse(glm::transpose(model_to_world)));
-#else
-    const glm::mat3 normal_matrix(model_to_world);
-#endif
-    assert(material != nullptr);
-
-    // Update settings
-    updateSettings(material->renderState());
-
-    // Use shader and set uniforms
-    material->use();
-    Uniform u_model_matrix, u_normal_matrix;
-    if (material->shader()->hasUniform("model_matrix", u_model_matrix))
-    {
-        u_model_matrix.set(model_to_world);
-    }
-    if (material->shader()->hasUniform("normal_matrix", u_normal_matrix))
-    {
-        u_normal_matrix.set(normal_matrix);
-    }
-    glBindVertexArray(mesh->vao());
-    if (mesh->numIndexData() == 0)
-    {
-        glDrawArrays(static_cast<GLint>(mesh->primitive()), 0,
-                     static_cast<GLsizei>(mesh->numVertexData()));
-    }
-    else
-    {
-        glDrawElements(static_cast<GLint>(mesh->primitive()), (GLsizei)mesh->numIndexData(),
-                       GL_UNSIGNED_INT, (void *)(0 * sizeof(uint32_t)));
-    }
-    glBindVertexArray(0);
-}
-
 void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls)
 {
     // TODO(pradeep): Optimize redundant state changes
@@ -492,77 +286,15 @@ void GLRenderer::drawSkybox(const RenderTarget &render_target,
     dc.mesh = getDrawCallMeshInfo(skybox_mesh_);
     draw(render_target, {dc});
 }
-    void GLRenderer::renderSkyBox(std::shared_ptr<TextureCubemap> cubemap)
-{
-    glDepthMask(GL_FALSE);
-    glDepthFunc(GL_LEQUAL);
-    skybox_mesh_->use();
-    cubemap->use(2);
-    skybox_shader_->use();
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glDepthFunc(GL_LESS);
-}
-
-void GLRenderer::renderEffect(ShaderProgram *effect, Framebuffer *input)
-{
-    effect->use();
-    // Bind the input framebuffer's texture
-    // input->colorAttachment(0)->use(0);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    quad_mesh_->use();
-    // Apply the effect on the input and render in bound framebuffer
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
-    effect->done();
-}
-
-void GLRenderer::renderFullscreenQuad(ShaderProgram *prog, Framebuffer *output)
-{
-    prog->use();
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    quad_mesh_->use();
-    output->use();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
-    output->done();
-    prog->done();
-}
 
 DrawCall::MeshInfo GLRenderer::getDrawCallMeshInfo(std::shared_ptr<Mesh> mesh)
 {
     DrawCall::MeshInfo mesh_info;
     mesh_info.indexed = mesh->numIndexData() > 0;
-    mesh_info.num_data = mesh_info.indexed ? mesh->numIndexData() : mesh->numVertexData();
+    mesh_info.num_data = GLsizei(mesh_info.indexed ? mesh->numIndexData() : mesh->numVertexData());
     mesh_info.primitive = static_cast<GLenum>(mesh->primitive());
     mesh_info.vao = mesh->vao();
     return mesh_info;
-}
-
-void GLRenderer::renderTextureToScreen(std::shared_ptr<Texture2D> tex)
-{
-   /* RenderTarget rt;
-    rt.clear_color_buffer = false;
-    rt.clear_depth_buffer = false;
-    rt.clear_stencil_buffer = false;
-    rt.framebuffer = 0;
-    DrawCall dc;
-    dc.shader = quad_shader_;
-    dc.textures.push_back({tex->id(), 0});
-    dc.mesh.indexed = false;
-    dc.mesh.num_data = 3;
-    dc.mesh.primitive = GL_TRIANGLES;
-    dc.mesh.vao = 0;
-    dc.settings.depth.test = false;
-    dc.settings.depth.write = true;
-    draw(rt, {dc});*/
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    tex->use(0);
-    clear();
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    quad_mesh_->use();
-    quad_shader_->use();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 3);
 }
 
 } // namespace rcube

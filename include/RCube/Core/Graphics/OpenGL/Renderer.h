@@ -86,43 +86,12 @@ class GLRenderer
     void setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
                    const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
 
-    void render(Mesh *mesh, ShaderProgram *program, const glm::mat4 &model_to_world);
-
-    void render(Mesh *mesh, Material *material, const glm::mat4 &model_to_world);
-
     void draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls);
 
     void drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture);
 
     void drawSkybox(const RenderTarget &render_target, std::shared_ptr<TextureCubemap> texture,
                     DrawCall dc = DrawCall{});
-
-    void renderSkyBox(std::shared_ptr<TextureCubemap> cubemap);
-
-    void renderTextureToScreen(std::shared_ptr<Texture2D> tex);
-
-    void renderEffect(ShaderProgram *effect, Framebuffer *input);
-
-    void renderFullscreenQuad(ShaderProgram *prog, Framebuffer *output);
-
-    /**
-     * @brief clearColor Returns the color that is used to clear the screen i.e.,
-     * passed to glClearColor()
-     * @return clear color
-     */
-    const glm::vec3 &clearColor() const;
-
-    /**
-     * @brief setClearColor Sets the color that is used to clear the screen i.e.,
-     * passed to glClearColor()
-     * @param color clear color
-     */
-    void setClearColor(const glm::vec3 &color);
-
-    /**
-     * @brief clear Clear the screen (calls glClear()) with set clear bits
-     */
-    void clear(bool color = true, bool depth = true, bool stencil = false);
 
     std::shared_ptr<Mesh> fullscreenQuadMesh()
     {
@@ -148,7 +117,6 @@ class GLRenderer
 
   private:
     void updateSettings(const RenderSettings &settings);
-    void updateSettings(const RenderSettings &settings, const RenderSettings &prev_settings);
 
     // Uniform buffer objects
     GLuint ubo_matrices_, ubo_lights_;

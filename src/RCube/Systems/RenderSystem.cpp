@@ -43,9 +43,10 @@ void RenderSystem::drawEntity(Entity ent)
     }
     assert(dr->material != nullptr && dr->mesh != nullptr);
     Transform *tr = world_->getComponent<Transform>(ent);
+
     if (dr->material->renderPriority() == RenderPriority::Opaque)
     {
-        renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
+        //renderer.render(dr->mesh.get(), dr->material.get(), tr->worldTransform());
     }
 }
 
@@ -124,11 +125,16 @@ void RenderSystem::update(bool /* force */)
         }
 
         // Set and clear draw area
-        render_fbo->use();
+        /*render_fbo->use();
         renderer.resize(0, 0, render_fbo->colorAttachment(0)->width(),
                         render_fbo->colorAttachment(0)->height());
         renderer.setClearColor(cam->background_color);
-        renderer.clear(true, true, true);
+        renderer.clear(true, true, true);*/
+        RenderTarget rt;
+        rt.clear_color = glm::vec4(cam->background_color, 1.0);
+        rt.clear_color_buffer = true;
+        rt.clear_depth_buffer = true;
+        rt.clear_stencil_buffer = true;
 
         // set camera & lights
         renderer.setCamera(tr->worldPosition(), cam->world_to_view, cam->view_to_projection,
@@ -144,13 +150,14 @@ void RenderSystem::update(bool /* force */)
         // TODO: find way to display skybox in orthographic projection
         if (cam->use_skybox && !cam->orthographic)
         {
-            renderer.renderSkyBox(cam->skybox);
+            //renderer.renderSkyBox(cam->skybox);
+            renderer.drawSkybox(rt, cam->skybox);
         }
 
         // Blit multisample framebuffer content to regular framebuffer
         if (msaa_ > 0)
         {
-            framebufferms_->blit(*framebuffer_, {0, 0}, resolution_, {0, 0}, resolution_);
+            framebufferms_->blit(framebuffer_, {0, 0}, resolution_, {0, 0}, resolution_);
         }
 
         // Postprocess
@@ -164,12 +171,20 @@ void RenderSystem::update(bool /* force */)
                     (i % 2 == 0) ? framebuffer_.get() : effect_framebuffer_.get();
                 curr_fbo = (i % 2 == 1) ? framebuffer_.get() : effect_framebuffer_.get();
                 curr_fbo->use();
-                renderer.renderEffect(curr_effect, prev_fbo);
+                //renderer.renderEffect(curr_effect, prev_fbo);
             }
         }
-        renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x,
+
+        RenderTarget rt_screen;
+        rt_screen.framebuffer = 0;
+        rt_screen.clear_color_buffer = false;
+        rt_screen.clear_depth_buffer = false;
+        rt_screen.viewport_origin = cam->viewport_origin;
+        rt_screen.viewport_size = cam->viewport_size;
+        /*renderer.resize(cam->viewport_origin.x, cam->viewport_origin.y, cam->viewport_size.x,
                         cam->viewport_size.y);
-        renderer.renderTextureToScreen(curr_fbo->colorAttachment(0));
+        renderer.renderTextureToScreen(curr_fbo->colorAttachment(0));*/
+        renderer.drawTexture(rt_screen, curr_fbo->colorAttachment(0));
     }
 }
 

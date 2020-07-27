@@ -178,32 +178,30 @@ std::shared_ptr<Texture2D> Framebuffer::colorAttachment(size_t i)
     return colors_[i];
 }
 
-void Framebuffer::blit(Framebuffer &target_fbo, glm::ivec2 src_origin, glm::ivec2 src_size,
-                       glm::ivec2 dst_origin, glm::ivec2 dst_size, bool color, bool depth,
+void Framebuffer::blit(std::shared_ptr<Framebuffer> target_fbo, glm::ivec2 src0, glm::ivec2 src1,
+                       glm::ivec2 dst0, glm::ivec2 dst1, bool color, bool depth,
                        bool stencil)
 {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_fbo.id());
     GLbitfield bits = 0;
     if (color)
     {
         bits |= GL_COLOR_BUFFER_BIT;
     }
-    if (depth && target_fbo.hasDepthStencilAttachment())
+    if (depth)
     {
         bits |= GL_DEPTH_BUFFER_BIT;
     }
-    if (stencil && target_fbo.hasDepthStencilAttachment())
+    if (stencil)
     {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBlitFramebuffer((GLint)src_origin.x, (GLint)src_origin.y, (GLint)src_size.x,
-                      (GLint)src_size.y, (GLint)dst_origin.x, (GLint)dst_origin.y,
-                      (GLint)dst_size.x, (GLint)dst_size.y, bits, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBlitNamedFramebuffer(id_, target_fbo->id(), (GLint)src0.x, (GLint)src0.y,
+                           (GLint)src1.x, (GLint)src1.y, (GLint)dst0.x,
+                           (GLint)dst0.y, (GLint)dst1.x, (GLint)dst1.y, bits,
+                           GL_NEAREST);
 }
 
-void Framebuffer::blitToScreen(glm::ivec2 dst_origin, glm::ivec2 dst_size, bool color, bool depth,
+void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1, bool color, bool depth,
                                bool stencil)
 {
     GLbitfield bits = 0;
@@ -219,35 +217,20 @@ void Framebuffer::blitToScreen(glm::ivec2 dst_origin, glm::ivec2 dst_size, bool 
     {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    // glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glDrawBuffer(GL_BACK);
-    glBlitFramebuffer((GLint)dst_origin.x, (GLint)dst_origin.y, (GLint)dst_size.x,
-                      (GLint)dst_size.y, (GLint)dst_origin.x, (GLint)dst_origin.y,
-                      (GLint)dst_size.x, (GLint)dst_size.y, bits, GL_NEAREST);
+    glNamedFramebufferDrawBuffer(0, GL_BACK);
+    glBlitNamedFramebuffer(id_, 0, (GLint)src0.x, (GLint)src0.y, (GLint)src1.x,
+                           (GLint)src1.y, (GLint)dst0.x, (GLint)dst0.y,
+                           (GLint)dst1.x, (GLint)dst1.y, bits, GL_NEAREST);
 }
 
-void Framebuffer::blitToScreen(glm::ivec2 src_origin, glm::ivec2 src_size, glm::ivec2 dst_origin,
-                               glm::ivec2 dst_size, bool color, bool depth, bool stencil)
+void Framebuffer::copySubImage(int attachment_index, std::shared_ptr<TextureCubemap> output,
+                               TextureCubemap::Side face, int level, glm::ivec2 src_origin,
+                               glm::ivec2 src_size)
 {
-    GLbitfield bits = 0;
-    if (color)
-    {
-        bits |= GL_COLOR_BUFFER_BIT;
-    }
-    if (depth)
-    {
-        bits |= GL_DEPTH_BUFFER_BIT;
-    }
-    if (stencil)
-    {
-        bits |= GL_STENCIL_BUFFER_BIT;
-    }
     glBindFramebuffer(GL_READ_FRAMEBUFFER, id_);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glDrawBuffer(GL_BACK);
-    glBlitFramebuffer(src_origin.x, src_origin.y, src_size.x, src_size.y, dst_origin.x,
-                      dst_origin.y, dst_size.x, dst_size.y, bits, GL_NEAREST);
+    glNamedFramebufferReadBuffer(id_, GL_COLOR_ATTACHMENT0 + GLenum(attachment_index));
+    glCopyTextureSubImage3D(output->id(), level, 0, 0, int(face), src_origin.x, src_origin.y,
+                            src_size.x, src_size.y);
 }
 
 Image Framebuffer::getImage(int attachment_index) const

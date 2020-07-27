@@ -107,24 +107,12 @@ class Framebuffer
      * Only works if both framebuffers match in dimensions
      * @param target_fbo
      */
-    void blit(Framebuffer &target_fbo, glm::ivec2 src_origin, glm::ivec2 src_size,
-              glm::ivec2 dst_origin, glm::ivec2 dst_size, bool color = true, bool depth = true, bool stencil = true);
+    void blit(std::shared_ptr<Framebuffer> target_fbo, glm::ivec2 src0, glm::ivec2 src1,
+              glm::ivec2 dst0, glm::ivec2 dst1, bool color = true, bool depth = true,
+              bool stencil = true);
 
     /**
      * Blits (copies) data from the current framebuffer to the default framebuffer
-     * @param dst0 ROI denoted by bottom-right point in current framebuffer
-     * @param dst1 ROI denoted by bottom-right point in destination framebuffer
-     * @param color Whether to copy color buffers
-     * @param depth Whether to copy depth buffer
-     * @param stencil Whether to copy stencil buffer
-     */
-
-    void blitToScreen(glm::ivec2 dst0, glm::ivec2 dst1, bool color = true, bool depth = true,
-                      bool stencil = true);
-    /**
-     * Blits (copies) data from the current framebuffer to the default framebuffer
-     * @param src0 ROI denoted by top-left point in current framebuffer
-     * @param src1 ROI denoted by top-left point in destination framebuffer
      * @param dst0 ROI denoted by bottom-right point in current framebuffer
      * @param dst1 ROI denoted by bottom-right point in destination framebuffer
      * @param color Whether to copy color buffers
@@ -133,7 +121,12 @@ class Framebuffer
      */
 
     void blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1,
-                      bool color = true, bool depth = true, bool stencil = true);
+                      bool color = true, bool depth = true,
+                      bool stencil = true);
+    
+    void copySubImage(int attachment_index, std::shared_ptr<TextureCubemap> output,
+                      TextureCubemap::Side face, int level, glm::ivec2 src_origin,
+                      glm::ivec2 src_size);
 
   private:
     unsigned int id_ = 0;

@@ -1,11 +1,10 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
+#include "RCube/Components/Material.h"
 #include "RCube/Components/PointLight.h"
 #include "RCube/Components/Transform.h"
 #include "RCube/Core/Arch/World.h"
-#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
-#include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/MeshGen/Grid.h"
 #include "RCube/Core/Graphics/MeshGen/Sphere.h"
@@ -32,7 +31,7 @@ struct RCubeViewerProps
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
     int MSAA = 0;                                  // Number of samples for multisampling
     glm::vec3 background_color = glm::vec3(0.2f, 0.2f, 0.2f); // Background color
-    float camera_fov = glm::radians(45.f); // Vertical FOV of the camera in radians
+    float camera_fov = glm::radians(30.f); // Vertical FOV of the camera in radians
     bool camera_orthographic = false;
     bool ground_plane = true;
 };

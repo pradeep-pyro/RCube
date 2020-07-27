@@ -1,13 +1,11 @@
 #include "RCubeViewer/RCubeViewer.h"
 #include "RCube/Core/Arch/World.h"
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
-#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCube/Core/Graphics/MeshGen/Plane.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Core/Graphics/TexGen/Gradient.h"
-#include "RCube/Systems/DeferredRenderSystem.h"
+#include "RCube/Systems/RenderSystem.h"
 #include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Systems/CameraControllerSystem.h"
@@ -89,10 +87,8 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const TriangleMeshD
     ent.add<Name>(name);
 
     std::shared_ptr<Mesh> mesh = Mesh::create(data);
-    std::shared_ptr<Material> mat = std::make_shared<PhysicallyBasedMaterial>();
     mesh->uploadToGPU();
     ent.get<Drawable>()->mesh = mesh;
-    ent.get<Drawable>()->material = mat;
     return ent;
 }
 
@@ -273,6 +269,14 @@ void RCubeViewer::drawGUI()
                             ImGui::EndTabItem();
                         }
                     }
+                    if (ent.has<Material>())
+                    {
+                        if (ImGui::BeginTabItem("Material"))
+                        {
+                            ent.get<Material>()->drawGUI();
+                            ImGui::EndTabItem();
+                        }
+                    }
                     if (ent.has<Camera>())
                     {
                         if (ImGui::BeginTabItem("Camera"))
@@ -334,6 +338,7 @@ EntityHandle RCubeViewer::createSurface()
 {
     auto ent = world_.createEntity();
     ent.add<Drawable>(Drawable());
+    ent.add<Material>();
     ent.add<Transform>(Transform());
     return ent;
 }
@@ -351,15 +356,14 @@ EntityHandle RCubeViewer::createGroundPlane()
 {
     std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 100, 100, Orientation::PositiveY));
     mesh->uploadToGPU();
-    auto mat = std::make_shared<PhysicallyBasedMaterial>();
+    ground_ = createSurface();
+    Material *mat = ground_.get<Material>();
     mat->albedo = glm::vec3(1);
     mat->roughness = 0.5f;
     mat->albedo_texture = Texture2D::create(1024, 1024, 1);
     mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.5f)));
-    ground_ = createSurface();
     ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
-    ground_.get<Drawable>()->material = mat;
     ground_.add(Name("ground"));
     return ground_;
 }

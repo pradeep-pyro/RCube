@@ -33,10 +33,6 @@ int main()
     colormap(Colormap::Viridis, height_field, vmin, vmax, sphere_mesh->attribute("colors")->data());
     sphere_mesh->uploadToGPU();
 
-    // Set albedo color to white since it will be multiplied with the colors above
-    auto material =
-        std::dynamic_pointer_cast<PhysicallyBasedMaterial>(sphere.get<Drawable>()->material);
-
     // Show viewer
     viewer.execute();
     return 0;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RCube/Core/Graphics/Materials/Material.h"
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
 #include "RCube/Core/Graphics/OpenGL/Image.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"

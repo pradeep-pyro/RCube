@@ -28,8 +28,7 @@ int main()
     EntityHandle mesh_handle = viewer.addSurface("OBJMesh", mesh);
 
     // Change its diffuse color by getting the Drawable component
-    auto material =
-        std::dynamic_pointer_cast<PhysicallyBasedMaterial>(mesh_handle.get<Drawable>()->material);
+    auto material = mesh_handle.get<Material>();
     material->albedo = glm::vec3(0.0, 0.3, 0.7);
     material->roughness = 0.5f;
     material->wireframe = true;

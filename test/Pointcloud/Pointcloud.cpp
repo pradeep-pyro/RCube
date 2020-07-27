@@ -1,4 +1,3 @@
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Colormap.h"
 #include "RCubeViewer/Components/Name.h"
@@ -34,9 +33,7 @@ int main()
     size_t num_triangles_per_point;
     TriangleMeshData pointcloudMesh = pointsToSpheres(pointcloud, 0.03f, num_triangles_per_point);
     EntityHandle pc_entity = viewer.addSurface("pointcloud", pointcloudMesh);
-    auto mat =
-        std::dynamic_pointer_cast<PhysicallyBasedMaterial>(pc_entity.get<Drawable>()->material);
-    mat->albedo = glm::vec3(0.f, 0.8f, 0.5f);
+    pc_entity.get<Material>()->albedo = glm::vec3(0.f, 0.8f, 0.5f);
 
     // Make pointcloud pickable with mouse click
     pc_entity.add<viewer::Pickable>();

@@ -1,7 +1,6 @@
 #include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
-#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCube/Core/Graphics/MeshGen/SuperShape.h"
 #include "RCubeViewer/RCubeViewer.h"
 
@@ -44,7 +43,7 @@ int main()
     // local position, and local orientation with respect to a parent transform
     EntityHandle s = viewer.addSurface(
         "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 3.f, 6.f, 1.f, 1.f, 1.f));
-    auto mat = std::dynamic_pointer_cast<PhysicallyBasedMaterial>(s.get<Drawable>()->material);
+    Material *mat = s.get<Material>();
     mat->albedo = glm::vec3(0.953, 0.788, 0.408);
     mat->roughness = 0.1f;
     mat->metallic = 1.f;

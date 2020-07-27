@@ -8,7 +8,6 @@ void Drawable::drawGUI()
 {
     // Visibility
     ImGui::Checkbox("Visible", &visible);
-    ImGui::Separator();
 
     // Mesh
     static const char *current_attr = nullptr;
@@ -45,10 +44,6 @@ void Drawable::drawGUI()
     }
     ImGui::LabelText(
         "#Faces", std::to_string(mesh->indices()->size() / mesh->primitiveDim()).c_str());
-    ImGui::Separator();
-
-    // Material
-    material->drawGUI();
 }
 
 } // namespace rcube

@@ -1,5 +1,4 @@
 #include "RCube/Core/Graphics/OpenGL/Renderer.h"
-#include "RCube/Core/Graphics/Materials/FlatMaterial.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"

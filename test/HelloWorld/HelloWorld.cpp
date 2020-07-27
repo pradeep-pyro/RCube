@@ -1,5 +1,3 @@
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
-#include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCubeViewer/RCubeViewer.h"
 
 int main()
@@ -25,8 +23,7 @@ int main()
     // assert(icoSphere.valid());
 
     // Change its diffuse color by getting the Drawable component
-    const auto &material =
-        std::dynamic_pointer_cast<PhysicallyBasedMaterial>(icoSphere.get<Drawable>()->material);
+    Material *material = icoSphere.get<Material>();
     material->albedo = glm::vec3(0.0, 0.3, 0.7);
     material->wireframe = true;
 

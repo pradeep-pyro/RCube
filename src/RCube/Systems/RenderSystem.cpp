@@ -139,7 +139,7 @@ in vec3 geom_position;
 in vec3 geom_normal;
 in vec2 geom_uv;
 in vec3 geom_color;
-in mat3 tbn;
+in mat3 geom_tbn;
 noperspective in vec3 dist;
 
 layout(location=0) out vec4 g_position;
@@ -188,7 +188,7 @@ void main() {
     float met = metallic;
     met = use_metallic_texture ? texture(metallic_tex, geom_uv).r * met: met;
     met = clamp(met, 0.0, 1.0);
-    vec3 N = use_normal_texture ? tbn * (texture(normal_tex, geom_uv).rgb * 2.0 - 1.0) : geom_normal;
+    vec3 N = use_normal_texture ? geom_tbn * (texture(normal_tex, geom_uv).rgb * 2.0 - 1.0) : geom_normal;
     N = normalize(N);
     g_normal.rgb = N;
     g_normal.a = met;
@@ -370,7 +370,7 @@ void main()
     vec3 result = direct + indirect;
 
     // Tone mapping using Reinhard operator
-    //result = result / (result + vec3(1.0));
+    result = result / (result + vec3(1.0));
 
     // Output
     result = pow(result, vec3(1.0 / 2.2));
@@ -436,9 +436,6 @@ void DeferredRenderSystem::initialize()
     framebuffer_hdr_->setDepthStencilAttachment(depth);
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
-
-    skybox_mesh_ = common::skyboxMesh();
-    skybox_shader_ = common::skyboxShader();
 
     lighting_shader_ = common::fullScreenQuadShader(PBRLightingPassShader);
 }

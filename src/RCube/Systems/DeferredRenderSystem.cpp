@@ -5,11 +5,11 @@
 #include "RCube/Components/Transform.h"
 #include "RCube/Core/Graphics/Materials/PhysicallyBasedMaterial.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
+#include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
+#include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
 #include "RCube/Systems/RenderSystem.h"
 #include "glm/gtx/string_cast.hpp"
-#include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
-#include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 
 namespace rcube
 {
@@ -30,11 +30,11 @@ layout (std140, binding=0) uniform Camera {
     vec3 eye_pos;
 };
 
-out vec3 frag_position;
-out vec2 frag_uv;
-out vec3 frag_color;
-out vec3 frag_normal;
-out mat3 tbn;
+out vec3 vert_position;
+out vec2 vert_uv;
+out vec3 vert_color;
+out vec3 vert_normal;
+out mat3 vert_tbn;
 
 uniform mat4 model_matrix;
 uniform mat3 normal_matrix;
@@ -42,26 +42,105 @@ uniform mat3 normal_matrix;
 void main()
 {
     vec4 world_pos = model_matrix * vec4(position, 1.0);
-    frag_position = world_pos.xyz; 
-    frag_uv = uv;
-    frag_color = color;
-    frag_normal = normal_matrix * normal;
+    vert_position = world_pos.xyz;
+    vert_uv = uv;
+    vert_color = color;
+    vert_normal = normal_matrix * normal;
     gl_Position = projection_matrix * view_matrix * world_pos;
     // Tangent basis
     vec3 T = normalize(vec3(model_matrix * vec4(tangent, 0.0)));
     vec3 B = cross(normal, T);
-    tbn = mat3(T, B, normal);
+    vert_tbn = mat3(T, B, normal);
+}
+)";
+
+const static std::string GBufferGeometryShader =
+    R"(
+#version 420
+layout (triangles) in;
+layout (triangle_strip, max_vertices=3) out;
+
+layout (std140, binding=0) uniform Camera {
+    mat4 view_matrix;
+    mat4 projection_matrix;
+    mat4 viewport_matrix;
+    vec3 eye_pos;
+};
+
+in vec3 vert_position[];
+out vec3 geom_position;
+in vec3 vert_normal[];
+out vec3 geom_normal;
+in vec2 vert_uv[];
+out vec2 geom_uv;
+in vec3 vert_color[];
+out vec3 geom_color;
+in mat3 vert_tbn[];
+out mat3 geom_tbn;
+
+noperspective out vec3 dist;
+
+void main() {
+    // Transform each vertex into viewport space
+    vec3 p0 = vec3(viewport_matrix * (gl_in[0].gl_Position / gl_in[0].gl_Position.w));
+    vec3 p1 = vec3(viewport_matrix * (gl_in[1].gl_Position / gl_in[1].gl_Position.w));
+    vec3 p2 = vec3(viewport_matrix * (gl_in[2].gl_Position / gl_in[2].gl_Position.w));
+
+    float a = length(p1 - p2);
+    float b = length(p2 - p0);
+    float c = length(p0 - p1);
+
+    // Interior angles
+    float alpha = acos((b*b + c*c - a*a) / (2.0 * b * c));
+    float beta = acos((a*a + c*c - b*b) / (2.0 * a * c));
+
+    // Distance from vertex to opposite side using law of cosines
+    float ha = c * sin(beta);
+    float hb = c * sin(alpha);
+    float hc = b * sin(alpha);
+
+    // Emit vertex 1
+    dist = vec3(ha, 0, 0);
+    geom_position = vert_position[0];
+    geom_normal = vert_normal[0];
+    geom_uv = vert_uv[0];
+    geom_color = vert_color[0];
+    geom_tbn = vert_tbn[0];
+    gl_Position = gl_in[0].gl_Position;
+    EmitVertex();
+
+    // Emit vertex 2
+    dist = vec3(0, hb, 0);
+    geom_position = vert_position[1];
+    geom_normal = vert_normal[1];
+    geom_uv = vert_uv[1];
+    geom_color = vert_color[1];
+    geom_tbn = vert_tbn[1];
+    gl_Position = gl_in[1].gl_Position;
+    EmitVertex();
+
+    // Emit vertex 3
+    dist = vec3(0, 0, hc);
+    geom_position = vert_position[2];
+    geom_normal = vert_normal[2];
+    geom_uv = vert_uv[2];
+    geom_color = vert_color[2];
+    geom_tbn = vert_tbn[2];
+    gl_Position = gl_in[2].gl_Position;
+    EmitVertex();
+    EndPrimitive();
 }
 )";
 
 const std::string GBufferFragmentShader =
     R"(
 #version 420
-in vec3 frag_position;
-in vec3 frag_normal;
-in vec2 frag_uv;
-in vec3 frag_color;
+in vec3 geom_position;
+in vec3 geom_normal;
+in vec2 geom_uv;
+in vec3 geom_color;
 in mat3 tbn;
+noperspective in vec3 dist;
 
 layout(location=0) out vec4 g_position;
 layout(location=1) out vec4 g_normal;
@@ -81,23 +160,43 @@ layout(binding=1) uniform sampler2D roughness_tex;
 layout(binding=2) uniform sampler2D metallic_tex;
 layout(binding=3) uniform sampler2D normal_tex;
 
+struct Wireframe {
+    bool show;
+    vec3 color;
+    float thickness;
+};
+uniform Wireframe wireframe;
+uniform bool show_wireframe;
+
 void main() {
-    vec3 alb = albedo * frag_color;
-    alb = use_albedo_texture ? texture(albedo_tex, frag_uv).rgb : alb;
+    vec3 alb = albedo * geom_color;
+    alb = use_albedo_texture ? texture(albedo_tex, geom_uv).rgb : alb;
+    
+    if (wireframe.show) {
+        // Find the smallest distance
+        float d = min(dist.x, dist.y);
+        d = min(d, dist.z);
+        if (d < wireframe.thickness)
+        {
+            float mix_val = smoothstep(wireframe.thickness - 1.0, wireframe.thickness + 1.0, d);
+            alb = mix(wireframe.color, alb, mix_val);
+        }
+    }
+    
     g_albedo = alb;
 
     float met = metallic;
-    met = use_metallic_texture ? texture(metallic_tex, frag_uv).r * met: met;
+    met = use_metallic_texture ? texture(metallic_tex, geom_uv).r * met: met;
     met = clamp(met, 0.0, 1.0);
-    vec3 N = use_normal_texture ? tbn * (texture(normal_tex, frag_uv).rgb * 2.0 - 1.0) : frag_normal;
+    vec3 N = use_normal_texture ? tbn * (texture(normal_tex, geom_uv).rgb * 2.0 - 1.0) : geom_normal;
     N = normalize(N);
     g_normal.rgb = N;
     g_normal.a = met;
 
     float rou = roughness;
-    rou = use_roughness_texture ? texture(roughness_tex, frag_uv).r * rou : rou;
+    rou = use_roughness_texture ? texture(roughness_tex, geom_uv).r * rou : rou;
     rou = clamp(rou, 0.04, 1.0);
-    g_position.rgb = frag_position;
+    g_position.rgb = geom_position;
     g_position.a = rou;
 }
 )";
@@ -325,8 +424,8 @@ DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution, unsigned int m
 void DeferredRenderSystem::initialize()
 {
     gbuffer_ = createGBuffer(resolution_.x, resolution_.y);
-    gbuffer_shader_ = ShaderProgram::create(GBufferVertexShader, GBufferFragmentShader, true);
-    
+    gbuffer_shader_ = ShaderProgram::create(GBufferVertexShader, GBufferGeometryShader, GBufferFragmentShader, true);
+
     framebuffer_hdr_ = Framebuffer::create();
     auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
     framebuffer_hdr_->setColorAttachment(0, color);
@@ -454,12 +553,15 @@ void DeferredRenderSystem::update(bool force)
                 shader->uniform("use_metallic_texture").set(pbr->metallic_texture != nullptr);
                 shader->uniform("model_matrix").set(tr->worldTransform());
                 shader->uniform("normal_matrix").set(glm::mat3(tr->worldTransform()));
+                shader->uniform("wireframe.show").set(pbr->wireframe);
+                shader->uniform("wireframe.color").set(pbr->wireframe_color);
+                shader->uniform("wireframe.thickness").set(pbr->wireframe_thickness);
             };
             drawcalls_geom_pass.push_back(dc);
         }
         renderer_.draw(rt_geom_pass, drawcalls_geom_pass);
         gbuffer_->done();
-        gbuffer_->blit(*framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
+        gbuffer_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
                        true);
         /*glEnable(GL_STENCIL_TEST);
         glEnable(GL_DEPTH_TEST);
@@ -553,7 +655,7 @@ void DeferredRenderSystem::update(bool force)
         // Fullscreen quad shader expects empty vao and drawcall with 6 vertices
         dc_light.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
         dcs.push_back(dc_light);
-        //renderer_.renderEffect(lighting_shader_.get(), gbuffer_.get());
+        // renderer_.renderEffect(lighting_shader_.get(), gbuffer_.get());
         if (cam->use_skybox)
         {
             DrawCall dc_skybox;

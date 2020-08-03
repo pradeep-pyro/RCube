@@ -15,7 +15,7 @@ namespace common
  * renders a skybox at depth = 1.0
  */
 const static std::string SKYBOX_VERTEX_SHADER = R"(
-#version 420
+#version 450
 
 layout (location = 0) in vec3 position;
 out vec3 texcoords;
@@ -40,7 +40,7 @@ void main() {
  * renders a skybox at depth = 1.0
  */
 const static std::string SKYBOX_FRAGMENT_SHADER = R"(
-#version 420
+#version 450
 
 out vec4 out_color;
 in vec3 texcoords;
@@ -59,7 +59,7 @@ void main() {
  * The fragment shader must be defined by the user.
  */
 const static std::string FULLSCREEN_QUAD_VERTEX_SHADER = R"(
-#version 450 core
+#version 450
 
 layout (location = 0) in vec3 position;
 layout (location = 2) in vec2 uv;
@@ -72,7 +72,7 @@ void main() {
 )";
 
 const static std::string FULLSCREEN_QUAD_TEXTURE_FRAGMENT_SHADER = R"(
-#version 450 core
+#version 450
 
 in vec2 v_texcoord;
 out vec4 out_color;
@@ -80,6 +80,35 @@ layout (binding=0) uniform sampler2D tex;
 
 void main() {
    out_color = texture(tex, v_texcoord);
+}
+)";
+
+
+/**
+ * Shadowmap vertex shader
+ */
+const static std::string SHADOWMAP_VERTEX_SHADER = R"(
+#version 450
+
+layout (location = 0) in vec3 position;
+
+uniform mat4 light_matrix;
+uniform mat4 model_matrix;
+
+void main()
+{
+    gl_Position = light_matrix * model_matrix * vec4(position, 1.0);
+}
+)";
+
+/**
+ * Shadowmap fragment shader
+ */
+const static std::string SHADOWMAP_FRAGMENT_SHADER = R"(
+#version 450
+
+void main() {
+    // gl_FragDepth = gl_FragCoord.z;
 }
 )";
 
@@ -96,6 +125,12 @@ std::shared_ptr<ShaderProgram> fullScreenQuadShader(const std::string &fragment_
  * expects a cubemap to be bound to texture unit 2.
  */
 std::shared_ptr<ShaderProgram> skyboxShader();
+
+/**
+ * Create a shader for rendering a shadow map into a depth buffer
+ */
+std::shared_ptr<ShaderProgram> shadowMapShader();
+
 
 } // namespace common
 } // namespace rcube

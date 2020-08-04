@@ -19,7 +19,11 @@ namespace rcube
 class DirectionalLight : public BaseLight
 {
   public:
-    std::shared_ptr<Texture2D> shadow_map_ = nullptr;
+    glm::ivec2 shadowmap_origin = glm::ivec2(0);  // Must be between (0, 0) and
+                                                  // (SHADOWMAP_ATLAS_SIZE, SHADOWMAP_ATLAS_SIZE)
+    glm::ivec2 shadowmap_size = glm::ivec2(1024); // Must be power-of-2
+    bool cast_shadow = false;
+
     DirectionalLight(glm::vec3 color = glm::vec3(1.f));
     /**
      * Set the color of the light

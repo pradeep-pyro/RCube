@@ -6,7 +6,8 @@ DirectionalLight::DirectionalLight(glm::vec3 rgb)
 {
     light_.pos_w = 0.f;
     light_.color = rgb;
-    shadow_map_ = Texture2D::create(1024, 1024, 1, TextureInternalFormat::Depth24Stencil8);
+    shadowmap_origin = glm::ivec2(0);
+    shadowmap_size = glm::ivec2(1024);
 }
 
 const glm::vec3 &DirectionalLight::color() const

@@ -31,6 +31,8 @@ class DeferredRenderSystem : public System
     std::shared_ptr<ShaderProgram> gbuffer_shader_;
     std::shared_ptr<ShaderProgram> lighting_shader_;
     std::shared_ptr<ShaderProgram> skybox_shader_;
+    std::shared_ptr<ShaderProgram> shadow_shader_;
+    std::shared_ptr<Texture2D> shadow_atlas_;
     unsigned int msaa_;
 };
 

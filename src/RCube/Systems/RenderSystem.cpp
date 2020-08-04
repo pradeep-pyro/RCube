@@ -440,18 +440,14 @@ void DeferredRenderSystem::initialize()
 
     // Shadow mapping fbo
     framebuffer_shadow_ = Framebuffer::create();
-    {
-        auto color =
-            Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
-        framebuffer_shadow_->setColorAttachment(0, color);
-        auto depth = Texture2D::create(resolution_.x, resolution_.y, 1,
-                                       TextureInternalFormat::Depth32FStencil8);
-        framebuffer_shadow_->setDepthStencilAttachment(depth);
-        framebuffer_shadow_->setDrawBuffers({});
-        assert(framebuffer_shadow_->isComplete());
-    }
+    shadow_atlas_ = Texture2D::create(4096, 4096, 1, TextureInternalFormat::Depth24Stencil8);
+    framebuffer_shadow_->setDepthStencilAttachment(shadow_atlas_);
+    framebuffer_shadow_->setDrawBuffers({});
+    assert(framebuffer_shadow_->isComplete());
 
     lighting_shader_ = common::fullScreenQuadShader(PBRLightingPassShader);
+
+    shadow_shader_ = common::shadowMapShader();
 }
 
 void DeferredRenderSystem::cleanup()
@@ -469,8 +465,43 @@ void DeferredRenderSystem::update(bool force)
     for (auto light : light_entities)
     {
         DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
+        if (dirL->cast_shadow)
+        {
+            continue;
+        }
         Transform *tr = world_->getComponent<Transform>(light);
-
+        RenderTarget rtsh;
+        rtsh.framebuffer = framebuffer_shadow_->id();
+        rtsh.clear_color_buffer = false;
+        rtsh.clear_depth_buffer = true;
+        rtsh.clear_stencil_buffer = false;
+        rtsh.viewport_origin = dirL->shadowmap_origin;
+        rtsh.viewport_size = dirL->shadowmap_size;
+        assert(framebuffer_shadow_->isComplete());
+        const glm::vec3 opp_dirL = -tr->worldPosition();
+        const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+        const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+        const glm::mat4 light_model = glm::mat4(1.0);
+        const glm::mat4 light_matrix = light_proj * light_view * light_model;
+        std::vector<DrawCall> dcsh;
+        dcsh.reserve(light_entities.size());
+        for (auto renderable : renderable_entities)
+        {
+            const glm::mat4 model_matrix =
+                world_->getComponent<Transform>(renderable)->worldTransform();
+            DrawCall dc;
+            dc.mesh =
+                renderer_.getDrawCallMeshInfo(world_->getComponent<Drawable>(renderable)->mesh);
+            dc.settings.depth.write = true;
+            dc.settings.depth.test = true;
+            dc.shader = shadow_shader_;
+            dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+                shader->uniform("light_matrix").set(light_matrix);
+                shader->uniform("model_matrix").set(model_matrix);
+            };
+            dcsh.push_back(dc);
+        }
+        renderer_.draw(rtsh, dcsh);
     }
 
     // Set lights

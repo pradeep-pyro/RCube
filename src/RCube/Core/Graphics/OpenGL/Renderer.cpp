@@ -200,9 +200,9 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
 {
     // TODO(pradeep): Optimize redundant state changes
     // Bind framebuffer
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer);
     resize(render_target.viewport_origin[0], render_target.viewport_origin[1],
            render_target.viewport_size[0], render_target.viewport_size[1]);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer);
 
     // Enable writing in all buffers for clearing state
     // Clear buffers
@@ -259,6 +259,8 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
                            (void *)(0 * sizeof(uint32_t)));
         }
     }
+    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
 void GLRenderer::drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture)

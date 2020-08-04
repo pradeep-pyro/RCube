@@ -27,7 +27,14 @@ void Framebuffer::setDrawBuffers(const std::vector<int> &attachment_indices)
     {
         draw_bufs.push_back(GL_COLOR_ATTACHMENT0 + att);
     }
-    glNamedFramebufferDrawBuffers(id_, (GLsizei)draw_bufs.size(), draw_bufs.data());
+    if (draw_bufs.size() > 0)
+    {
+        glNamedFramebufferDrawBuffers(id_, (GLsizei)draw_bufs.size(), draw_bufs.data());
+    }
+    else
+    {
+        glNamedFramebufferDrawBuffer(id_, GL_NONE);
+    }
 }
 
 void Framebuffer::setReadBuffer(int attachment_index)
@@ -179,8 +186,7 @@ std::shared_ptr<Texture2D> Framebuffer::colorAttachment(size_t i)
 }
 
 void Framebuffer::blit(std::shared_ptr<Framebuffer> target_fbo, glm::ivec2 src0, glm::ivec2 src1,
-                       glm::ivec2 dst0, glm::ivec2 dst1, bool color, bool depth,
-                       bool stencil)
+                       glm::ivec2 dst0, glm::ivec2 dst1, bool color, bool depth, bool stencil)
 {
     GLbitfield bits = 0;
     if (color)
@@ -195,14 +201,13 @@ void Framebuffer::blit(std::shared_ptr<Framebuffer> target_fbo, glm::ivec2 src0,
     {
         bits |= GL_STENCIL_BUFFER_BIT;
     }
-    glBlitNamedFramebuffer(id_, target_fbo->id(), (GLint)src0.x, (GLint)src0.y,
-                           (GLint)src1.x, (GLint)src1.y, (GLint)dst0.x,
-                           (GLint)dst0.y, (GLint)dst1.x, (GLint)dst1.y, bits,
-                           GL_NEAREST);
+    glBlitNamedFramebuffer(id_, target_fbo->id(), (GLint)src0.x, (GLint)src0.y, (GLint)src1.x,
+                           (GLint)src1.y, (GLint)dst0.x, (GLint)dst0.y, (GLint)dst1.x,
+                           (GLint)dst1.y, bits, GL_NEAREST);
 }
 
-void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1, bool color, bool depth,
-                               bool stencil)
+void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0, glm::ivec2 dst1,
+                               bool color, bool depth, bool stencil)
 {
     GLbitfield bits = 0;
     if (color)
@@ -218,9 +223,9 @@ void Framebuffer::blitToScreen(glm::ivec2 src0, glm::ivec2 src1, glm::ivec2 dst0
         bits |= GL_STENCIL_BUFFER_BIT;
     }
     glNamedFramebufferDrawBuffer(0, GL_BACK);
-    glBlitNamedFramebuffer(id_, 0, (GLint)src0.x, (GLint)src0.y, (GLint)src1.x,
-                           (GLint)src1.y, (GLint)dst0.x, (GLint)dst0.y,
-                           (GLint)dst1.x, (GLint)dst1.y, bits, GL_NEAREST);
+    glBlitNamedFramebuffer(id_, 0, (GLint)src0.x, (GLint)src0.y, (GLint)src1.x, (GLint)src1.y,
+                           (GLint)dst0.x, (GLint)dst0.y, (GLint)dst1.x, (GLint)dst1.y, bits,
+                           GL_NEAREST);
 }
 
 void Framebuffer::copySubImage(int attachment_index, std::shared_ptr<TextureCubemap> output,

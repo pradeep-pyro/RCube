@@ -1,6 +1,7 @@
 #include "RCube/Systems/RenderSystem.h"
 #include "RCube/Components/BaseLight.h"
 #include "RCube/Components/Camera.h"
+#include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
 #include "RCube/Components/Material.h"
 #include "RCube/Components/Transform.h"
@@ -437,6 +438,19 @@ void DeferredRenderSystem::initialize()
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
 
+    // Shadow mapping fbo
+    framebuffer_shadow_ = Framebuffer::create();
+    {
+        auto color =
+            Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
+        framebuffer_shadow_->setColorAttachment(0, color);
+        auto depth = Texture2D::create(resolution_.x, resolution_.y, 1,
+                                       TextureInternalFormat::Depth32FStencil8);
+        framebuffer_shadow_->setDepthStencilAttachment(depth);
+        framebuffer_shadow_->setDrawBuffers({});
+        assert(framebuffer_shadow_->isComplete());
+    }
+
     lighting_shader_ = common::fullScreenQuadShader(PBRLightingPassShader);
 }
 
@@ -450,6 +464,14 @@ void DeferredRenderSystem::update(bool force)
     const auto &light_entities = registered_entities_[filters_[0]];
     const auto &camera_entities = registered_entities_[filters_[1]];
     const auto &renderable_entities = registered_entities_[filters_[2]];
+
+    // Shadow pass
+    for (auto light : light_entities)
+    {
+        DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
+        Transform *tr = world_->getComponent<Transform>(light);
+
+    }
 
     // Set lights
     std::vector<Light> lights;

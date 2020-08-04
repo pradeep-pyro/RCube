@@ -7,23 +7,6 @@
 
 namespace rcube
 {
-struct PBRMaterial
-{
-    glm::vec3 albedo = glm::vec3(0.5f, 0.5f, 0.5f);
-    float roughness = 0.5f;
-    float metallic = 0.5f;
-    std::shared_ptr<Texture2D> albedo_texture = nullptr;
-    std::shared_ptr<Texture2D> roughness_texture = nullptr;
-    std::shared_ptr<Texture2D> metallic_texture = nullptr;
-    std::shared_ptr<Texture2D> normal_texture = nullptr;
-    bool wireframe = false;
-    float wireframe_thickness = 1.f;
-    glm::vec3 wireframe_color = glm::vec3(0.f, 0.f, 0.f);
-    // Image-based lighting
-    std::shared_ptr<TextureCubemap> irradiance_map = nullptr;
-    std::shared_ptr<TextureCubemap> prefilter_map = nullptr;
-    std::shared_ptr<Texture2D> brdf_map = nullptr;
-};
 
 class DeferredRenderSystem : public System
 {
@@ -44,6 +27,7 @@ class DeferredRenderSystem : public System
     GLRenderer renderer_;
     std::shared_ptr<Framebuffer> gbuffer_;
     std::shared_ptr<Framebuffer> framebuffer_hdr_;
+    std::shared_ptr<Framebuffer> framebuffer_shadow_;
     std::shared_ptr<ShaderProgram> gbuffer_shader_;
     std::shared_ptr<ShaderProgram> lighting_shader_;
     std::shared_ptr<ShaderProgram> skybox_shader_;

@@ -2,6 +2,7 @@
 #define DIRECTIONLIGHT_H
 
 #include "RCube/Components/BaseLight.h"
+#include "RCube/Core/Graphics/OpenGL/Texture.h"
 
 namespace rcube
 {
@@ -18,6 +19,7 @@ namespace rcube
 class DirectionalLight : public BaseLight
 {
   public:
+    std::shared_ptr<Texture2D> shadow_map_ = nullptr;
     DirectionalLight(glm::vec3 color = glm::vec3(1.f));
     /**
      * Set the color of the light

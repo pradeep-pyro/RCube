@@ -292,8 +292,6 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
     prefiltered_map->setFilterModeMin(TextureFilterMode::Trilinear); // enable trilinear filtering
     prefiltered_map->setFilterModeMag(TextureFilterMode::Linear);
     prefiltered_map->setWrapMode(TextureWrapMode::ClampToEdge);
-    shader_->uniform("num_samples").set(num_samples_);
-    rdr_.resize(0, 0, resolution_, resolution_);
 
     std::vector<std::shared_ptr<Framebuffer>> fbos;
     fbos.reserve(num_mipmaps);
@@ -302,7 +300,8 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         auto color = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::RGB16F);
-        auto depth = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::Depth24Stencil8);
+        auto depth =
+            Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::Depth24Stencil8);
         auto fbo = Framebuffer::create();
         fbo->setColorAttachment(0, color);
         fbo->setDepthStencilAttachment(depth);
@@ -319,6 +318,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         float roughness = static_cast<float>(mip) / static_cast<float>(num_mipmaps - 1);
         RenderTarget rt;
         rt.framebuffer = fbos[mip]->id();
+        rt.clear_color = glm::vec4(0.);
         rt.clear_color_buffer = true;
         rt.clear_depth_buffer = true;
         rt.clear_stencil_buffer = true;
@@ -327,9 +327,9 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         DrawCall dc;
         dc.cubemaps.push_back({env_map->id(), 0});
         dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
-        dc.cubemaps.push_back({env_map->id(), 0});
         dc.shader = shader_;
-        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader){
+        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("num_samples").set(num_samples_);
             shader->uniform("roughness").set(roughness);
         };
         for (unsigned int i = 0; i < 6; ++i)
@@ -354,8 +354,9 @@ std::shared_ptr<Texture2D> IBLSpecularSplitSum::integrateBRDF(unsigned int resol
     auto fbo = Framebuffer::create();
     fbo->setColorAttachment(0, brdf_lut);
     fbo->setDrawBuffers({0});
-    fbo->setDepthAttachment(Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth32F));
-    
+    fbo->setDepthAttachment(
+        Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth32F));
+
     RenderTarget rt;
     rt.framebuffer = fbo->id();
     rt.clear_color_buffer = true;

@@ -60,6 +60,8 @@ class Framebuffer
 
     void setReadBuffer(int attachment_index);
 
+    void setReadBufferNone();
+
     void setColorAttachment(size_t index, std::shared_ptr<Texture2D> tex);
 
     void resize(size_t width, size_t height);

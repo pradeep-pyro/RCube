@@ -42,11 +42,6 @@ void Framebuffer::setReadBuffer(int attachment_index)
     glNamedFramebufferReadBuffer(id_, GL_COLOR_ATTACHMENT0 + attachment_index);
 }
 
-void Framebuffer::setReadBufferNone()
-{
-    glNamedFramebufferReadBuffer(id_, GL_NONE);
-}
-
 std::shared_ptr<Framebuffer> Framebuffer::create()
 {
     auto fbo = std::make_shared<Framebuffer>();

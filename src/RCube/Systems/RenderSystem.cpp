@@ -17,7 +17,7 @@ namespace rcube
 
 const std::string GBufferVertexShader =
     R"(
-#version 450
+#version 420
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 uv;
@@ -57,7 +57,7 @@ void main()
 
 const static std::string GBufferGeometryShader =
     R"(
-#version 450
+#version 420
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
@@ -135,7 +135,7 @@ void main() {
 
 const std::string GBufferFragmentShader =
     R"(
-#version 450
+#version 420
 in vec3 geom_position;
 in vec3 geom_normal;
 in vec2 geom_uv;
@@ -203,7 +203,7 @@ void main() {
 )";
 
 const std::string PBRLightingPassShader = R"(
-#version 450
+#version 420
 
 #define MAX_LIGHTS 99
 
@@ -212,7 +212,6 @@ out vec4 out_color;
 layout(binding=0) uniform sampler2D g_position_roughness;
 layout(binding=1) uniform sampler2D g_normal_metallic;
 layout(binding=2) uniform sampler2D g_albedo;
-layout(binding=3) uniform sampler2D shadow_atlas;
 
 layout(binding=4) uniform sampler2D brdf_lut;
 layout(binding=5) uniform samplerCube prefilter_map;
@@ -230,8 +229,6 @@ struct Light {
     vec4 position;
     vec4 direction_radius;
     vec4 color_coneangle;
-    vec4 shadowmap_origin_size;
-    mat4 light_viewproj;
 };
 
 layout (std140, binding=2) uniform Lights {
@@ -297,17 +294,6 @@ vec3 diffuseLambertian(vec3 albedo) {
     return albedo / PI;
 }
 
-float shadow(int light_index, vec3 world_pos)
-{
-    vec4 shadow_pos = lights[light_index].light_viewproj * vec4(world_pos, 1.0);
-    vec3 shadow_pos_proj = shadow_pos.xyz / shadow_pos.w;
-    shadow_pos_proj = shadow_pos_proj * 0.5 + 0.5;
-    const float bias = 0.005;
-    const float closest = texture(shadow_atlas, shadow_pos_proj.xy).r;
-    const float curr = shadow_pos_proj.z;
-    return curr > closest ? 1.0 : 0.0;
-}
-
 void main()
 {
     // From G-buffer
@@ -359,10 +345,8 @@ void main()
         vec3 diffuse = diffuseLambertian(albedo);
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic; // Metallic materials have ~0 diffuse contribution
-        
-        // Shadow visiblity
-        float visibility = 1.0 - shadow(i, position);
         direct += (kD * diffuse + specular) * radiance * dot(L, N);
+        //direct += diffuse * radiance * dot(L, N);
     }
 
     // Indirect image-based lighting for ambient term
@@ -381,6 +365,7 @@ void main()
         vec3 prefiltered_color = textureLod(prefilter_map, R,  roughness * MAX_REFLECTION_LOD).rgb;
         vec2 brdf  = texture(brdf_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
         vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
+
         indirect = (kD * diffuse + specular) * 1.0;
     }
     vec3 result = direct + indirect;
@@ -455,10 +440,9 @@ void DeferredRenderSystem::initialize()
 
     // Shadow mapping fbo
     framebuffer_shadow_ = Framebuffer::create();
-    shadow_atlas_ = Texture2D::create(1024, 1024, 1, TextureInternalFormat::Depth24Stencil8);
+    shadow_atlas_ = Texture2D::create(4096, 4096, 1, TextureInternalFormat::Depth24Stencil8);
     framebuffer_shadow_->setDepthStencilAttachment(shadow_atlas_);
     framebuffer_shadow_->setDrawBuffers({});
-    framebuffer_shadow_->setReadBufferNone();
     assert(framebuffer_shadow_->isComplete());
 
     lighting_shader_ = common::fullScreenQuadShader(PBRLightingPassShader);
@@ -481,6 +465,10 @@ void DeferredRenderSystem::update(bool force)
     for (auto light : light_entities)
     {
         DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
+        if (dirL->cast_shadow)
+        {
+            continue;
+        }
         Transform *tr = world_->getComponent<Transform>(light);
         RenderTarget rtsh;
         rtsh.framebuffer = framebuffer_shadow_->id();
@@ -489,9 +477,12 @@ void DeferredRenderSystem::update(bool force)
         rtsh.clear_stencil_buffer = false;
         rtsh.viewport_origin = dirL->shadowmap_origin;
         rtsh.viewport_size = dirL->shadowmap_size;
-
+        assert(framebuffer_shadow_->isComplete());
         const glm::vec3 opp_dirL = -tr->worldPosition();
-
+        const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+        const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+        const glm::mat4 light_model = glm::mat4(1.0);
+        const glm::mat4 light_matrix = light_proj * light_view * light_model;
         std::vector<DrawCall> dcsh;
         dcsh.reserve(light_entities.size());
         for (auto renderable : renderable_entities)
@@ -505,10 +496,7 @@ void DeferredRenderSystem::update(bool force)
             dc.settings.depth.test = true;
             dc.shader = shadow_shader_;
             dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
-                const glm::mat4 proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-                const glm::mat4 view =
-                    glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-                shader->uniform("light_matrix").set(proj * view);
+                shader->uniform("light_matrix").set(light_matrix);
                 shader->uniform("model_matrix").set(model_matrix);
             };
             dcsh.push_back(dc);
@@ -525,13 +513,6 @@ void DeferredRenderSystem::update(bool force)
         Transform *transform_comp = world_->getComponent<Transform>(e);
         Light light = light_comp->light();
         light.position = transform_comp->worldPosition();
-        DirectionalLight *dir_light = world_->getComponent<DirectionalLight>(e);
-        if (dir_light != nullptr)
-        {
-            const glm::mat4 proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-            const glm::mat4 view = glm::lookAt(-transform_comp->worldPosition(), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-            light.light_viewproj = proj * view;
-        }
         lights.push_back(light);
     }
     renderer_.setLights(lights);
@@ -551,8 +532,8 @@ void DeferredRenderSystem::update(bool force)
                             cam->projection_to_viewport);
 
         // Set and clear draw area
-        //gbuffer_->useForWrite();
-        //renderer_.resize(0, 0, resolution_.x, resolution_.y);
+        gbuffer_->useForWrite();
+        renderer_.resize(0, 0, resolution_.x, resolution_.y);
 
         //////////////////////////////////////////////////////////////////////////////////////
         // Geometry pass
@@ -658,10 +639,6 @@ void DeferredRenderSystem::update(bool force)
         dc_light.textures.push_back({gbuffer_->colorAttachment(0)->id(), 0});
         dc_light.textures.push_back({gbuffer_->colorAttachment(1)->id(), 1});
         dc_light.textures.push_back({gbuffer_->colorAttachment(2)->id(), 2});
-        if (shadow_atlas_ != nullptr)
-        {
-            dc_light.textures.push_back({shadow_atlas_->id(), 3});
-        }
         const bool use_ibl =
             cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
         if (use_ibl)

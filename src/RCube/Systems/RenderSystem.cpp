@@ -583,7 +583,6 @@ void DeferredRenderSystem::update(bool force)
         {
             continue;
         }
-        Transform *tr = world_->getComponent<Transform>(light);
         RenderTarget rtsh;
         rtsh.framebuffer = framebuffer_shadow_->id();
         rtsh.clear_color_buffer = false;
@@ -592,7 +591,7 @@ void DeferredRenderSystem::update(bool force)
         rtsh.viewport_origin = dirL->shadowmap_origin;
         rtsh.viewport_size = dirL->shadowmap_size;
         assert(framebuffer_shadow_->isComplete());
-        const glm::vec3 opp_dirL = glm::normalize(tr->worldPosition());
+        const glm::vec3 opp_dirL = -glm::normalize(dirL->direction);
         const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
         const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
         const glm::mat4 light_matrix = light_proj * light_view;

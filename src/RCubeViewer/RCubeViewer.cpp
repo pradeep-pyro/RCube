@@ -69,11 +69,10 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeZ, front_back);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveZ, front_back);
     camera_.get<Camera>()->use_skybox = true;
-    // Put a directional light on the camera
-    //camera_.add<DirectionalLight>();
+
+    // Create a sunlight
     auto dirl = createDirLight();
-    dirl.get<Transform>()->setPosition(glm::vec3(1, 1, 0));
-    dirl.add(Name("DirLight1"));
+    dirl.add(Name("Sun"));
     dirl.get<DirectionalLight>()->cast_shadow = true;
 
     // Create a ground plane
@@ -385,7 +384,6 @@ EntityHandle RCubeViewer::createDirLight()
 {
     EntityHandle ent = world_.createEntity();
     ent.add(DirectionalLight());
-    ent.add(Transform());
     return ent;
 }
 

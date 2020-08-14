@@ -317,9 +317,9 @@ vec3 diffuseLambertian(vec3 albedo) {
 
 float shadow(int index, vec3 world_pos, float LdotN)
 {
-    if (dirlights[index].cast_shadow == 0)
+    if (dirlights[index].cast_shadow <= 1e-6)
     {
-        return 1.0;
+        return 0.0;
     }
     const float bias = 0.05;
     vec4 shadow_pos = dirlights[index].view_proj * vec4(world_pos, 1.0);
@@ -447,10 +447,9 @@ std::shared_ptr<Framebuffer> createGBuffer(size_t width, size_t height)
 DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution, unsigned int msaa)
     : resolution_(resolution)
 {
-    ComponentMask light_filter;
-    light_filter.set(BaseLight::family());
-    light_filter.set(Transform::family());
-    addFilter(light_filter);
+    ComponentMask dirlight_filter;
+    dirlight_filter.set(DirectionalLight::family());
+    addFilter(dirlight_filter);
 
     ComponentMask camera_filter;
     camera_filter.set(Camera::family());
@@ -462,10 +461,6 @@ DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution, unsigned int m
     renderable_filter.set(Drawable::family());
     renderable_filter.set(Material::family());
     addFilter(renderable_filter);
-
-    ComponentMask dirlight_filter;
-    dirlight_filter.set(DirectionalLight::family());
-    addFilter(dirlight_filter);
 }
 
 void DeferredRenderSystem::initialize()
@@ -508,7 +503,7 @@ void DeferredRenderSystem::initialize()
     // directional lights
     ubo_dirlights_ =
         UniformBuffer::create(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float) + sizeof(float));
-
+    dirlight_data_.resize(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24);
     // Initialize renderer
     renderer_.initialize();
 }
@@ -536,7 +531,7 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
     std::vector<Entity> dirlights = getFilteredEntities({DirectionalLight::family()});;
     // Copy lights
     assert(dirlights.size() < RCUBE_MAX_DIRECTIONAL_LIGHTS);
-    std::vector<float> light_data_;
+    size_t k = 0;
     for (const Entity &l : dirlights)
     {
         DirectionalLight *dl = world_->getComponent<DirectionalLight>(l);
@@ -550,24 +545,24 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
                                  : glm::vec3(1, 0, 0);
         const glm::mat4 light_view = glm::lookAt(opp_dir, glm::vec3(0, 0, 0), up);
         const glm::mat4 light_matrix = light_proj * light_view;
-        light_data_.push_back(dir.x);
-        light_data_.push_back(dir.y);
-        light_data_.push_back(dir.z);
-        light_data_.push_back(float(dl->cast_shadow));
-        light_data_.push_back(col.r);
-        light_data_.push_back(col.g);
-        light_data_.push_back(col.b);
-        light_data_.push_back(dl->intensity);
+        dirlight_data_[k++] = dir.x;
+        dirlight_data_[k++] = dir.y;
+        dirlight_data_[k++] = dir.z;
+        dirlight_data_[k++] = float(dl->cast_shadow);
+        dirlight_data_[k++] = col.r;
+        dirlight_data_[k++] = col.g;
+        dirlight_data_[k++] = col.b;
+        dirlight_data_[k++] = dl->intensity;
         for (int i = 0; i < 4; ++i)
         {
             for (int j = 0; j < 4; ++j)
             {
-                light_data_.push_back(dl->cast_shadow ? light_matrix[i][j] : 0.0);
+                dirlight_data_[k++] = dl->cast_shadow ? light_matrix[i][j] : 0.0;
             }
         }
     }
     const int num_lights = static_cast<int>(dirlights.size());
-    ubo_dirlights_->setData(light_data_.data(), light_data_.size(), 0);
+    ubo_dirlights_->setData(dirlight_data_.data(), dirlight_data_.size(), 0);
     ubo_dirlights_->setData(&num_lights, 1,
                             RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float));
     ubo_dirlights_->bindBase(1);
@@ -575,13 +570,11 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
 
 void DeferredRenderSystem::update(bool force)
 {
-    const auto &light_entities = registered_entities_[filters_[0]];
+    const auto &dirlight_entities = registered_entities_[filters_[0]];
     const auto &camera_entities = registered_entities_[filters_[1]];
     const auto &renderable_entities = registered_entities_[filters_[2]];
-    const auto &dirlight_entities = registered_entities_[filters_[3]];
 
     // Shadow pass
-    std::vector<float> dirlight_data;
     for (auto light : dirlight_entities)
 
     {
@@ -604,7 +597,7 @@ void DeferredRenderSystem::update(bool force)
         const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
         const glm::mat4 light_matrix = light_proj * light_view;
         std::vector<DrawCall> dcsh;
-        dcsh.reserve(light_entities.size());
+        dcsh.reserve(dirlight_entities.size());
         for (auto renderable : renderable_entities)
         {
             const glm::mat4 model_matrix =
@@ -623,18 +616,6 @@ void DeferredRenderSystem::update(bool force)
             dcsh.push_back(dc);
         }
         renderer_.draw(rtsh, dcsh);
-    }
-
-    // Set lights
-    std::vector<Light> lights;
-    lights.reserve(light_entities.size());
-    for (const auto &e : light_entities)
-    {
-        BaseLight *light_comp = world_->getComponent<BaseLight>(e);
-        Transform *transform_comp = world_->getComponent<Transform>(e);
-        Light light = light_comp->light();
-        light.position = transform_comp->worldPosition();
-        lights.push_back(light);
     }
 
     // Render all drawable entities

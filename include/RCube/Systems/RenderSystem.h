@@ -41,6 +41,8 @@ class DeferredRenderSystem : public System
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_camera_;
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_dirlights_;
     unsigned int msaa_;
+    // Buffers
+    std::vector<float> dirlight_data_;
 };
 
 } // namespace rcube

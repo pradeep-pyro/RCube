@@ -12,6 +12,8 @@
 #include "RCube/Systems/RenderSystem.h"
 #include "glm/gtx/string_cast.hpp"
 
+#define RCUBE_MAX_DIRECTIONAL_LIGHTS 50
+
 namespace rcube
 {
 
@@ -205,6 +207,8 @@ void main() {
 const std::string PBRLightingPassShader = R"(
 #version 420
 
+#define RCUBE_MAX_DIRLIGHTS 50
+
 #define MAX_LIGHTS 99
 
 out vec4 out_color;
@@ -212,6 +216,8 @@ out vec4 out_color;
 layout(binding=0) uniform sampler2D g_position_roughness;
 layout(binding=1) uniform sampler2D g_normal_metallic;
 layout(binding=2) uniform sampler2D g_albedo;
+
+layout(binding=3) uniform sampler2D shadow_atlas;
 
 layout(binding=4) uniform sampler2D brdf_lut;
 layout(binding=5) uniform samplerCube prefilter_map;
@@ -225,6 +231,21 @@ layout (std140, binding=0) uniform Camera {
     vec3 eye_pos;
 };
 
+struct DirectionalLight
+{
+    vec3 direction;
+    float cast_shadow;
+    vec3 color;
+    float intensity;
+    mat4 view_proj;
+};
+
+layout (std140, binding=1) uniform DirectionalLights {
+    DirectionalLight dirlights[RCUBE_MAX_DIRLIGHTS];
+    int num_dirlights;
+};
+
+/*
 struct Light {
     vec4 position;
     vec4 direction_radius;
@@ -235,6 +256,9 @@ layout (std140, binding=2) uniform Lights {
     Light lights[MAX_LIGHTS];
     int num_lights;
 };
+
+uniform mat4 light_viewproj;
+*/
 
 in vec2 v_texcoord;
 
@@ -250,10 +274,9 @@ bool close(float a, float b) {
     return abs(a - b) < 0.00001;
 }
 
-float DGgx(vec3 N, vec3 H, float roughness) {
+float DGgx(float HdotN, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
-    float HdotN = max(dot(H, N), 0.0);
     float HdotN2 = HdotN * HdotN;
 
     float nom   = a2;
@@ -273,9 +296,7 @@ float GSchlickGgx(float NdotV, float roughness) {
     return numerator / denominator;
 }
 
-float GSmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float LdotN = max(dot(L, N), 0.0);
+float GSmith(float NdotV, float LdotN, float roughness) {
     float ggx1 = GSchlickGgx(LdotN, roughness);
     float ggx2 = GSchlickGgx(NdotV, roughness);
     return ggx1 * ggx2;
@@ -292,6 +313,33 @@ vec3 FSchlickRoughness(float cos_grazing_angle, vec3 F0, float roughness)
 
 vec3 diffuseLambertian(vec3 albedo) {
     return albedo / PI;
+}
+
+float shadow(int index, vec3 world_pos, float LdotN)
+{
+    if (dirlights[index].cast_shadow == 0)
+    {
+        return 1.0;
+    }
+    const float bias = 0.05;
+    vec4 shadow_pos = dirlights[index].view_proj * vec4(world_pos, 1.0);
+    // perform perspective divide
+    vec3 shadow_coords = shadow_pos.xyz / shadow_pos.w;
+    shadow_coords = shadow_coords * 0.5 + 0.5; 
+
+    float closest = texture(shadow_atlas, shadow_coords.xy).r; 
+    float current = shadow_coords.z;
+    float shadow = current - bias > closest ? 1.0 : 0.0;
+    if (shadow_coords.z > 1.0)
+    {
+        shadow = 0.0;
+    }
+    return shadow;
+}
+
+vec3 radianceDirLight(int index, float LdotN)
+{
+    return dirlights[index].intensity * LdotN * dirlights[index].color;
 }
 
 void main()
@@ -312,32 +360,22 @@ void main()
     vec3 specular_color = vec3(0.04);
     specular_color = mix(specular_color, albedo, metallic);
     vec3 direct = vec3(0.0);
-    for (int i = 0; i < min(num_lights, MAX_LIGHTS); ++i)
+    for (int i = 0; i < min(num_dirlights, RCUBE_MAX_DIRLIGHTS); ++i)
     {
-        vec3 L;          // Surface to light
-        float att = 1.0; // Light attenuation
-
-        if (close(lights[i].position.w, 0.0)) { // is directional?
-            L = lights[i].position.xyz;
-        }
-        else {
-            L = lights[i].position.xyz - position;
-            // att = attenuation(length(L), lights[i].radius);
-            att = falloff(length(L), lights[i].direction_radius.w);
-        }
-        L = normalize(L);
-        // Radiance
-        vec3 radiance = att * lights[i].color_coneangle.xyz;
-
+        vec3 L = -normalize(dirlights[i].direction);  // Surface to light
         // Useful values to precompute
         vec3 H = normalize(L + V);  // Halfway vector
+        float LdotN = clamp(dot(L, N), 0, 1);
+        float NdotV = clamp(dot(N, V), 0, 1);
+        float HdotV = clamp(dot(H, V), 0, 1);
+        float HdotN = clamp(dot(H, N), 0, 1);
 
         // Cook-Torrance specular BRDF
-        float D = DGgx(N, H, roughness);
-        float G = GSmith(N, V, L, roughness);
-        vec3 F = FSchlick(max(dot(H, V), 0.0), specular_color);
+        float D = DGgx(HdotN, roughness);
+        float G = GSmith(NdotV, LdotN, roughness);
+        vec3 F = FSchlick(HdotV, specular_color);
         vec3 numer = D * G * F;
-        float denom = 4 * max(dot(N, V), 0.0) * max(dot(L, N), 0.0) + 0.001;
+        float denom = 4 * NdotV * LdotN + 0.001;
         vec3 specular = numer / denom;
         vec3 kS = F;
 
@@ -345,14 +383,16 @@ void main()
         vec3 diffuse = diffuseLambertian(albedo);
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic; // Metallic materials have ~0 diffuse contribution
-        direct += (kD * diffuse + specular) * radiance * dot(L, N);
-        //direct += diffuse * radiance * dot(L, N);
+
+        float visibility = 1.0 - shadow(i, position, LdotN);
+        vec3 radiance = radianceDirLight(i, LdotN);
+        direct += visibility * (kD * diffuse + specular) * radiance;
     }
 
     // Indirect image-based lighting for ambient term
     vec3 indirect = vec3(0.03) * albedo; // default ambient color for non-IBL setting
     if (use_image_based_lighting) {
-        vec3 F = FSchlickRoughness(max(dot(N, V), 0.0), specular_color, roughness);
+        vec3 F = FSchlickRoughness(NdotV, specular_color, roughness);
         vec3 kS = F;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
@@ -363,11 +403,12 @@ void main()
         const float MAX_REFLECTION_LOD = 4.0;
         vec3 R = reflect(-V, N);
         vec3 prefiltered_color = textureLod(prefilter_map, R,  roughness * MAX_REFLECTION_LOD).rgb;
-        vec2 brdf  = texture(brdf_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
+        vec2 brdf  = texture(brdf_lut, vec2(NdotV, roughness)).rg;
         vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
 
         indirect = (kD * diffuse + specular) * 1.0;
     }
+
     vec3 result = direct + indirect;
 
     // Tone mapping using Reinhard operator
@@ -421,14 +462,20 @@ DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution, unsigned int m
     renderable_filter.set(Drawable::family());
     renderable_filter.set(Material::family());
     addFilter(renderable_filter);
+
+    ComponentMask dirlight_filter;
+    dirlight_filter.set(DirectionalLight::family());
+    addFilter(dirlight_filter);
 }
 
 void DeferredRenderSystem::initialize()
 {
+    // GBuffer
     gbuffer_ = createGBuffer(resolution_.x, resolution_.y);
     gbuffer_shader_ = ShaderProgram::create(GBufferVertexShader, GBufferGeometryShader,
                                             GBufferFragmentShader, true);
 
+    // HDR framebuffer
     framebuffer_hdr_ = Framebuffer::create();
     auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
     framebuffer_hdr_->setColorAttachment(0, color);
@@ -438,16 +485,32 @@ void DeferredRenderSystem::initialize()
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
 
-    // Shadow mapping fbo
+    // Shadow mapping
     framebuffer_shadow_ = Framebuffer::create();
-    shadow_atlas_ = Texture2D::create(4096, 4096, 1, TextureInternalFormat::Depth24Stencil8);
-    framebuffer_shadow_->setDepthStencilAttachment(shadow_atlas_);
+    shadow_atlas_ = Texture2D::create(1024, 1024, 1, TextureInternalFormat::Depth32F);
+    shadow_atlas_->setFilterMode(TextureFilterMode::Nearest);
+    shadow_atlas_->setWrapMode(TextureWrapMode::ClampToBorder);
+    shadow_atlas_->setBorderColor(glm::vec4(1.0));
+    framebuffer_shadow_->setDepthAttachment(shadow_atlas_);
     framebuffer_shadow_->setDrawBuffers({});
+    glNamedFramebufferReadBuffer(framebuffer_shadow_->id(), GL_NONE);
     assert(framebuffer_shadow_->isComplete());
+    shadow_shader_ = common::shadowMapShader();
 
+    // Lighting shader
     lighting_shader_ = common::fullScreenQuadShader(PBRLightingPassShader);
 
-    shadow_shader_ = common::shadowMapShader();
+    // UBOs
+    // Three 4x4 matrices and one 3D vector
+    ubo_camera_ = UniformBuffer::create(sizeof(glm::mat4) * 3 + sizeof(glm::vec3));
+    // Each light has one 3D direction, one bool flag for shadow casting, one 3D color, one scalar,
+    // one 4x4 matrix intensity: 8 floats Finally there one int (treated as float) for number of
+    // directional lights
+    ubo_dirlights_ =
+        UniformBuffer::create(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float) + sizeof(float));
+
+    // Initialize renderer
+    renderer_.initialize();
 }
 
 void DeferredRenderSystem::cleanup()
@@ -455,17 +518,75 @@ void DeferredRenderSystem::cleanup()
     renderer_.cleanup();
 }
 
+void DeferredRenderSystem::setCameraUBO(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
+                                        const glm::mat4 &view_to_projection,
+                                        const glm::mat4 &projection_to_viewport)
+{
+    const int float4x4_size = sizeof(glm::mat4);
+    ubo_camera_->setData(glm::value_ptr(world_to_view), 16, 0);
+    ubo_camera_->setData(glm::value_ptr(view_to_projection), 16, float4x4_size);
+    ubo_camera_->setData(glm::value_ptr(projection_to_viewport), 16, 2 * float4x4_size);
+    ubo_camera_->setData(glm::value_ptr(eye_pos), 3, 3 * float4x4_size);
+    ubo_camera_->bindBase(0);
+}
+
+void DeferredRenderSystem::setDirectionalLightsUBO()
+{
+    
+    std::vector<Entity> dirlights = getFilteredEntities({DirectionalLight::family()});;
+    // Copy lights
+    assert(dirlights.size() < RCUBE_MAX_DIRECTIONAL_LIGHTS);
+    std::vector<float> light_data_;
+    for (const Entity &l : dirlights)
+    {
+        DirectionalLight *dl = world_->getComponent<DirectionalLight>(l);
+        const glm::vec3 dir = glm::normalize(dl->direction);
+        const glm::vec3 &col = dl->color;
+        // Light's viewproj matrix
+        const glm::vec3 opp_dir = -dir;
+        const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+        const glm::vec3 up = glm::length(glm::cross(opp_dir, glm::vec3(0, 1, 0))) > 1e-6
+                                 ? glm::vec3(0, 1, 0)
+                                 : glm::vec3(1, 0, 0);
+        const glm::mat4 light_view = glm::lookAt(opp_dir, glm::vec3(0, 0, 0), up);
+        const glm::mat4 light_matrix = light_proj * light_view;
+        light_data_.push_back(dir.x);
+        light_data_.push_back(dir.y);
+        light_data_.push_back(dir.z);
+        light_data_.push_back(float(dl->cast_shadow));
+        light_data_.push_back(col.r);
+        light_data_.push_back(col.g);
+        light_data_.push_back(col.b);
+        light_data_.push_back(dl->intensity);
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                light_data_.push_back(dl->cast_shadow ? light_matrix[i][j] : 0.0);
+            }
+        }
+    }
+    const int num_lights = static_cast<int>(dirlights.size());
+    ubo_dirlights_->setData(light_data_.data(), light_data_.size(), 0);
+    ubo_dirlights_->setData(&num_lights, 1,
+                            RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float));
+    ubo_dirlights_->bindBase(1);
+}
+
 void DeferredRenderSystem::update(bool force)
 {
     const auto &light_entities = registered_entities_[filters_[0]];
     const auto &camera_entities = registered_entities_[filters_[1]];
     const auto &renderable_entities = registered_entities_[filters_[2]];
+    const auto &dirlight_entities = registered_entities_[filters_[3]];
 
     // Shadow pass
-    for (auto light : light_entities)
+    std::vector<float> dirlight_data;
+    for (auto light : dirlight_entities)
+
     {
         DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
-        if (dirL->cast_shadow)
+        if (!dirL->cast_shadow)
         {
             continue;
         }
@@ -478,11 +599,10 @@ void DeferredRenderSystem::update(bool force)
         rtsh.viewport_origin = dirL->shadowmap_origin;
         rtsh.viewport_size = dirL->shadowmap_size;
         assert(framebuffer_shadow_->isComplete());
-        const glm::vec3 opp_dirL = -tr->worldPosition();
+        const glm::vec3 opp_dirL = glm::normalize(tr->worldPosition());
         const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
         const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-        const glm::mat4 light_model = glm::mat4(1.0);
-        const glm::mat4 light_matrix = light_proj * light_view * light_model;
+        const glm::mat4 light_matrix = light_proj * light_view;
         std::vector<DrawCall> dcsh;
         dcsh.reserve(light_entities.size());
         for (auto renderable : renderable_entities)
@@ -494,6 +614,7 @@ void DeferredRenderSystem::update(bool force)
                 renderer_.getDrawCallMeshInfo(world_->getComponent<Drawable>(renderable)->mesh);
             dc.settings.depth.write = true;
             dc.settings.depth.test = true;
+            dc.settings.cull.enabled = false;
             dc.shader = shadow_shader_;
             dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
                 shader->uniform("light_matrix").set(light_matrix);
@@ -515,7 +636,6 @@ void DeferredRenderSystem::update(bool force)
         light.position = transform_comp->worldPosition();
         lights.push_back(light);
     }
-    renderer_.setLights(lights);
 
     // Render all drawable entities
     for (const auto &camera_entity : camera_entities)
@@ -527,13 +647,9 @@ void DeferredRenderSystem::update(bool force)
             continue;
         }
 
-        // Set camera & lights
-        renderer_.setCamera(tr->worldPosition(), cam->world_to_view, cam->view_to_projection,
-                            cam->projection_to_viewport);
-
-        // Set and clear draw area
-        gbuffer_->useForWrite();
-        renderer_.resize(0, 0, resolution_.x, resolution_.y);
+        // Set camera
+        setCameraUBO(tr->worldPosition(), cam->world_to_view, cam->view_to_projection,
+                     cam->projection_to_viewport);
 
         //////////////////////////////////////////////////////////////////////////////////////
         // Geometry pass
@@ -557,6 +673,7 @@ void DeferredRenderSystem::update(bool force)
         state.stencil.op_pass = StencilOp::Replace;
         state.stencil.op_depth_fail = StencilOp::Replace;
         state.stencil.op_stencil_fail = StencilOp::Replace;
+        state.cull.enabled = false;
 
         std::vector<DrawCall> drawcalls_geom_pass;
         drawcalls_geom_pass.reserve(renderable_entities.size());
@@ -608,7 +725,6 @@ void DeferredRenderSystem::update(bool force)
             drawcalls_geom_pass.push_back(dc);
         }
         renderer_.draw(rt_geom_pass, drawcalls_geom_pass);
-        gbuffer_->done();
         gbuffer_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
                        true);
 
@@ -639,6 +755,7 @@ void DeferredRenderSystem::update(bool force)
         dc_light.textures.push_back({gbuffer_->colorAttachment(0)->id(), 0});
         dc_light.textures.push_back({gbuffer_->colorAttachment(1)->id(), 1});
         dc_light.textures.push_back({gbuffer_->colorAttachment(2)->id(), 2});
+        dc_light.textures.push_back({shadow_atlas_->id(), 3});
         const bool use_ibl =
             cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
         if (use_ibl)
@@ -673,6 +790,7 @@ void DeferredRenderSystem::update(bool force)
             dc_skybox.cubemaps.push_back({cam->skybox->id(), 0});
             dcs.push_back(dc_skybox);
         }
+        setDirectionalLightsUBO();
         renderer_.draw(rtl, dcs);
         RenderTarget rtsc;
         rtsc.viewport_origin = cam->viewport_origin;

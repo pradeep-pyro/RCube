@@ -23,6 +23,10 @@ class DeferredRenderSystem : public System
     }
 
   protected:
+    void setCameraUBO(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
+                      const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
+    void setDirectionalLightsUBO();
+
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
     GLRenderer renderer_;
     std::shared_ptr<Framebuffer> gbuffer_;
@@ -33,6 +37,9 @@ class DeferredRenderSystem : public System
     std::shared_ptr<ShaderProgram> skybox_shader_;
     std::shared_ptr<ShaderProgram> shadow_shader_;
     std::shared_ptr<Texture2D> shadow_atlas_;
+    // Uniform buffer objects for camera and lights
+    std::shared_ptr<Buffer<BufferType::Uniform>> ubo_camera_;
+    std::shared_ptr<Buffer<BufferType::Uniform>> ubo_dirlights_;
     unsigned int msaa_;
 };
 

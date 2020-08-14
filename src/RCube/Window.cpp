@@ -131,7 +131,7 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severi
     if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
         return;
     
-    if (id == 1282)
+    if (id == 1281)
     {
         std::cerr << "---------------" << std::endl;
     }

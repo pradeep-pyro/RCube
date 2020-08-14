@@ -80,11 +80,6 @@ class GLRenderer
      */
     void resize(int top, int left, size_t width, size_t height);
 
-    void setLights(const std::vector<Light> &lights);
-
-    void setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
-                   const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
-
     void draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls);
 
     void drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture);
@@ -117,21 +112,12 @@ class GLRenderer
   private:
     void updateSettings(const RenderSettings &settings);
 
-    // Uniform buffer objects
-    GLuint ubo_matrices_, ubo_lights_;
-
-    // Buffer to store lights data
-    std::vector<float> light_data_;
-
     // Skybox
     std::shared_ptr<Mesh> skybox_mesh_;
     std::shared_ptr<ShaderProgram> skybox_shader_;
 
     // Viewport size
     int top_, left_, width_, height_;
-
-    // Clear settings
-    glm::vec3 clear_color_;
 
     // Dirty flags
     bool init_;

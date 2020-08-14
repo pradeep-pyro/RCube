@@ -51,12 +51,12 @@ class AttributeBuffer
 
     const float *ptr() const
     {
-        return &data_[0];
+        return data_.data();
     }
 
     float *ptr()
     {
-        return &data_[0];
+        return data_.data();
     }
 
     const glm::vec3 *ptrVec3() const
@@ -66,7 +66,7 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
                                      "D data as 3D");
         }
-        return reinterpret_cast<const glm::vec3 *>(&data_[0]);
+        return reinterpret_cast<const glm::vec3 *>(data_.data());
     }
 
     glm::vec3 *ptrVec3()
@@ -76,7 +76,7 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
                                      "D data as 3D");
         }
-        return reinterpret_cast<glm::vec3 *>(&data_[0]);
+        return reinterpret_cast<glm::vec3 *>(data_.data());
     }
 
     const glm::vec2 *ptrVec2() const
@@ -86,7 +86,7 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
                                      "D data as 2D");
         }
-        return reinterpret_cast<const glm::vec2 *>(&data_[0]);
+        return reinterpret_cast<const glm::vec2 *>(data_.data());
     }
 
     glm::vec2 *ptrVec2()
@@ -96,7 +96,7 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
                                      "D data as 2D");
         }
-        return reinterpret_cast<glm::vec2 *>(&data_[0]);
+        return reinterpret_cast<glm::vec2 *>(data_.data());
     }
 
     size_t size() const
@@ -162,9 +162,9 @@ class AttributeBuffer
 
     void update()
     {
-        if (buffer_->size() != data_.size())
+        if (buffer_->size() != data_.size() * sizeof(float))
         {
-            buffer_->reserve(data_.size());
+            buffer_->reserve(data_.size() * sizeof(float));
         }
         buffer_->setData(data_);
     }
@@ -175,7 +175,8 @@ class AttributeBuffer
         {
             buffer_->release();
         }
-        data_.swap(std::vector<float>{});
+        data_.clear();
+        data_.shrink_to_fit();
     }
 };
 
@@ -196,7 +197,7 @@ class AttributeIndexBuffer
 
     const unsigned int *ptr() const
     {
-        return &data_[0];
+        return data_.data();
     }
 
     const glm::uvec3 *ptrUVec3() const
@@ -206,7 +207,7 @@ class AttributeIndexBuffer
             throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
                                      "D data as 3D");
         }
-        return reinterpret_cast<const glm::uvec3 *>(&data_[0]);
+        return reinterpret_cast<const glm::uvec3 *>(data_.data());
     }
 
     const glm::uvec2 *ptrUVec2() const
@@ -216,7 +217,7 @@ class AttributeIndexBuffer
             throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
                                      "D data as 2D");
         }
-        return reinterpret_cast<const glm::uvec2 *>(&data_[0]);
+        return reinterpret_cast<const glm::uvec2 *>(data_.data());
     }
 
     size_t size() const
@@ -290,9 +291,9 @@ class AttributeIndexBuffer
 
     void update()
     {
-        if (buffer_->size() != data_.size())
+        if (buffer_->size() != data_.size() * sizeof(unsigned int))
         {
-            buffer_->reserve(data_.size());
+            buffer_->reserve(data_.size() * sizeof(unsigned int));
         }
         buffer_->setData(data_);
     }

@@ -13,7 +13,8 @@ namespace rcube
 enum class BufferType
 {
     Array = GL_ARRAY_BUFFER,
-    ElementArray = GL_ELEMENT_ARRAY_BUFFER
+    ElementArray = GL_ELEMENT_ARRAY_BUFFER,
+    Uniform = GL_UNIFORM_BUFFER
 };
 
 template <BufferType Type> class Buffer
@@ -40,23 +41,33 @@ template <BufferType Type> class Buffer
     {
         return Type;
     }
-    void reserve(size_t num_elements)
+    void reserve(size_t bytes)
     {
-        glNamedBufferData(id_, num_elements * sizeof(float), NULL, GL_DYNAMIC_DRAW);
-        size_ = num_elements;
+        glNamedBufferData(id_, bytes, NULL, GL_DYNAMIC_DRAW);
+        size_ = bytes;
     }
+
     void release()
     {
         glDeleteBuffers(1, &id_);
         id_ = 0;
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
-    void setData(const float *buf, size_t size)
+    template <BufferType T = Type,
+              typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
+    void setData(const float *buf, size_t size, size_t offset = 0)
     {
         assert(size == size_);
-        glNamedBufferSubData(id_, 0, size * sizeof(float), buf);
+        glNamedBufferSubData(id_, offset, size * sizeof(float), buf);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    template <BufferType T = Type,
+              typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
+    void setData(const int *buf, size_t size, size_t offset = 0)
+    {
+        assert(size == size_);
+        glNamedBufferSubData(id_, offset, size * sizeof(int), buf);
+    }
+    template <BufferType T = Type,
+              typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
     void setData(const std::vector<float> &buf)
     {
         setData(&buf[0], buf.size());
@@ -109,9 +120,15 @@ template <BufferType Type> class Buffer
     {
         glBindBuffer(GLenum(Type), 0);
     }
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Uniform>::type>
+    void bindBase(int index) const
+    {
+        glBindBufferBase(GLenum(Type), index, id_);
+    }
 };
 
 using ArrayBuffer = Buffer<BufferType::Array>;
 using ElementArrayBuffer = Buffer<BufferType::ElementArray>;
+using UniformBuffer = Buffer<BufferType::Uniform>;
 
 } // namespace rcube

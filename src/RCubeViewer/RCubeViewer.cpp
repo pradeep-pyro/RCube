@@ -70,7 +70,12 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveZ, front_back);
     camera_.get<Camera>()->use_skybox = true;
     // Put a directional light on the camera
-    camera_.add<DirectionalLight>();
+    //camera_.add<DirectionalLight>();
+    auto dirl = createDirLight();
+    dirl.get<Transform>()->setPosition(glm::vec3(1, 1, 0));
+    dirl.add(Name("DirLight1"));
+    dirl.get<DirectionalLight>()->cast_shadow = true;
+
     // Create a ground plane
     ground_ = createGroundPlane();
     ground_.get<Drawable>()->visible = props.ground_plane;
@@ -282,6 +287,14 @@ void RCubeViewer::drawGUI()
                         if (ImGui::BeginTabItem("Camera"))
                         {
                             ent.get<Camera>()->drawGUI();
+                            ImGui::EndTabItem();
+                        }
+                    }
+                    if (ent.has<DirectionalLight>())
+                    {
+                        if (ImGui::BeginTabItem("DirectionalLight"))
+                        {
+                            ent.get<DirectionalLight>()->drawGUI();
                             ImGui::EndTabItem();
                         }
                     }

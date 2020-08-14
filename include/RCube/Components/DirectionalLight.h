@@ -1,8 +1,7 @@
-#ifndef DIRECTIONLIGHT_H
-#define DIRECTIONLIGHT_H
+#pragma once
 
-#include "RCube/Components/BaseLight.h"
-#include "RCube/Core/Graphics/OpenGL/Texture.h"
+#include "glm/glm.hpp"
+#include "RCube/Core/Arch/Component.h"
 
 namespace rcube
 {
@@ -10,34 +9,39 @@ namespace rcube
 /**
  * The DirectionalLight class represents an infinite distance light source that is not
  * attenuated.
- * To create a valid directional light, add a DirectionalLight component (camera's characteristics)
- * and a Transform component (light's location) to an Entity.
+ * To create a valid directional light, add a DirectionalLight component to an Entity.
  *
  * The direction is taken to be the xyz coordinates given by the position in the Transform
  * component.
  */
-class DirectionalLight : public BaseLight
+class DirectionalLight : public Component<DirectionalLight>
 {
   public:
-    glm::ivec2 shadowmap_origin = glm::ivec2(0);  // Must be between (0, 0) and
-                                                  // (SHADOWMAP_ATLAS_SIZE, SHADOWMAP_ATLAS_SIZE)
+    // Illuminance  in lux
+    // From Table 12:
+    // https://google.github.io/filament/Filament.md.html#lighting/directlighting/directionallights
+    enum Illuminance
+    {
+        MorningSun = 100'000,
+        MiddaySun = 105'000,
+        EveningSun = 90'000,
+        MorningSky = 20'000,
+        MiddaySky = 25'000,
+        EveningSky = 9'000,
+        Moon = 1,
+    };
+    glm::vec3 color = glm::vec3(1.f);
+    glm::vec3 direction = glm::vec3(0, -1, 0);
+    float intensity = float(MorningSky);
+    glm::ivec2 shadowmap_origin =
+        glm::ivec2(0); // Must be between (0, 0) and
+                       // (RCUBE_SHADOWMAP_ATLAS_SIZE - size.x, RCUBE_SHADOWMAP_ATLAS_SIZE - size.y)
     glm::ivec2 shadowmap_size = glm::ivec2(1024); // Must be power-of-2
     bool cast_shadow = false;
 
-    DirectionalLight(glm::vec3 color = glm::vec3(1.f));
-    /**
-     * Set the color of the light
-     * @param rgb Color
-     */
-    void setColor(const glm::vec3 &rgb);
+    DirectionalLight() = default;
 
-    /**
-     * Get the color of the light
-     * @return Color
-     */
-    const glm::vec3 &color() const;
+    void drawGUI();
 };
 
 } // namespace rcube
-
-#endif // DIRECTIONLIGHT_H

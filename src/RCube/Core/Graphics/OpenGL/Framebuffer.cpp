@@ -132,7 +132,22 @@ void Framebuffer::resize(size_t width, size_t height)
         auto new_tex = Texture2D::create(width, height, 1 /*mipmap is always 1*/,
                                          depth_stencil_->internalFormat());
         depth_stencil_->release();
-        setDepthAttachment(new_tex);
+        if (new_tex->internalFormat() == TextureInternalFormat::Depth16 ||
+            new_tex->internalFormat() == TextureInternalFormat::Depth24 ||
+            new_tex->internalFormat() == TextureInternalFormat::Depth32 ||
+            new_tex->internalFormat() == TextureInternalFormat::Depth32F)
+        {
+            setDepthAttachment(new_tex);
+        }
+        else if (new_tex->internalFormat() == TextureInternalFormat::Depth24Stencil8 ||
+                 new_tex->internalFormat() == TextureInternalFormat::Depth32FStencil8)
+        {
+            setDepthStencilAttachment(new_tex);
+        }
+        else
+        {
+            throw std::runtime_error("Expected Depth or DepthStencil format.");
+        }
     }
 }
 

@@ -11,12 +11,8 @@ layout (location = 0) in vec3 position;
 
 out vec3 direction;
 
-layout (std140, binding=0) uniform Camera {
-    mat4 view_matrix;
-    mat4 projection_matrix;
-    mat4 viewport_matrix;
-    vec3 eye_pos;
-};
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
 
 void main() {
     direction = position;
@@ -150,7 +146,7 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
 {
     auto irradiance_map =
         TextureCubemap::create(resolution_, resolution_, 1, true, TextureInternalFormat::RGB16F);
-    //rdr_.resize(0, 0, resolution_, resolution_);
+
     glm::mat4 eye(1.0);
     glm::vec3 eye_pos(0., 0., 0.);
     RenderTarget rt;
@@ -164,12 +160,14 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
     dc.cubemaps.push_back({env_map->id(), 0});
     dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
     dc.shader = shader_;
-    dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
-        shader->uniform("num_samples").set(num_samples_);
-    };
     for (unsigned int i = 0; i < 6; ++i)
     {
-        rdr_.setCamera(eye_pos, views_[i], projection_, eye);
+        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("num_samples").set(num_samples_);
+            shader->uniform("view_matrix").set(views_[i]);
+            shader->uniform("projection_matrix").set(projection_);
+        };
+
         rdr_.draw(rt, {dc});
         fbo_->copySubImage(0, irradiance_map, TextureCubemap::Side(i), 0, glm::ivec2(0),
                            glm::ivec2(resolution_));

@@ -11,19 +11,15 @@ namespace rcube
 
 const static std::string SpecularPrefilterVertexShader =
     R"(
-    #version 420
-    layout(location = 0) in vec3 position;
+#version 420
+layout(location = 0) in vec3 position;
 
-    out vec3 direction;
+out vec3 direction;
 
-    layout(std140, binding = 0) uniform Camera {
-    mat4 view_matrix;
-    mat4 projection_matrix;
-    mat4 viewport_matrix;
-    vec3 eye_pos;
-                                         };
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
 
-                                         void main() {
+void main() {
     direction = position;
     gl_Position = projection_matrix * view_matrix * vec4(position, 1);
 }
@@ -31,85 +27,85 @@ const static std::string SpecularPrefilterVertexShader =
 
 const static std::string SpecularPrefilterFragmentShader =
     R"(
-        #version 420
-        layout(binding=0) uniform samplerCube env_map;
+#version 420
+layout(binding=0) uniform samplerCube env_map;
 
-        out vec4 frag_color;
+out vec4 frag_color;
 
-        in vec3 direction;
+in vec3 direction;
 
-        uniform int num_samples;
+uniform int num_samples;
 
-        uniform float roughness;
+uniform float roughness;
 
-        const float PI = 3.14159265358979323846;
+const float PI = 3.14159265358979323846;
 
-        uint reverseBits32(uint n) {
-            n = (n << 16) | (n >> 16); // Swap first and last 16 bits
-            n = ((n & 0x00ff00ff) << 8) |
-                ((n & 0xff00ff00) >> 8); // Swap consecutive 8 bits in the first half & second half
-            n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4); // Continue similarly
-            n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
-            n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
-            return n;
+uint reverseBits32(uint n) {
+    n = (n << 16) | (n >> 16); // Swap first and last 16 bits
+    n = ((n & 0x00ff00ff) << 8) |
+        ((n & 0xff00ff00) >> 8); // Swap consecutive 8 bits in the first half & second half
+    n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4); // Continue similarly
+    n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
+    n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
+    return n;
+}
+
+float radicalInverse(uint n) {
+    n = reverseBits32(n);
+    // Divide by 2^32
+    return float(n) * 2.3283064365386963e-10;
+}
+
+// Generate low-discrepancy sequence using the Hammersley method
+vec2 hammersleySample(uint i, int N) {
+    return vec2(float(i) / float(N), radicalInverse(i));
+}
+
+vec3 importanceSampleGgx(vec2 u, vec3 N, float roughness) {
+    float a = roughness * roughness;
+    float phi = 2.0 * PI * u.x;
+    float cos_theta = sqrt((1.0 - u.y) / (1.0 + (a * a - 1.0) * u.y));
+    float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+    // Spherical to cartesian coordinates
+    float x = cos(phi) * sin_theta;
+    float y = sin(phi) * sin_theta;
+    float z = cos_theta;
+
+    // Tangent-space to world-space sample vector
+    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, N));
+    vec3 bitangent = cross(N, tangent);
+
+    vec3 sample_vec = tangent * x + bitangent * y + N * z;
+    return normalize(sample_vec);
+}
+
+void main() {
+    vec3 N = normalize(direction);
+    // Approximation introduced by Epic Games: assume view direction
+    // is equal to reflected light direction (\omega_o)
+    vec3 R = N;
+    vec3 V = R;
+
+    vec3 prefiltered_color = vec3(0.0);
+    float weight = 0.0;
+
+    for (uint i = 0; i < num_samples; ++i)
+    {
+        vec2 u = hammersleySample(i, num_samples);
+        vec3 H = importanceSampleGgx(u, N, roughness);
+        vec3 L = normalize(2.0 * dot(V, H) * H - V);
+        float LdotN = max(dot(L, N), 0.0);
+        if (LdotN > 0.0)
+        {
+            prefiltered_color += texture(env_map, L).rgb * LdotN;
+            weight += LdotN;
         }
-
-        float radicalInverse(uint n) {
-            n = reverseBits32(n);
-            // Divide by 2^32
-            return float(n) * 2.3283064365386963e-10;
-        }
-
-        // Generate low-discrepancy sequence using the Hammersley method
-        vec2 hammersleySample(uint i, int N) {
-            return vec2(float(i) / float(N), radicalInverse(i));
-        }
-
-        vec3 importanceSampleGgx(vec2 u, vec3 N, float roughness) {
-            float a = roughness * roughness;
-            float phi = 2.0 * PI * u.x;
-            float cos_theta = sqrt((1.0 - u.y) / (1.0 + (a * a - 1.0) * u.y));
-            float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
-
-            // Spherical to cartesian coordinates
-            float x = cos(phi) * sin_theta;
-            float y = sin(phi) * sin_theta;
-            float z = cos_theta;
-
-            // Tangent-space to world-space sample vector
-            vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-            vec3 tangent = normalize(cross(up, N));
-            vec3 bitangent = cross(N, tangent);
-
-            vec3 sample_vec = tangent * x + bitangent * y + N * z;
-            return normalize(sample_vec);
-        }
-
-        void main() {
-            vec3 N = normalize(direction);
-            // Approximation introduced by Epic Games: assume view direction
-            // is equal to reflected light direction (\omega_o)
-            vec3 R = N;
-            vec3 V = R;
-
-            vec3 prefiltered_color = vec3(0.0);
-            float weight = 0.0;
-
-            for (uint i = 0; i < num_samples; ++i)
-            {
-                vec2 u = hammersleySample(i, num_samples);
-                vec3 H = importanceSampleGgx(u, N, roughness);
-                vec3 L = normalize(2.0 * dot(V, H) * H - V);
-                float LdotN = max(dot(L, N), 0.0);
-                if (LdotN > 0.0)
-                {
-                    prefiltered_color += texture(env_map, L).rgb * LdotN;
-                    weight += LdotN;
-                }
-            }
-            prefiltered_color /= weight;
-            frag_color = vec4(prefiltered_color, 1.0);
-        })";
+    }
+    prefiltered_color /= weight;
+    frag_color = vec4(prefiltered_color, 1.0);
+})";
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -328,13 +324,15 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         dc.cubemaps.push_back({env_map->id(), 0});
         dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
         dc.shader = shader_;
-        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
-            shader->uniform("num_samples").set(num_samples_);
-            shader->uniform("roughness").set(roughness);
-        };
         for (unsigned int i = 0; i < 6; ++i)
         {
-            rdr_.setCamera(eye_pos, views_[i], projection_, eye);
+            dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+                shader->uniform("num_samples").set(num_samples_);
+                shader->uniform("roughness").set(roughness);
+                shader->uniform("view_matrix").set(views_[i]);
+                shader->uniform("projection_matrix").set(projection_);
+            };
+
             rdr_.draw(rt, {dc});
             fbos[mip]->copySubImage(0, prefiltered_map, TextureCubemap::Side(i), mip,
                                     glm::ivec2(0, 0), glm::ivec2(mip_width, mip_height));

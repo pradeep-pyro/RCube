@@ -8,9 +8,10 @@
 #include <unordered_map>
 #include <vector>
 
+#define RCUBE_COMPONENTMASK_BITS 32
+
 namespace rcube
 {
-
 /**
  * ComponentMask is a bitset where bits at a particular position (from Component::family())
  * representing a component can be set. This is used to filter entities based on components of
@@ -28,7 +29,7 @@ struct ComponentMask
             set(x);
         }
     }
-    std::bitset<8> bits;
+    std::bitset<RCUBE_COMPONENTMASK_BITS> bits;
     void set(size_t pos, bool flag = true);
     void reset(size_t pos);
     bool match(const ComponentMask &other);
@@ -49,7 +50,7 @@ template <> struct hash<rcube::ComponentMask>
     typedef std::size_t result_type;
     result_type operator()(argument_type const &cm) const noexcept
     {
-        return std::hash<std::bitset<8>>{}(cm.bits);
+        return std::hash<std::bitset<RCUBE_COMPONENTMASK_BITS>>{}(cm.bits);
     }
 };
 } // namespace std
@@ -89,7 +90,7 @@ class System
      * @param filter Component mask filter to get entities of interest
      * @return List of entities that were registered under te given filter
      */
-    const std::vector<Entity> & getFilteredEntities(const ComponentMask &filter)
+    const std::vector<Entity> &getFilteredEntities(const ComponentMask &filter)
     {
         return registered_entities_[filter];
     }

@@ -4,17 +4,12 @@
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/string_cast.hpp"
-#include <iostream>
-
-// Enable this to explicitly compute normal matrix as transpose of inverse of model matrix
-// Only needed when non-uniform scaling is present
-// #define RCUBE_ENABLE_NORMAL_MATRIX_COMPUTATION
 
 namespace rcube
 {
 
 GLRenderer::GLRenderer()
-    : top_(0), left_(0), width_(1280), height_(720), clear_color_(glm::vec4(1.f)), init_(false)
+    : top_(0), left_(0), width_(1280), height_(720), init_(false)
 {
 }
 
@@ -22,8 +17,6 @@ void GLRenderer::cleanup()
 {
     if (init_)
     {
-        glDeleteBuffers(1, &ubo_matrices_);
-        glDeleteBuffers(1, &ubo_lights_);
         skybox_mesh_->release();
         skybox_shader_->release();
         quad_mesh_->release();
@@ -38,19 +31,6 @@ void GLRenderer::initialize()
     {
         return;
     }
-    glGenBuffers(1, &ubo_matrices_);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices_);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 3 + sizeof(glm::vec3), nullptr,
-                 GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glGenBuffers(1, &ubo_lights_);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_lights_);
-    // 99 lights with 12 floats and 1 int for num_lights and 3 ints since GLSL std140 expects
-    // 16-byte alignment
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * 12 * 99 + 1 * sizeof(int), nullptr,
-                 GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
     // Full screen quad
     quad_mesh_ = common::fullScreenQuadMesh();
     quad_shader_ = common::fullScreenQuadShader(common::FULLSCREEN_QUAD_TEXTURE_FRAGMENT_SHADER);
@@ -59,8 +39,6 @@ void GLRenderer::initialize()
     skybox_mesh_ = common::skyboxMesh();
     skybox_shader_ = common::skyboxShader();
 
-    // Lights data
-    light_data_.reserve(99 * 12);
     init_ = true;
 }
 
@@ -74,62 +52,6 @@ void GLRenderer::resize(int top, int left, size_t width, size_t height)
     glEnable(GL_SCISSOR_TEST);
     glViewport(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
     glScissor(top_, left_, static_cast<GLsizei>(width_), static_cast<GLsizei>(height_));
-}
-
-void GLRenderer::setCamera(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
-                           const glm::mat4 &view_to_projection,
-                           const glm::mat4 &projection_to_viewport)
-{
-    initialize();
-
-    // const glm::vec3 eye_pos = glm::vec3(glm::inverse(world_to_view)[3]);
-
-    const int float4x4_size = sizeof(glm::mat4);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices_);
-    // Copy view, projection and viewport matrices to UBO
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, float4x4_size, glm::value_ptr(world_to_view));
-    glBufferSubData(GL_UNIFORM_BUFFER, float4x4_size, float4x4_size,
-                    glm::value_ptr(view_to_projection));
-    glBufferSubData(GL_UNIFORM_BUFFER, 2 * float4x4_size, float4x4_size,
-                    glm::value_ptr(projection_to_viewport));
-    // Copy eye pos to UBO
-    glBufferSubData(GL_UNIFORM_BUFFER, 3 * float4x4_size, static_cast<int>(sizeof(glm::vec3)),
-                    glm::value_ptr(eye_pos));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_matrices_);
-}
-
-void GLRenderer::setLights(const std::vector<Light> &lights)
-{
-    initialize();
-    // Copy lights
-    assert(lights.size() < 99);
-    light_data_.clear();
-    for (const Light &l : lights)
-    {
-        const glm::vec3 &pos_xyz = l.position;
-        // pos_xyz = glm::vec3(world_to_view * glm::vec4(pos_xyz, 1.f));
-        const glm::vec3 &dir = l.direction;
-        // dir = glm::vec3(world_to_view * glm::vec4(dir, 0.f));
-        light_data_.push_back(pos_xyz.x);
-        light_data_.push_back(pos_xyz.y);
-        light_data_.push_back(pos_xyz.z);
-        light_data_.push_back(l.pos_w);
-        light_data_.push_back(dir.x);
-        light_data_.push_back(dir.y);
-        light_data_.push_back(dir.z);
-        light_data_.push_back(l.radius);
-        light_data_.push_back(l.color.r);
-        light_data_.push_back(l.color.g);
-        light_data_.push_back(l.color.b);
-        light_data_.push_back(l.cone_angle);
-    }
-    const int num_lights = static_cast<int>(lights.size());
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_lights_);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, light_data_.size() * sizeof(float), light_data_.data());
-    glBufferSubData(GL_UNIFORM_BUFFER, 99 * 12 * sizeof(float), sizeof(int), &num_lights);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo_lights_);
 }
 
 void GLRenderer::updateSettings(const RenderSettings &settings)

@@ -31,7 +31,6 @@ int main()
     auto material = mesh_handle.get<Material>();
     material->albedo = glm::vec3(0.0, 0.3, 0.7);
     material->roughness = 0.5f;
-    material->wireframe = true;
 
     // Show viewer
     viewer.execute();

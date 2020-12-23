@@ -342,6 +342,11 @@ vec3 radianceDirLight(int index, float LdotN)
     return dirlights[index].intensity * LdotN * dirlights[index].color;
 }
 
+vec3 tonemapReinhard(const vec3 color)
+{
+    return color / (color + vec3(1.0));
+}
+
 void main()
 {
     // From G-buffer
@@ -411,11 +416,13 @@ void main()
 
     vec3 result = direct + indirect;
 
-    // Tone mapping using Reinhard operator
-    result = result / (result + vec3(1.0));
+    // Tone mapping
+    result = tonemapReinhard(result);
+
+    // Gamma correction
+    result = pow(result, vec3(1.0 / 2.2));
 
     // Output
-    result = pow(result, vec3(1.0 / 2.2));
     out_color = vec4(result , 1.0);
 }
 )";

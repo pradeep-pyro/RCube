@@ -57,10 +57,10 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     // Make a default skybox
     camera_.get<Camera>()->skybox = TextureCubemap::create(256, 256);
     glm::vec3 color_top = glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f);
-    glm::vec3 color_bot = glm::vec3(100.f / 255.f, 93 / 255.f, 86.f / 255.f);
-    Image front_back = gradientV(256, 256, color_top, color_bot, 10.f);
-    Image top = gradientV(256, 256, color_top, color_top, 10.f);
-    Image bottom = gradientV(256, 256, color_bot, color_bot, 10.f);
+    glm::vec3 color_bot = glm::vec3(1.f, 1.f, 1.f);
+    Image front_back = gradientV(256, 256, color_top, color_bot, 2.f);
+    Image top = gradientV(256, 256, color_top, color_top, 2.f);
+    Image bottom = gradientV(256, 256, color_bot, color_bot, 2.f);
     camera_.get<Camera>()->skybox->setFilterModeMin(rcube::TextureFilterMode::Trilinear);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveY, top);
     camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeY, bottom);
@@ -93,6 +93,13 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const TriangleMeshD
     std::shared_ptr<Mesh> mesh = Mesh::create(data);
     mesh->uploadToGPU();
     ent.get<Drawable>()->mesh = mesh;
+    return ent;
+}
+
+EntityHandle RCubeViewer::createPointcloudEntity(const std::string name)
+{
+    EntityHandle ent = createSurface();
+    ent.add<Name>(name);
     return ent;
 }
 

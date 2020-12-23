@@ -4,6 +4,7 @@
 #include "RCube/Components/Transform.h"
 #include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Pickable.h"
+#include "RCubeViewer/Pointcloud.h"
 #include "imgui.h"
 
 namespace rcube
@@ -89,9 +90,16 @@ void PickSystem::update(bool)
             if (hit)
             {
                 Pickable *closest_pick = world_->getComponent<Pickable>(closest);
+                Drawable *closest_dr = world_->getComponent<Drawable>(closest);
                 closest_pick->picked = true;
                 closest_pick->point = closest_point;
                 closest_pick->triangle = closest_id;
+                auto pointcloud = std::dynamic_pointer_cast<Pointcloud>(closest_dr->mesh);
+                if (pointcloud != nullptr)
+                {
+                    closest_pick->primitive = static_cast<size_t>(
+                        std::floor((double)closest_id / (double)pointcloud->trianglesPerPoint()));
+                }
             }
         }
     }

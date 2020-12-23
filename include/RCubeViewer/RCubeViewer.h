@@ -50,6 +50,8 @@ class RCubeViewer : public rcube::Window
 
     EntityHandle addSurface(const std::string name, const TriangleMeshData &data);
 
+    EntityHandle createPointcloudEntity(const std::string name);
+
     EntityHandle addPointLight(const std::string name, glm::vec3 position, float radius,
                                glm::vec3 color);
 

@@ -58,6 +58,7 @@ struct TriangleMeshData
 // texcoords, colors using OpenGL buffers
 class Mesh
 {
+  protected:
     GLuint vao_ = 0;
     MeshPrimitive primitive_ = MeshPrimitive::Triangles;
     std::map<std::string, std::shared_ptr<AttributeBuffer>> attributes_;
@@ -66,8 +67,12 @@ class Mesh
     bool init_ = false;
     BVHNodePtr bvh_;  // Bounding Volume Hierarchy for intersection queries
 
+    Mesh(std::vector<std::shared_ptr<AttributeBuffer>> attributes, MeshPrimitive prim,
+         bool indexed = false);
   public:
     Mesh() = default;
+
+    virtual ~Mesh() = default;
 
     Mesh(const Mesh &other) = delete;
 
@@ -139,6 +144,8 @@ class Mesh
     void enableAttribute(std::string name);
 
     void disableAttribute(std::string name);
+
+    virtual void drawGUI();
 
   private:
     void setDefaultValue(GLuint id, const glm::vec3 &val);

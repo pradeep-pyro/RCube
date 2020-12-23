@@ -12,4 +12,5 @@ void DirectionalLight::drawGUI()
     ImGui::InputFloat("Intensity", &intensity);
     ImGui::Checkbox("Cast shadow", &cast_shadow);
 }
+
 } // namespace rcube

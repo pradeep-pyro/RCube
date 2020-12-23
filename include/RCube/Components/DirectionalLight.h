@@ -20,6 +20,7 @@ class DirectionalLight : public Component<DirectionalLight>
     // Illuminance  in lux
     // From Table 12:
     // https://google.github.io/filament/Filament.md.html#lighting/directlighting/directionallights
+    // TODO: Use Physically based units throughout
     enum Illuminance
     {
         MorningSun = 100'000,
@@ -32,7 +33,7 @@ class DirectionalLight : public Component<DirectionalLight>
     };
     glm::vec3 color = glm::vec3(1.f);
     glm::vec3 direction = glm::vec3(0, -1, 0);
-    float intensity = float(MorningSky);
+    float intensity = 1.f;
     glm::ivec2 shadowmap_origin =
         glm::ivec2(0); // Must be between (0, 0) and
                        // (RCUBE_SHADOWMAP_ATLAS_SIZE - size.x, RCUBE_SHADOWMAP_ATLAS_SIZE - size.y)

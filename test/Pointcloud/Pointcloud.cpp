@@ -1,3 +1,4 @@
+#include "RCubeViewer/Pointcloud.h"
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Colormap.h"
 #include "RCubeViewer/Components/Name.h"
@@ -9,45 +10,56 @@
 int main()
 {
     using namespace rcube;
+    using namespace rcube::viewer;
 
     // Properties to configure the viewer
-    viewer::RCubeViewerProps props;
+    RCubeViewerProps props;
     props.resolution = glm::vec2(1280 /*4096*/, 720 /*2160*/); // 720p
     props.MSAA = 2;                                            // turn on 2x multisampling
     props.camera_fov = glm::radians(30.f);
 
     // Create a viewer
-    viewer::RCubeViewer viewer(props);
+    RCubeViewer viewer(props);
 
-    // Create a random pointcloud
-    size_t num_points = 1024;
-    std::vector<glm::vec3> pointcloud(num_points);
-    std::uniform_real_distribution<float> dist(-1.f, 1.f);
-    std::default_random_engine gen;
-    for (size_t i = 0; i < num_points; ++i)
-    {
-        pointcloud[i] = glm::vec3(dist(gen), dist(gen), dist(gen));
-    }
+    // Create a pointcloud with the vertices of an icosphere
+    auto sphere = icoSphere(0.5f, 4);
 
     // Convert points to mesh for visualization
-    size_t num_triangles_per_point;
-    TriangleMeshData pointcloudMesh = pointsToSpheres(pointcloud, 0.03f, num_triangles_per_point);
-    EntityHandle pc_entity = viewer.addSurface("pointcloud", pointcloudMesh);
-    pc_entity.get<Material>()->albedo = glm::vec3(0.f, 0.8f, 0.5f);
+    std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.01);
+    ScalarField xs, ys, zs;
+    for (const glm::vec3 &xyz : sphere.vertices)
+    {
+        xs.data.push_back(xyz.x);
+        ys.data.push_back(xyz.y);
+        zs.data.push_back(xyz.z);
+    }
+    pc->addScalarField("Xs", xs);
+    pc->addScalarField("Ys", ys);
+    pc->addScalarField("Zs", zs);
+
+    // Add an entity in the viewer to hold the pointcloud
+    auto entity = viewer.createPointcloudEntity("Sphere vertices");
+    entity.get<Drawable>()->mesh = pc;
 
     // Make pointcloud pickable with mouse click
-    pc_entity.add<viewer::Pickable>();
-    pc_entity.get<Drawable>()->mesh->updateBVH();
+    entity.add<Pickable>();
 
-    viewer.customGUI = [&](viewer::RCubeViewer &v) {
+    // Custom window to show picked point
+    viewer.customGUI = [&](RCubeViewer &v) {
         ImGui::Begin("Pick");
-        viewer::Pickable *pick_comp = pc_entity.get<viewer::Pickable>();
+        Pickable *pick_comp = entity.get<Pickable>();
         if (pick_comp->picked)
         {
-            ImGui::Text(
-                "Picked triangle index %zd, which corresponds to pointcloud index %zd\n",
-                pick_comp->triangle,
-                (size_t)std::floor((double)pick_comp->triangle / (double)num_triangles_per_point));
+            size_t index = pick_comp->primitive;
+            ImGui::Text("Picked point: %zd\n", index);
+            // Get the pointcloud
+            std::shared_ptr<Pointcloud> pc =
+                std::dynamic_pointer_cast<Pointcloud>(entity.get<Drawable>()->mesh);
+
+            // Display the scalar fields values for the picked point
+            ImGui::LabelText("Xs", std::to_string(pc->scalarField("Xs").data[index]).c_str());
+            ImGui::LabelText("Ys", std::to_string(pc->scalarField("Ys").data[index]).c_str());
+            ImGui::LabelText("Zs", std::to_string(pc->scalarField("Zs").data[index]).c_str());
         }
         ImGui::End();
     };

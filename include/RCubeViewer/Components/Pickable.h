@@ -15,6 +15,7 @@ class Pickable : public Component<Pickable>
     bool picked = false;
     glm::vec3 point = glm::vec3(0.0, 0.0, 0.0);
     size_t triangle = 0;
+    size_t primitive = 0;
 };
 
 } // namespace viewer

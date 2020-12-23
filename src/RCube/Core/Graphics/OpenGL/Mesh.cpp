@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include "imgui.h"
 
 namespace rcube
 {
@@ -171,6 +172,34 @@ std::shared_ptr<Mesh> Mesh::create(const TriangleMeshData &trimesh)
     return mesh;
 }
 
+Mesh::Mesh(std::vector<std::shared_ptr<AttributeBuffer>> attributes, MeshPrimitive prim,
+           bool indexed)
+{
+    glGenVertexArrays(1, &vao_);
+    glBindVertexArray(vao_);
+    for (auto attr : attributes)
+    {
+        auto attrbuf = AttributeBuffer::create(attr->name(), attr->location(), attr->dim());
+        attrbuf->buffer()->use();
+        GLuint loc = static_cast<GLuint>(attrbuf->location());
+        glVertexAttribPointer(loc, static_cast<GLint>(attr->dim()), GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(loc);
+        attributes_[attr->name()] = attrbuf;
+        attributes_enabled_[attr->name()] = true;
+    }
+    primitive_ = prim;
+    if (indexed)
+    {
+        indices_ = AttributeIndexBuffer::create(
+            prim == MeshPrimitive::Points ? 1 : (prim == MeshPrimitive::Lines ? 2 : 3));
+        indices_->buffer()->use();
+    }
+    init_ = true;
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    checkGLError();
+}
+
 std::shared_ptr<Mesh> Mesh::createPointMesh()
 {
     return Mesh::create(
@@ -254,6 +283,41 @@ void Mesh::disableAttribute(std::string name)
     checkGLError();
     done();
     attributes_enabled_[name] = false;
+}
+
+void Mesh::drawGUI()
+{
+    static const char *current_attr = nullptr;
+    if (ImGui::BeginCombo("Attribute", current_attr))
+    {
+        for (auto &kv : attributes())
+        {
+            bool is_selected = (current_attr == kv.first.c_str());
+            if (ImGui::Selectable(kv.first.c_str(), is_selected))
+            {
+                current_attr = kv.first.c_str();
+            }
+            if (is_selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (current_attr != nullptr)
+    {
+        ImGui::LabelText("Count", std::to_string(attribute(current_attr)->size()).c_str());
+        ImGui::LabelText("Dimension", std::to_string(attribute(current_attr)->dim()).c_str());
+        ImGui::LabelText("Layout location",
+                         std::to_string(attribute(current_attr)->location()).c_str());
+        bool checked = attributeEnabled(current_attr);
+        if (ImGui::Checkbox("Active", &checked))
+        {
+            checked ? enableAttribute(current_attr) : disableAttribute(current_attr);
+        }
+    }
+    ImGui::LabelText("#Faces",
+                     std::to_string(indices()->size() / primitiveDim()).c_str());
 }
 
 void Mesh::use() const

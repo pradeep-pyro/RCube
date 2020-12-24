@@ -11,6 +11,8 @@ namespace viewer
 
 class ScalarField
 {
+    friend class Pointcloud;
+    std::vector<glm::vec3> colors_;
   public:
     std::vector<float> data;
     float vmin = 0.f;

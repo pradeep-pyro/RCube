@@ -223,7 +223,7 @@ void RCubeViewer::drawGUI()
 
     ///////////////////////////////////////////////////////////////////////////
 
-    if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::CollapsingHeader("Entities", ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto it = world_.entities();
 

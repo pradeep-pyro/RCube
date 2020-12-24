@@ -37,5 +37,5 @@ target_link_libraries(RCube glm_static glfw glad stb_image imgui)
 
 option(RCUBE_BUILD_EXAMPLES "Whether to build examples (default: OFF)" ON)
 if(RCUBE_BUILD_EXAMPLES)
-    add_subdirectory(test)
+    add_subdirectory(examples)
 endif()

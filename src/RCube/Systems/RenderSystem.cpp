@@ -315,27 +315,27 @@ vec3 diffuseLambertian(vec3 albedo) {
     return albedo / PI;
 }
 
-float shadow(int index, vec3 world_pos, float LdotN)
-{
-    if (dirlights[index].cast_shadow <= 1e-6)
-    {
-        return 0.0;
-    }
-    const float bias = 0.05;
-    vec4 shadow_pos = dirlights[index].view_proj * vec4(world_pos, 1.0);
-    // perform perspective divide
-    vec3 shadow_coords = shadow_pos.xyz / shadow_pos.w;
-    shadow_coords = shadow_coords * 0.5 + 0.5; 
-
-    float closest = texture(shadow_atlas, shadow_coords.xy).r; 
-    float current = shadow_coords.z;
-    float shadow = current - bias > closest ? 1.0 : 0.0;
-    if (shadow_coords.z > 1.0)
-    {
-        shadow = 0.0;
-    }
-    return shadow;
-}
+//float shadow(int index, vec3 world_pos, float LdotN)
+//{
+//    if (dirlights[index].cast_shadow <= 1e-6)
+//    {
+//        return 0.0;
+//    }
+//    const float bias = 0.05;
+//    vec4 shadow_pos = dirlights[index].view_proj * vec4(world_pos, 1.0);
+//    // perform perspective divide
+//    vec3 shadow_coords = shadow_pos.xyz / shadow_pos.w;
+//    shadow_coords = shadow_coords * 0.5 + 0.5; 
+//
+//    float closest = texture(shadow_atlas, shadow_coords.xy).r; 
+//    float current = shadow_coords.z;
+//    float shadow = current - bias > closest ? 1.0 : 0.0;
+//    if (shadow_coords.z > 1.0)
+//    {
+//        shadow = 0.0;
+//    }
+//    return shadow;
+//}
 
 vec3 radianceDirLight(int index, float LdotN)
 {
@@ -389,9 +389,9 @@ void main()
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic; // Metallic materials have ~0 diffuse contribution
 
-        float visibility = 1.0 - shadow(i, position, LdotN);
+        //float visibility = 1.0 - shadow(i, position, LdotN);
         vec3 radiance = radianceDirLight(i, LdotN);
-        direct += visibility * (kD * diffuse + specular) * radiance;
+        direct += /*visibility * */ (kD * diffuse + specular) * radiance;
     }
 
     // Indirect image-based lighting for ambient term
@@ -581,48 +581,48 @@ void DeferredRenderSystem::update(bool force)
     const auto &camera_entities = registered_entities_[filters_[1]];
     const auto &renderable_entities = registered_entities_[filters_[2]];
 
-    // Shadow pass
-    for (auto light : dirlight_entities)
+    //// Shadow pass
+    //for (auto light : dirlight_entities)
 
-    {
-        DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
-        if (!dirL->cast_shadow)
-        {
-            continue;
-        }
-        RenderTarget rtsh;
-        rtsh.framebuffer = framebuffer_shadow_->id();
-        rtsh.clear_color_buffer = false;
-        rtsh.clear_depth_buffer = true;
-        rtsh.clear_stencil_buffer = false;
-        rtsh.viewport_origin = dirL->shadowmap_origin;
-        rtsh.viewport_size = dirL->shadowmap_size;
-        assert(framebuffer_shadow_->isComplete());
-        const glm::vec3 opp_dirL = -glm::normalize(dirL->direction);
-        const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-        const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-        const glm::mat4 light_matrix = light_proj * light_view;
-        std::vector<DrawCall> dcsh;
-        dcsh.reserve(dirlight_entities.size());
-        for (auto renderable : renderable_entities)
-        {
-            const glm::mat4 model_matrix =
-                world_->getComponent<Transform>(renderable)->worldTransform();
-            DrawCall dc;
-            dc.mesh =
-                renderer_.getDrawCallMeshInfo(world_->getComponent<Drawable>(renderable)->mesh);
-            dc.settings.depth.write = true;
-            dc.settings.depth.test = true;
-            dc.settings.cull.enabled = false;
-            dc.shader = shadow_shader_;
-            dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
-                shader->uniform("light_matrix").set(light_matrix);
-                shader->uniform("model_matrix").set(model_matrix);
-            };
-            dcsh.push_back(dc);
-        }
-        renderer_.draw(rtsh, dcsh);
-    }
+    //{
+    //    DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
+    //    if (!dirL->cast_shadow)
+    //    {
+    //        continue;
+    //    }
+    //    RenderTarget rtsh;
+    //    rtsh.framebuffer = framebuffer_shadow_->id();
+    //    rtsh.clear_color_buffer = false;
+    //    rtsh.clear_depth_buffer = true;
+    //    rtsh.clear_stencil_buffer = false;
+    //    rtsh.viewport_origin = dirL->shadowmap_origin;
+    //    rtsh.viewport_size = dirL->shadowmap_size;
+    //    assert(framebuffer_shadow_->isComplete());
+    //    const glm::vec3 opp_dirL = -glm::normalize(dirL->direction);
+    //    const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+    //    const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    //    const glm::mat4 light_matrix = light_proj * light_view;
+    //    std::vector<DrawCall> dcsh;
+    //    dcsh.reserve(dirlight_entities.size());
+    //    for (auto renderable : renderable_entities)
+    //    {
+    //        const glm::mat4 model_matrix =
+    //            world_->getComponent<Transform>(renderable)->worldTransform();
+    //        DrawCall dc;
+    //        dc.mesh =
+    //            renderer_.getDrawCallMeshInfo(world_->getComponent<Drawable>(renderable)->mesh);
+    //        dc.settings.depth.write = true;
+    //        dc.settings.depth.test = true;
+    //        dc.settings.cull.enabled = false;
+    //        dc.shader = shadow_shader_;
+    //        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+    //            shader->uniform("light_matrix").set(light_matrix);
+    //            shader->uniform("model_matrix").set(model_matrix);
+    //        };
+    //        dcsh.push_back(dc);
+    //    }
+    //    renderer_.draw(rtsh, dcsh);
+    //}
 
     // Render all drawable entities
     for (const auto &camera_entity : camera_entities)
@@ -696,7 +696,7 @@ void DeferredRenderSystem::update(bool force)
             }
             dc.shader = gbuffer_shader_;
             dc.update_uniforms = [tr, pbr](std::shared_ptr<ShaderProgram> shader) {
-                shader->uniform("albedo").set(pbr->albedo);
+                shader->uniform("albedo").set(glm::pow(pbr->albedo, glm::vec3(2.2f)));
                 shader->uniform("roughness").set(pbr->roughness);
                 shader->uniform("metallic").set(pbr->metallic);
                 shader->uniform("use_albedo_texture").set(pbr->albedo_texture != nullptr);
@@ -706,7 +706,7 @@ void DeferredRenderSystem::update(bool force)
                 shader->uniform("model_matrix").set(tr->worldTransform());
                 shader->uniform("normal_matrix").set(glm::mat3(tr->worldTransform()));
                 shader->uniform("wireframe.show").set(pbr->wireframe);
-                shader->uniform("wireframe.color").set(pbr->wireframe_color);
+                shader->uniform("wireframe.color").set(glm::pow(pbr->wireframe_color, glm::vec3(2.2f)));
                 shader->uniform("wireframe.thickness").set(pbr->wireframe_thickness);
             };
             drawcalls_geom_pass.push_back(dc);
@@ -742,7 +742,7 @@ void DeferredRenderSystem::update(bool force)
         dc_light.textures.push_back({gbuffer_->colorAttachment(0)->id(), 0});
         dc_light.textures.push_back({gbuffer_->colorAttachment(1)->id(), 1});
         dc_light.textures.push_back({gbuffer_->colorAttachment(2)->id(), 2});
-        dc_light.textures.push_back({shadow_atlas_->id(), 3});
+        //dc_light.textures.push_back({shadow_atlas_->id(), 3});
         const bool use_ibl =
             cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
         if (use_ibl)
@@ -794,7 +794,7 @@ void DeferredRenderSystem::update(bool force)
         dcsc.settings.cull.enabled = false;
         renderer_.draw(rtsc, {dcsc});
     }
-} // namespace rcube
+}
 
 unsigned int DeferredRenderSystem::priority() const
 {

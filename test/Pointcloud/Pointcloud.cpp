@@ -29,9 +29,9 @@ int main()
     ScalarField xs, ys, zs;
     for (const glm::vec3 &xyz : sphere.vertices)
     {
-        xs.data.push_back(xyz.x);
-        ys.data.push_back(xyz.y);
-        zs.data.push_back(xyz.z);
+        xs.data().push_back(xyz.x);
+        ys.data().push_back(xyz.y);
+        zs.data().push_back(xyz.z);
     }
     pc->addScalarField("Xs", xs);
     pc->addScalarField("Ys", ys);
@@ -57,9 +57,9 @@ int main()
                 std::dynamic_pointer_cast<Pointcloud>(entity.get<Drawable>()->mesh);
 
             // Display the scalar fields values for the picked point
-            ImGui::LabelText("Xs", std::to_string(pc->scalarField("Xs").data[index]).c_str());
-            ImGui::LabelText("Ys", std::to_string(pc->scalarField("Ys").data[index]).c_str());
-            ImGui::LabelText("Zs", std::to_string(pc->scalarField("Zs").data[index]).c_str());
+            ImGui::LabelText("Xs", std::to_string(pc->scalarField("Xs").data()[index]).c_str());
+            ImGui::LabelText("Ys", std::to_string(pc->scalarField("Ys").data()[index]).c_str());
+            ImGui::LabelText("Zs", std::to_string(pc->scalarField("Zs").data()[index]).c_str());
         }
         ImGui::End();
     };

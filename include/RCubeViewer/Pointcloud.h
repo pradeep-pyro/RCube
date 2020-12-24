@@ -3,8 +3,8 @@
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include "RCubeViewer/ScalarField.h"
-#include <unordered_map>
 #include "imgui.h"
+#include <unordered_map>
 
 namespace rcube
 {
@@ -16,6 +16,7 @@ class Pointcloud : public Mesh
     size_t num_triangles_per_point_ = 0;
     size_t num_points_ = 0;
     std::unordered_map<std::string, ScalarField> scalar_fields_;
+    std::string visible_scalar_field_ = "";
 
     Pointcloud(const std::vector<glm::vec3> &points, float point_size)
         : Mesh({AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
@@ -62,22 +63,28 @@ class Pointcloud : public Mesh
     }
     void showScalarField(std::string name)
     {
-        auto sf = scalarField(name);
-        std::vector<glm::vec3> colors, colors_repeated;
-        colormap(sf.colormap, sf.data, sf.vmin, sf.vmax, colors);
-        for (size_t i = 0; i < colors.size(); ++i)
+        ScalarField& sf = scalarField(name);
+        if (visible_scalar_field_ != name || sf.dirty_)
         {
-            for (size_t j = 0; j < verticesPerPoint(); ++j)
+            sf.updateColors();
+            std::vector<glm::vec3> colors;
+            colors.reserve(sf.colors_.size() * verticesPerPoint());
+            for (size_t i = 0; i < sf.colors_.size(); ++i)
             {
-                colors_repeated.push_back(colors[i]);
+                for (size_t j = 0; j < verticesPerPoint(); ++j)
+                {
+                    colors.push_back(sf.colors_[i]);
+                }
             }
+            attributes_["colors"]->setData(colors);
+            visible_scalar_field_ = name;
+            uploadToGPU();
         }
-        attributes_["colors"]->setData(colors_repeated);
-        uploadToGPU();
     }
     void hideAllScalarFields()
     {
         attributes_["colors"]->setData(std::vector<glm::vec3>{});
+        visible_scalar_field_ = "";
         uploadToGPU();
     }
     void updatePoints(const std::vector<glm::vec3> &points)
@@ -89,12 +96,14 @@ class Pointcloud : public Mesh
     }
     virtual void drawGUI() override
     {
+        ImGui::Separator();
+        ImGui::Text("Pointcloud geometry");
         ImGui::LabelText("#points", std::to_string(num_points_).c_str());
         if (scalar_fields_.size() > 0)
         {
             ImGui::Separator();
         }
-        static const char *current_sf = nullptr;
+        static const char *current_sf = "(None)";
         if (ImGui::BeginCombo("Scalar field", current_sf))
         {
             for (auto &kv : scalar_fields_)
@@ -111,17 +120,20 @@ class Pointcloud : public Mesh
             }
             ImGui::EndCombo();
         }
-        if (current_sf != nullptr)
+        if (current_sf != nullptr && current_sf != "(None)")
         {
             showScalarField(current_sf);
-            
-            if (ImGui::InputFloat("vmin", &scalarField(current_sf).vmin))
+            if (ImGui::InputFloat("Min.", &scalarField(current_sf).vmin_))
             {
-                showScalarField(current_sf);
+                scalarField(current_sf).dirty_ = true;
             }
-            if (ImGui::InputFloat("vmax", &scalarField(current_sf).vmax))
+            if (ImGui::InputFloat("Max.", &scalarField(current_sf).vmax_))
             {
-                showScalarField(current_sf);
+                scalarField(current_sf).dirty_ = true;
+            }
+            if (ImGui::Button("Fit data range"))
+            {
+                scalarField(current_sf).fitDataRange();
             }
         }
     }

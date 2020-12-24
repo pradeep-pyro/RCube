@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9)
-project(ScalarField)
+project(Ex5_SurfaceMesh)
 
-add_executable(ScalarField ScalarField.cpp)
-target_link_libraries(ScalarField RCube)
+add_executable(Ex5_SurfaceMesh Ex5_SurfaceMesh.cpp)
+target_link_libraries(Ex5_SurfaceMesh RCube)

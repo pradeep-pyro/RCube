@@ -5,6 +5,7 @@
 int main()
 {
     using namespace rcube;
+    using namespace viewer;
 
     // Properties to configure the viewer
     viewer::RCubeViewerProps props;

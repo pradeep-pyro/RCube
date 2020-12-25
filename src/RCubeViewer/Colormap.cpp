@@ -1,11 +1,11 @@
 #include "RCubeViewer/Colormap.h"
 #include <algorithm>
 #include <stdexcept>
-#include <vector>
 
 namespace rcube
 {
-
+namespace viewer
+{
 // Taken from https://github.com/libigl/libigl/blob/master/include/igl/colormap.cpp
 static float viridis[256][3] = {
     {0.267004, 0.004874, 0.329415}, {0.268510, 0.009605, 0.335427}, {0.269944, 0.014625, 0.341379},
@@ -189,8 +189,10 @@ void colormap(const float palette[256][3], float value, glm::vec3 &rgb)
     const float one = 1.0;
     float value_clamped = static_cast<float>(std::max(zero, std::min(one, value)));
 
-    unsigned int least = static_cast<unsigned int>(std::floor(value_clamped * static_cast<float>(255)));
-    unsigned int most = static_cast<unsigned int>(std::ceil(value_clamped * static_cast<float>(255)));
+    unsigned int least =
+        static_cast<unsigned int>(std::floor(value_clamped * static_cast<float>(255)));
+    unsigned int most =
+        static_cast<unsigned int>(std::ceil(value_clamped * static_cast<float>(255)));
 
     const float r_min = palette[least][0];
     const float r_max = palette[most][0];
@@ -227,7 +229,8 @@ void colormap(Colormap cm, float value, float vmin, float vmax, glm::vec3 &rgb)
     }
 }
 
-void colormap(Colormap cm, const float *ptr, size_t size, float vmin, float vmax, std::vector<glm::vec3> &colors)
+void colormap(Colormap cm, const float *ptr, size_t size, float vmin, float vmax,
+              std::vector<glm::vec3> &colors)
 {
     colors.reserve(size);
     glm::vec3 rgb;
@@ -252,9 +255,11 @@ void colormap(Colormap cm, const std::vector<float> values, float vmin, float vm
     }
 }
 
-void colormap(Colormap cm, const std::vector<float> &value, float vmin, float vmax, std::vector<glm::vec3> &colors)
+void colormap(Colormap cm, const std::vector<float> &value, float vmin, float vmax,
+              std::vector<glm::vec3> &colors)
 {
     colormap(cm, value.data(), value.size(), vmin, vmax, colors);
 }
+} // namespace viewer
 
 } // namespace rcube

@@ -18,125 +18,82 @@ class Pointcloud : public Mesh
     std::unordered_map<std::string, ScalarField> scalar_fields_;
     std::string visible_scalar_field_ = "";
 
-    Pointcloud(const std::vector<glm::vec3> &points, float point_size)
-        : Mesh({AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
-                AttributeBuffer::create("normals", GLuint(AttributeLocation::NORMAL), 3),
-                AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
-               MeshPrimitive::Triangles, true)
-    {
-        TriangleMeshData trimesh =
-            pointsToSpheres(points, point_size, num_vertices_per_point_, num_triangles_per_point_);
-        attributes_["positions"]->setData(trimesh.vertices);
-        attributes_["normals"]->setData(trimesh.normals);
-        indices_->setData(trimesh.indices);
-        uploadToGPU();
-        updateBVH();
-        num_points_ = points.size();
-    }
+    Pointcloud(const std::vector<glm::vec3> &points, float point_size);
 
   public:
+    /**
+     * Creates an OpenGL mesh to represent Pointcloud data
+     *
+     * @param points vector of glm::vec3 points
+     * @param point_size Size of the sphere for each point
+     * @return Shared pointer to Pointcloud
+     */
     static std::shared_ptr<Pointcloud> create(const std::vector<glm::vec3> &points,
-                                              float point_size)
-    {
-        return std::shared_ptr<Pointcloud>(new Pointcloud(points, point_size));
-    }
-    size_t verticesPerPoint() const
-    {
-        return num_vertices_per_point_;
-    }
-    size_t trianglesPerPoint() const
-    {
-        return num_triangles_per_point_;
-    }
-    void addScalarField(std::string name, const ScalarField &sf)
-    {
-        assert(sf.data.size() == numPoints());
-        scalar_fields_[name] = sf;
-    }
-    const ScalarField &scalarField(std::string name) const
-    {
-        return scalar_fields_.at(name);
-    }
-    ScalarField &scalarField(std::string name)
-    {
-        return scalar_fields_.at(name);
-    }
-    void showScalarField(std::string name)
-    {
-        ScalarField& sf = scalarField(name);
-        if (visible_scalar_field_ != name || sf.dirty_)
-        {
-            sf.updateColors();
-            std::vector<glm::vec3> colors;
-            colors.reserve(sf.colors_.size() * verticesPerPoint());
-            for (size_t i = 0; i < sf.colors_.size(); ++i)
-            {
-                for (size_t j = 0; j < verticesPerPoint(); ++j)
-                {
-                    colors.push_back(sf.colors_[i]);
-                }
-            }
-            attributes_["colors"]->setData(colors);
-            visible_scalar_field_ = name;
-            uploadToGPU();
-        }
-    }
-    void hideAllScalarFields()
-    {
-        attributes_["colors"]->setData(std::vector<glm::vec3>{});
-        visible_scalar_field_ = "";
-        uploadToGPU();
-    }
-    void updatePoints(const std::vector<glm::vec3> &points)
-    {
-        assert(points.size() == num_points_);
-        attributes_["positions"]->setData(points);
-        uploadToGPU();
-        updateBVH();
-    }
-    virtual void drawGUI() override
-    {
-        ImGui::Separator();
-        ImGui::Text("Pointcloud geometry");
-        ImGui::LabelText("#points", std::to_string(num_points_).c_str());
-        if (scalar_fields_.size() > 0)
-        {
-            ImGui::Separator();
-        }
-        static const char *current_sf = "(None)";
-        if (ImGui::BeginCombo("Scalar field", current_sf))
-        {
-            for (auto &kv : scalar_fields_)
-            {
-                bool is_selected = (current_sf == kv.first.c_str());
-                if (ImGui::Selectable(kv.first.c_str(), is_selected))
-                {
-                    current_sf = kv.first.c_str();
-                }
-                if (is_selected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-        if (current_sf != nullptr && current_sf != "(None)")
-        {
-            showScalarField(current_sf);
-            if (ImGui::InputFloat("Min.", &scalarField(current_sf).vmin_))
-            {
-                scalarField(current_sf).dirty_ = true;
-            }
-            if (ImGui::InputFloat("Max.", &scalarField(current_sf).vmax_))
-            {
-                scalarField(current_sf).dirty_ = true;
-            }
-            if (ImGui::Button("Fit data range"))
-            {
-                scalarField(current_sf).fitDataRange();
-            }
-        }
-    }
+                                              float point_size);
+
+    /**
+     * Returns the number of vertices used by the mesh to represent each point
+     *
+     * @return Number of vertices in the per-point mesh
+     */
+    size_t verticesPerPoint() const;
+
+    /**
+     * Returns the number of triangles used by the mesh to represent each point
+     *
+     * @return Number of vertices in the per - point mesh
+     */
+    size_t trianglesPerPoint() const;
+
+    /**
+     * Add a scalar field (list of per-point scalars) for the pointcloud
+     *
+     * @param name Name of the scalar field for retrieving it and displaying in the GUI
+     * @param sf Scalarfield
+     */
+    void addScalarField(std::string name, const ScalarField &sf);
+
+    /**
+     * Get the scalar field given its name
+     *
+     * @param name Name of the scalar field
+     * @return sf const-ref to Scalarfield
+     */
+    const ScalarField &scalarField(std::string name) const;
+    
+    /**
+     * Get the scalar field given its name
+     *
+     * @param name Name of the scalar field
+     * @return sf ref to Scalarfield
+     */
+    ScalarField &scalarField(std::string name);
+    
+    /**
+     * Show the scalar field in the viewport
+     *
+     * @param name Name of the scalar field
+     */
+    void showScalarField(std::string name);
+    
+    /**
+     * Hide all scalar fields in the viewport
+     */
+    void hideAllScalarFields();
+    
+    /**
+     * Update the points in the pointcloud
+     * Note: this may invalidate all the associated fields
+     *
+     * @param points vector of glm::vec3 points 
+     */
+    void updatePoints(const std::vector<glm::vec3> &points);
+
+    /**
+     * Draws the GUI for this pointcloud
+     * Note: called by RCubeViewer internally
+     */
+    virtual void drawGUI() override;
 };
 
 } // namespace viewer

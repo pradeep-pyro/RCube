@@ -1,18 +1,29 @@
 #include "RCubeViewer/Pointcloud.h"
+#include "RCubeViewer/MessageBox.h"
 #include "imgui.h"
 
 namespace rcube
 {
 namespace viewer
 {
-Pointcloud::Pointcloud(const std::vector<glm::vec3> &points, float point_size)
+Pointcloud::Pointcloud(const std::vector<glm::vec3> &points, float point_size,
+                       PointcloudGlyph glyph)
     : Mesh({AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
             AttributeBuffer::create("normals", GLuint(AttributeLocation::NORMAL), 3),
             AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
            MeshPrimitive::Triangles, true)
 {
-    TriangleMeshData trimesh =
-        pointsToSpheres(points, point_size, num_vertices_per_point_, num_triangles_per_point_);
+    TriangleMeshData trimesh;
+    if (glyph == PointcloudGlyph::Sphere)
+    {
+        trimesh =
+            pointsToSpheres(points, point_size, num_vertices_per_point_, num_triangles_per_point_);
+    }
+    else
+    {
+        trimesh =
+            pointsToBoxes(points, point_size, num_vertices_per_point_, num_triangles_per_point_);
+    }
     attributes_["positions"]->setData(trimesh.vertices);
     attributes_["normals"]->setData(trimesh.normals);
     indices_->setData(trimesh.indices);
@@ -22,9 +33,9 @@ Pointcloud::Pointcloud(const std::vector<glm::vec3> &points, float point_size)
 }
 
 std::shared_ptr<Pointcloud> Pointcloud::create(const std::vector<glm::vec3> &points,
-                                               float point_size)
+                                               float point_size, PointcloudGlyph glyph)
 {
-    return std::shared_ptr<Pointcloud>(new Pointcloud(points, point_size));
+    return std::shared_ptr<Pointcloud>(new Pointcloud(points, point_size, glyph));
 }
 size_t Pointcloud::verticesPerPoint() const
 {
@@ -73,10 +84,24 @@ void Pointcloud::hideAllScalarFields()
     visible_scalar_field_ = "";
     uploadToGPU();
 }
-void Pointcloud::updatePoints(const std::vector<glm::vec3> &points)
+void Pointcloud::updatePoints(const std::vector<glm::vec3> &points, float point_size)
 {
     assert(points.size() == num_points_);
-    attributes_["positions"]->setData(points);
+    bool ok = (points.size() == num_points_);
+    if (!ok)
+    {
+        messageBoxError("Error", "Number of points passed in Pointcloud::updatePoints has to be " +
+                                     std::to_string(num_points_) + " but got " +
+                                     std::to_string(points.size()));
+        return;
+    }
+    TriangleMeshData trimesh =
+        pointsToSpheres(points, point_size, num_vertices_per_point_, num_triangles_per_point_);
+    attributes_["positions"]->setData(trimesh.vertices);
+    attributes_["normals"]->setData(trimesh.normals);
+    indices_->setData(trimesh.indices);
+    uploadToGPU();
+    updateBVH();
     uploadToGPU();
     updateBVH();
 }
@@ -92,6 +117,11 @@ void Pointcloud::drawGUI()
     static const char *current_sf = "(None)";
     if (ImGui::BeginCombo("Scalar field", current_sf))
     {
+        bool is_selected = (current_sf == "(None)");
+        if (ImGui::Selectable("(None)", is_selected))
+        {
+            current_sf = "(None)";
+        }
         for (auto &kv : scalar_fields_)
         {
             bool is_selected = (current_sf == kv.first.c_str());

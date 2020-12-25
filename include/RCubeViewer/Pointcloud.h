@@ -12,13 +12,25 @@ namespace viewer
 {
 class Pointcloud : public Mesh
 {
+  public:
+    /**
+     * Enum to specify how each point is rendered
+     */
+    enum class PointcloudGlyph
+    {
+        Sphere,
+        Box
+    };
+
+  private:
     size_t num_vertices_per_point_ = 0;
     size_t num_triangles_per_point_ = 0;
     size_t num_points_ = 0;
     std::unordered_map<std::string, ScalarField> scalar_fields_;
     std::string visible_scalar_field_ = "";
+    std::unordered_map<std::string, VectorField> vector_fields_;
 
-    Pointcloud(const std::vector<glm::vec3> &points, float point_size);
+    Pointcloud(const std::vector<glm::vec3> &points, float point_size, PointcloudGlyph glyph);
 
   public:
     /**
@@ -26,10 +38,12 @@ class Pointcloud : public Mesh
      *
      * @param points vector of glm::vec3 points
      * @param point_size Size of the sphere for each point
+     * @param glyph Enum specifying how each point is rendered
      * @return Shared pointer to Pointcloud
      */
     static std::shared_ptr<Pointcloud> create(const std::vector<glm::vec3> &points,
-                                              float point_size);
+                                              float point_size,
+                                              PointcloudGlyph glyph = PointcloudGlyph::Box);
 
     /**
      * Returns the number of vertices used by the mesh to represent each point
@@ -60,7 +74,7 @@ class Pointcloud : public Mesh
      * @return sf const-ref to Scalarfield
      */
     const ScalarField &scalarField(std::string name) const;
-    
+
     /**
      * Get the scalar field given its name
      *
@@ -68,26 +82,27 @@ class Pointcloud : public Mesh
      * @return sf ref to Scalarfield
      */
     ScalarField &scalarField(std::string name);
-    
+
     /**
      * Show the scalar field in the viewport
      *
      * @param name Name of the scalar field
      */
     void showScalarField(std::string name);
-    
+
     /**
      * Hide all scalar fields in the viewport
      */
     void hideAllScalarFields();
-    
+
     /**
      * Update the points in the pointcloud
-     * Note: this may invalidate all the associated fields
+     * Note: this may invalidate some of the associated fields
      *
-     * @param points vector of glm::vec3 points 
+     * @param points vector of glm::vec3 points
+     * @param point_size Size of the sphere for each point
      */
-    void updatePoints(const std::vector<glm::vec3> &points);
+    void updatePoints(const std::vector<glm::vec3> &points, float point_size);
 
     /**
      * Draws the GUI for this pointcloud

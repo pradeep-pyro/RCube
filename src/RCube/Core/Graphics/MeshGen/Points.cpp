@@ -46,7 +46,7 @@ TriangleMeshData pointsToSpheres(const std::vector<glm::vec3> &points, float rad
 }
 
 TriangleMeshData pointsToBoxes(const std::vector<glm::vec3> &points, float side,
-                               size_t &num_triangles_per_point)
+                               size_t &num_vertices_per_point, size_t &num_triangles_per_point)
 {
     TriangleMeshData data;
     data.indexed = true;
@@ -57,6 +57,7 @@ TriangleMeshData pointsToBoxes(const std::vector<glm::vec3> &points, float side,
         {
             vertex += points[i];
         }
+        num_vertices_per_point = box_mesh.vertices.size();
         num_triangles_per_point = box_mesh.indices.size();
         data.append(box_mesh);
     }

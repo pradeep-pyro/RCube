@@ -25,7 +25,7 @@ int main()
     auto sphere = icoSphere(0.5f, 4);
 
     // Convert points to mesh for visualization
-    std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.01);
+    std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.01f);
     ScalarField xs, ys, zs;
     for (const glm::vec3 &xyz : sphere.vertices)
     {

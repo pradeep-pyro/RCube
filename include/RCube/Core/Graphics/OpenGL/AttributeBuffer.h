@@ -210,6 +210,16 @@ class AttributeIndexBuffer
         return reinterpret_cast<const glm::uvec3 *>(data_.data());
     }
 
+    glm::uvec3 *ptrUVec3()
+    {
+        if (dim_ != 3)
+        {
+            throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
+                                     "D data as 3D");
+        }
+        return reinterpret_cast<glm::uvec3 *>(data_.data());
+    }
+
     const glm::uvec2 *ptrUVec2() const
     {
         if (dim_ != 2)
@@ -218,6 +228,16 @@ class AttributeIndexBuffer
                                      "D data as 2D");
         }
         return reinterpret_cast<const glm::uvec2 *>(data_.data());
+    }
+
+    glm::uvec2 *ptrUVec2()
+    {
+        if (dim_ != 2)
+        {
+            throw std::runtime_error("Attempting to interpret " + std::to_string(dim_) +
+                                     "D data as 2D");
+        }
+        return reinterpret_cast<glm::uvec2 *>(data_.data());
     }
 
     size_t size() const

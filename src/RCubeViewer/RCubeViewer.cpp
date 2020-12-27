@@ -73,6 +73,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     // Create a sunlight
     auto dirl = createDirLight();
     dirl.add(Name("Sun"));
+    dirl.get<DirectionalLight>()->intensity = 20.f;
     dirl.get<DirectionalLight>()->cast_shadow = true;
 
     // Create a ground plane

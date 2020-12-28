@@ -384,7 +384,7 @@ EntityHandle RCubeViewer::createGroundPlane()
     mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
     ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
-    ground_.add(Name("ground"));
+    ground_.add(Name("Ground"));
     return ground_;
 }
 

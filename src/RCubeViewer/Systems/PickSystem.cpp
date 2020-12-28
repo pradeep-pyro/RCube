@@ -86,6 +86,10 @@ void PickSystem::update(bool)
                     closest_id = id;
                     closest = ent;
                 }
+                else
+                {
+                    pickable->picked = false;
+                }
             }
             if (hit)
             {

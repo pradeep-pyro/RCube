@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RCubeViewer/Colormap.h"
+#include "RCube/Core/Graphics/OpenGL/Mesh.h"
 #include <string>
 #include <vector>
 
@@ -29,12 +30,6 @@ class ScalarField
      * @return const-ref to scalar field
      */
     const std::vector<float> &data() const;
-
-    /**
-     * Returns the scalar field data
-     * @return ref to scalar field
-     */
-    std::vector<float> &data();
 
     /**
      * Sets the scalar field data
@@ -85,9 +80,11 @@ class ScalarField
 
     /**
      * Updates the colors of the scalar field if necessary
-     * Note: called by RCubeViewer interally
+     * Note: called by RCubeViewer internally
+     *
+     * @return Whether colors were actually updated
      */
-    void updateColors();
+    bool updateColors();
 };
 
 } // namespace viewer

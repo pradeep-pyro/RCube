@@ -109,6 +109,11 @@ class AttributeBuffer
         return dim_;
     }
 
+    size_t count() const
+    {
+        return data_.size() / dim();
+    }
+
     std::shared_ptr<ArrayBuffer> buffer() const
     {
         return buffer_;

@@ -17,4 +17,9 @@ TriangleMeshData pointsToSpheres(const std::vector<glm::vec3> &points, float rad
 TriangleMeshData pointsToBoxes(const std::vector<glm::vec3> &points, float side,
                                size_t &num_vertices_per_point, size_t &num_triangles_per_point);
 
+TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
+                                       const std::vector<glm::vec3> &vectors,
+                                       const std::vector<float> &lengths,
+                                       size_t &num_vertices_per_point,
+                                       size_t &num_triangles_per_point);
 } // namespace rcube

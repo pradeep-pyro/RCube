@@ -63,7 +63,7 @@ void TriangleMeshData::clear()
     indices.clear();
 }
 
-void TriangleMeshData::append(TriangleMeshData &other)
+void TriangleMeshData::append(const TriangleMeshData &other)
 {
     assert(indexed == other.indexed);
     size_t offset = vertices.size();
@@ -77,6 +77,15 @@ void TriangleMeshData::append(TriangleMeshData &other)
         val += static_cast<unsigned int>(offset);
     }
     indices.insert(indices.end(), tmp.begin(), tmp.end());
+}
+
+void TriangleMeshData::resize(size_t num_vertices, size_t num_indices)
+{
+    vertices.resize(num_vertices);
+    normals.resize(num_vertices);
+    colors.resize(num_vertices);
+    texcoords.resize(num_vertices);
+    indices.resize(num_indices);
 }
 
 void TriangleMeshData::scaleAndCenter()
@@ -381,6 +390,24 @@ void Mesh::uploadToGPU()
         {
             enableAttribute(kv.first);
             kv.second->update();
+        }
+    }
+}
+
+void Mesh::uploadToGPU(const std::string &attribute)
+{
+    done();
+    auto attr = attributes_.at(attribute);
+    {
+        if (attr->data().size() / attr->dim() !=
+            attributes_["positions"]->data().size() / attributes_["positions"]->dim())
+        {
+            disableAttribute(attribute);
+        }
+        else
+        {
+            enableAttribute(attribute);
+            attr->update();
         }
     }
 }

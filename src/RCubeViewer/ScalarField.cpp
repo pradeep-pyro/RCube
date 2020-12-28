@@ -1,4 +1,5 @@
 #include "RCubeViewer/ScalarField.h"
+#include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Colormap.h"
 #include <algorithm>
 #include <string>
@@ -9,10 +10,6 @@ namespace rcube
 namespace viewer
 {
 const std::vector<float> &ScalarField::data() const
-{
-    return data_;
-}
-std::vector<float> &ScalarField::data()
 {
     return data_;
 }
@@ -55,14 +52,15 @@ void ScalarField::setCmap(Colormap cmap)
     cmap_ = cmap;
     dirty_ = true;
 }
-void ScalarField::updateColors()
+bool ScalarField::updateColors()
 {
     if (dirty_)
     {
-        colors_.clear();
         colormap(cmap_, data_, vmin_, vmax_, colors_);
         dirty_ = false;
+        return true;
     }
+    return false;
 }
 
 } // namespace viewer

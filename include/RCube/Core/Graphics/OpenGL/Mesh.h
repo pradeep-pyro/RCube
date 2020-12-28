@@ -47,7 +47,9 @@ struct TriangleMeshData
 
     void clear();
 
-    void append(TriangleMeshData &other);
+    void append(const TriangleMeshData &other);
+
+    void resize(size_t num_vertices, size_t num_indices);
 
     bool valid() const;
 
@@ -66,7 +68,7 @@ class Mesh
     std::map<std::string, bool> attributes_enabled_; 
     bool init_ = false;
     BVHNodePtr bvh_;  // Bounding Volume Hierarchy for intersection queries
-
+    
     Mesh(std::vector<std::shared_ptr<AttributeBuffer>> attributes, MeshPrimitive prim,
          bool indexed = false);
   public:
@@ -112,6 +114,8 @@ class Mesh
     std::shared_ptr<AttributeIndexBuffer> indices();
 
     void uploadToGPU();
+
+    void uploadToGPU(const std::string &attribute);
 
     MeshPrimitive primitive() const
     {

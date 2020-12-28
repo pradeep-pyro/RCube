@@ -26,16 +26,27 @@ int main()
 
     // Convert points to mesh for visualization
     std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.01f);
+    
+    // Add some scalar fields
     ScalarField xs, ys, zs;
+    std::vector<float> xs_data, ys_data, zs_data;
     for (const glm::vec3 &xyz : sphere.vertices)
     {
-        xs.data().push_back(xyz.x);
-        ys.data().push_back(xyz.y);
-        zs.data().push_back(xyz.z);
+        xs_data.push_back(xyz.x);
+        ys_data.push_back(xyz.y);
+        zs_data.push_back(xyz.z);
     }
+    xs.setData(xs_data);
+    ys.setData(ys_data);
+    zs.setData(zs_data);
     pc->addScalarField("Xs", xs);
     pc->addScalarField("Ys", ys);
     pc->addScalarField("Zs", zs);
+
+    // Add a vector field
+    VectorField normals;
+    normals.setVectors(sphere.normals);
+    pc->addVectorField("Normals", normals);
 
     // Add an entity in the viewer to hold the pointcloud
     auto entity = viewer.createPointcloudEntity("Sphere vertices");
@@ -51,15 +62,21 @@ int main()
         if (pick_comp->picked)
         {
             size_t index = pick_comp->primitive;
-            ImGui::Text("Picked point: %zd\n", index);
+            ImGui::LabelText("Picked point", std::to_string(index).c_str());
             // Get the pointcloud
             std::shared_ptr<Pointcloud> pc =
                 std::dynamic_pointer_cast<Pointcloud>(entity.get<Drawable>()->mesh);
 
-            // Display the scalar fields values for the picked point
+            //// Display the fields values for the picked point
+            ImGui::Separator();
             ImGui::LabelText("Xs", std::to_string(pc->scalarField("Xs").data()[index]).c_str());
             ImGui::LabelText("Ys", std::to_string(pc->scalarField("Ys").data()[index]).c_str());
             ImGui::LabelText("Zs", std::to_string(pc->scalarField("Zs").data()[index]).c_str());
+            ImGui::Separator();
+            const glm::vec3 nor = pc->vectorField("Normals").vectors()[index];
+            ImGui::LabelText("Normal.x", std::to_string(nor.x).c_str());
+            ImGui::LabelText("Normal.y", std::to_string(nor.y).c_str());
+            ImGui::LabelText("Normal.z", std::to_string(nor.z).c_str());
         }
         ImGui::End();
     };

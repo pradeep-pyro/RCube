@@ -47,7 +47,7 @@ void main()
     vec4 world_pos = model_matrix * vec4(position, 1.0);
     vert_position = world_pos.xyz;
     vert_uv = uv;
-    vert_color = color;
+    vert_color = pow(color, vec3(2.2));
     vert_normal = normal_matrix * normal;
     gl_Position = projection_matrix * view_matrix * world_pos;
     // Tangent basis

@@ -20,6 +20,7 @@ void Pointcloud::createMesh()
         points_mesh_ =
             pointsToBoxes(points_, point_size_, num_vertices_per_point_, num_triangles_per_point_);
     }
+
     attributes_["positions"]->setData(points_mesh_.vertices);
     attributes_["normals"]->setData(points_mesh_.normals);
     attributes_["colors"]->setData(
@@ -141,19 +142,16 @@ void Pointcloud::setPointcloudArrowAttributes(const TriangleMeshData &mesh)
     size_t k = numPoints() * num_vertices_per_point_;
     for (size_t i = 0; i < mesh.vertices.size(); ++i)
     {
-        positions[k] = mesh.vertices.at(i);
-        normals[k] = mesh.normals.at(i);
-        colors[k++] = mesh.colors.at(i);
+        positions[k + i] = mesh.vertices.at(i);
+        normals[k + i] = mesh.normals.at(i);
+        colors[k + i] = mesh.colors.at(i);
     }
-    indices_->data().resize(indices_->data().size() + mesh.indices.size() * 3);
     glm::uvec3 *indices = indices_->ptrUVec3();
     k = numPoints() * num_triangles_per_point_;
-    unsigned int offset =
-        *std::max_element(indices_->data().begin(),
-                          indices_->data().begin() + numPoints() * num_triangles_per_point_ * 3);
+    unsigned int offset(numPoints() * verticesPerPoint());
     for (size_t i = 0; i < mesh.indices.size(); ++i)
     {
-        indices[k++] = offset + mesh.indices[i];
+        indices[k + i] = offset + mesh.indices[i];
     }
     uploadToGPU();
 }

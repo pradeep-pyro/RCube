@@ -49,7 +49,7 @@ int main()
     pc->addVectorField("Normals", normals);
 
     // Add an entity in the viewer to hold the pointcloud
-    auto entity = viewer.createPointcloudEntity("Sphere vertices");
+    auto entity = viewer.addMeshEntity("Sphere vertices");
     entity.get<Drawable>()->mesh = pc;
 
     // Make pointcloud pickable with mouse click

@@ -97,9 +97,19 @@ EntityHandle RCubeViewer::addSurface(const std::string name, const TriangleMeshD
     return ent;
 }
 
-EntityHandle RCubeViewer::createPointcloudEntity(const std::string name)
+EntityHandle RCubeViewer::addEntity(const std::string &name)
 {
-    EntityHandle ent = createSurface();
+    auto ent = world_.createEntity();
+    ent.add<Name>(name);
+    return ent;
+}
+
+EntityHandle RCubeViewer::addMeshEntity(const std::string &name)
+{
+    auto ent = world_.createEntity();
+    ent.add<Drawable>(Drawable());
+    ent.add<Material>();
+    ent.add<Transform>(Transform());
     ent.add<Name>(name);
     return ent;
 }

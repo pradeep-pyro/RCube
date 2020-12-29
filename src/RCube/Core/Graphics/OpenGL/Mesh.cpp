@@ -426,9 +426,9 @@ void Mesh::updateBVH()
     // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
     std::vector<PrimitivePtr> prims;
     const glm::vec3 *pos = attributes_["positions"]->ptrVec3();
-    const unsigned int *ind = indices_->ptr();
     if (numIndexData() > 0)
     {
+        const unsigned int *ind = indices_->ptr();
         prims.reserve(indices_->size() / 3);
         size_t face_id = 0;
         for (size_t i = 0; i < indices_->size(); i += 3)

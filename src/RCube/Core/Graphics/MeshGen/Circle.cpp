@@ -7,9 +7,9 @@ TriangleMeshData circle(float radius, int radial_segments, float theta_start, fl
     TriangleMeshData data;
     data.indexed = true;
 
-    data.vertices.reserve(radial_segments + 2);
-    data.texcoords.reserve(radial_segments + 2);
-    data.normals.reserve(radial_segments + 2);
+    data.vertices.reserve(radial_segments + 1);
+    data.texcoords.reserve(radial_segments + 1);
+    data.normals.reserve(radial_segments + 1);
 
     // Center
     glm::vec3 center(0);
@@ -18,7 +18,7 @@ TriangleMeshData circle(float radius, int radial_segments, float theta_start, fl
     data.texcoords.push_back(glm::vec2(0.5f, 0.5f));
 
     float theta_inc = (theta_end - theta_start) / radial_segments;
-    for (int i = 0; i <= radial_segments; ++i)
+    for (int i = 0; i < radial_segments; ++i)
     {
         float curr_theta = theta_start + i * theta_inc;
         glm::vec3 vertex = radius * glm::vec3(std::cos(curr_theta), 0, std::sin(curr_theta));
@@ -30,9 +30,14 @@ TriangleMeshData circle(float radius, int radial_segments, float theta_start, fl
         data.normals.push_back(glm::vec3(0, 1, 0));
     }
 
-    for (int i = 0; i <= radial_segments; ++i)
+    for (size_t i = 1; i < data.vertices.size(); ++i)
     {
-        data.indices.push_back({i, i + 1, 0});
+        size_t j = i + 1;
+        if (j == data.vertices.size())
+        {
+            j = 1;
+        }
+        data.indices.push_back({i, j, 0});
     }
 
     return data;

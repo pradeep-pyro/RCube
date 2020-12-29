@@ -141,7 +141,7 @@ class Mesh
 
     size_t numIndexData() const;
 
-    void updateBVH();
+    virtual void updateBVH();
 
     bool rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id);
 

@@ -17,6 +17,7 @@ namespace viewer
 class ScalarField
 {
     friend class Pointcloud;
+    friend class SurfaceMesh;
     std::vector<glm::vec3> colors_;
     std::vector<float> data_;
     Colormap cmap_ = Colormap::Viridis;

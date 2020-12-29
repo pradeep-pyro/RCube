@@ -1,6 +1,8 @@
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
+#include "RCube/Core/Graphics/MeshGen/Cone.h"
+#include "RCube/Core/Graphics/MeshGen/Obj.h"
 #include "RCubeViewer/Colormap.h"
 #include "RCubeViewer/RCubeViewer.h"
+#include "RCubeViewer/SurfaceMesh.h"
 
 int main()
 {
@@ -17,22 +19,26 @@ int main()
 
     // Add a subdivided icosahedron surface to viewer
     TriangleMeshData icosphere = icoSphere(1.0, 4);
-    EntityHandle sphere = viewer.addSurface("sphere", icosphere);
+    EntityHandle entity = viewer.addSurface("Sphere", icosphere);
 
-    // Create a scalar field
+    std::shared_ptr<SurfaceMesh> surf = SurfaceMesh::create(icosphere);
+    entity.get<Drawable>()->mesh = surf;
+
+    // Create a per-vertex scalar field
     std::vector<float> height_field;
-    Mesh *sphere_mesh = sphere.get<Drawable>()->mesh.get();
     height_field.reserve(icosphere.vertices.size());
     for (auto &v : icosphere.vertices)
     {
         height_field.push_back(v.y);
     }
+    ScalarField height;
+    height.setData(height_field);
+    surf->addScalarField("Height", height);
 
-    // Create colors based on colormap
-    float vmin = -1.f;
-    float vmax = +1.f;
-    colormap(Colormap::Viridis, height_field, vmin, vmax, sphere_mesh->attribute("colors")->data());
-    sphere_mesh->uploadToGPU();
+    // Create a per-vertex vector field
+    VectorField normals;
+    normals.setVectors(icosphere.normals);
+    surf->addVertexVectorField("Normals", normals);
 
     // Show viewer
     viewer.execute();

@@ -11,13 +11,13 @@ namespace viewer
 {
 
 /**
- * ScalarField is a class to store a field of scalar values that can be displayed on
+ * VectorField is a class to store a field of vector values that can be displayed on
  * a pointcloud, surface mesh, etc.
  */
-
 class VectorField
 {
     friend class Pointcloud;
+    friend class SurfaceMesh;
     TriangleMeshData mesh_;
     std::vector<glm::vec3> vectors_;
     float max_length_ = 0.01f;

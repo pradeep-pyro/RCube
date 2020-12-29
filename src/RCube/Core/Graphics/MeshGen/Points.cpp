@@ -1,5 +1,6 @@
 #include "RCube/Core/Graphics/MeshGen/Sphere.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
+#include "RCube/Core/Graphics/MeshGen/Cone.h"
 #include "RCube/Core/Graphics/MeshGen/Cylinder.h"
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "glm/gtx/quaternion.hpp"
@@ -81,7 +82,7 @@ TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
         // Create an arrow as a cone
         float h = lengths[i];
         TriangleMeshData arrow_mesh =
-            cylinder(0.1f * h, 0, h, 10, 1, 0, glm::pi<float>() * 2.f, false, true);
+            cone(0.1f * h, h, 10, 0, glm::pi<float>() * 2.f, false);
         // Rotate the arrow from y-axis to vector orientation
         glm::quat q = glm::rotation(glm::vec3(0.f, 1.f, 0.f), vectors[i]);
         // Shift the arrow such that the vector's tail is at origin

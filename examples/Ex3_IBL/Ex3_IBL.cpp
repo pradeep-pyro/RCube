@@ -1,4 +1,3 @@
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLDiffuse.h"
 #include "RCube/Core/Graphics/ImageBasedLighting/IBLSpecularSplitSum.h"
 #include "RCube/Core/Graphics/MeshGen/SuperShape.h"
@@ -37,7 +36,7 @@ int main()
     viewer.camera().get<Camera>()->skybox = env_map;
     viewer.camera().get<Camera>()->use_skybox = true;
 
-    // Add a fancy supershape
+    // Add a supershape
     // The returned entity has 2 components in it: (1) a Drawable component holding the mesh and
     // material (a Blinn-Phong material is used by default), (2) a Transform component holding the
     // local position, and local orientation with respect to a parent transform
@@ -52,7 +51,7 @@ int main()
     // (2) prefiltered specular cubmap and
     // (3) BRDF 2D LUT using the split-sum approximation
     // are automatically precomputed based on
-    // on the subemap's skybox when the viewer is initialized.
+    // on the cubemap's skybox when the viewer is initialized.
     // To manually update IBL, call:
     // viewer.updateImageBasedLighting);
 

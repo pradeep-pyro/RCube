@@ -1,4 +1,3 @@
-#include "RCube/Core/Graphics/Effects/GammaCorrectionEffect.h"
 #include "RCube/Core/Graphics/MeshGen/Obj.h"
 #include "RCubeViewer/RCubeViewer.h"
 

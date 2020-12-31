@@ -1,8 +1,8 @@
-#include "RCube/Core/Graphics/MeshGen/Sphere.h"
+#include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCube/Core/Graphics/MeshGen/Box.h"
 #include "RCube/Core/Graphics/MeshGen/Cone.h"
 #include "RCube/Core/Graphics/MeshGen/Cylinder.h"
-#include "RCube/Core/Graphics/MeshGen/Points.h"
+#include "RCube/Core/Graphics/MeshGen/Sphere.h"
 #include "glm/gtx/quaternion.hpp"
 
 namespace rcube
@@ -81,8 +81,7 @@ TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
     {
         // Create an arrow as a cone
         float h = lengths[i];
-        TriangleMeshData arrow_mesh =
-            cone(0.1f * h, h, 10, 0, glm::pi<float>() * 2.f, false);
+        TriangleMeshData arrow_mesh = cone(0.1f * h, h, 10, 0, glm::pi<float>() * 2.f, false);
         // Rotate the arrow from y-axis to vector orientation
         glm::quat q = glm::rotation(glm::vec3(0.f, 1.f, 0.f), vectors[i]);
         // Shift the arrow such that the vector's tail is at origin
@@ -104,6 +103,41 @@ TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
         data.append(arrow_mesh);
     }
     return data;
+}
+
+void pointsVectorsToArrows(const std::vector<glm::vec3> &points,
+                           const std::vector<glm::vec3> &vectors, const std::vector<float> &lengths,
+                           size_t &num_vertices_per_point,
+                           TriangleMeshData &data)
+{
+    assert(points.size() == vectors.size());
+    assert(points.size() == lengths.size());
+    data.indexed = false;
+    data.clear();
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+        // Create an arrow as a cone
+        float h = lengths[i];
+        TriangleMeshData arrow_mesh = cone(0.1f * h, h, 8);
+        // Rotate the arrow from y-axis to vector orientation
+        glm::quat q = glm::rotation(glm::vec3(0.f, 1.f, 0.f), vectors[i]);
+        // Shift the arrow such that the vector's tail is at origin
+        for (glm::vec3 &vertex : arrow_mesh.vertices)
+        {
+            vertex.y += 0.5f * h;
+        }
+        for (glm::vec3 &vertex : arrow_mesh.vertices)
+        {
+            vertex = glm::rotate(q, vertex);
+        }
+        // Shift the arrow such that the vector's tail coincides with points[i]
+        for (glm::vec3 &vertex : arrow_mesh.vertices)
+        {
+            vertex += points[i];
+        }
+        num_vertices_per_point = arrow_mesh.vertices.size();
+        data.append(arrow_mesh);
+    }
 }
 
 } // namespace rcube

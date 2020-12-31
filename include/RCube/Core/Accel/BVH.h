@@ -23,6 +23,6 @@ using BVHNodePtr = std::shared_ptr<BVHNode>;
 
 constexpr size_t BVH_MAXDEPTH = 10;
 
-BVHNodePtr buildBVH(std::vector<PrimitivePtr> &prims, size_t depth = 0);
+BVHNodePtr buildBVH(const std::vector<PrimitivePtr> &prims, size_t depth = 0);
 
 } // namespace rcube

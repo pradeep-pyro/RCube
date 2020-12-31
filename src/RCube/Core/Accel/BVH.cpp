@@ -31,7 +31,7 @@ bool BVHNode::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &primitiv
     return false;
 }
 
-BVHNodePtr buildBVH(std::vector<PrimitivePtr> &prims, size_t depth)
+BVHNodePtr buildBVH(const std::vector<PrimitivePtr> &prims, size_t depth)
 {
 
     auto node = std::make_shared<BVHNode>();

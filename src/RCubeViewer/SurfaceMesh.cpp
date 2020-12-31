@@ -68,7 +68,15 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
             ++k;
         }
     }
-    updateBVH();
+    std::vector<PrimitivePtr> prims;
+    prims.reserve(data.indices.size());
+    for (size_t i = 0; i < data.indices.size(); ++i)
+    {
+        const glm::uvec3 ind = data.indices[i];
+        prims.push_back(std::make_shared<Triangle>(i, data.vertices[ind[0]], data.vertices[ind[1]],
+                                                   data.vertices[ind[2]]));
+    }
+    updateBVH(prims);
     uploadToGPU();
 }
 
@@ -473,36 +481,6 @@ void SurfaceMesh::drawGUI()
     {
         hideAllVertexVectorFields();
     }
-}
-
-void SurfaceMesh::updateBVH()
-{
-    // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
-    std::vector<PrimitivePtr> prims;
-    const glm::vec3 *pos = attributes_["positions"]->ptrVec3();
-    if (numIndexData() > 0)
-    {
-        const unsigned int *ind = indices_->ptr();
-        prims.reserve(indices_->size() / 3);
-        size_t face_id = 0;
-        for (size_t i = 0; i < numFaces(); i += 3)
-        {
-            prims.push_back(std::make_shared<Triangle>(face_id++, pos[ind[i + 0]], pos[ind[i + 1]],
-                                                       pos[ind[i + 2]]));
-        }
-    }
-    else
-    {
-        size_t num_verts = numVertexData();
-        prims.reserve(num_verts / 3);
-        size_t face_id = 0;
-        for (size_t i = 0; i < numVertices(); i += 3)
-        {
-            prims.push_back(
-                std::make_shared<Triangle>(face_id++, pos[i + 0], pos[i + 1], pos[i + 2]));
-        }
-    }
-    bvh_ = buildBVH(prims);
 }
 
 } // namespace viewer

@@ -224,8 +224,6 @@ class SurfaceMesh : public Mesh
     size_t numVertices() const;
 
     size_t numFaces() const;
-
-    virtual void updateBVH() override;
 };
 
 } // namespace viewer

@@ -3,10 +3,10 @@
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
 #include "glad/glad.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
-#include "imgui.h"
 
 namespace rcube
 {
@@ -325,8 +325,10 @@ void Mesh::drawGUI()
             checked ? enableAttribute(current_attr) : disableAttribute(current_attr);
         }
     }
-    ImGui::LabelText("#Faces",
-                     std::to_string(indices()->size() / primitiveDim()).c_str());
+    if (numIndexData() > 0)
+    {
+        ImGui::LabelText("#Faces", std::to_string(indices()->size() / primitiveDim()).c_str());
+    }
 }
 
 void Mesh::use() const
@@ -448,6 +450,11 @@ void Mesh::updateBVH()
                 std::make_shared<Triangle>(face_id++, pos[i + 0], pos[i + 1], pos[i + 2]));
         }
     }
+    bvh_ = buildBVH(prims);
+}
+
+void Mesh::updateBVH(const std::vector<PrimitivePtr> &prims)
+{
     bvh_ = buildBVH(prims);
 }
 

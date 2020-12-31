@@ -14,73 +14,116 @@ namespace viewer
 class SurfaceMesh : public Mesh
 {
     glm::vec3 color_ = glm::vec3(1.f, 1.f, 1.f);
-    std::unordered_map<std::string, ScalarField> scalar_fields_;
-    std::string visible_scalar_field_ = "(None)";
+    std::unordered_map<std::string, ScalarField> vertex_scalar_fields_;
+    std::string visible_vertex_scalar_field_ = "(None)";
+    std::unordered_map<std::string, ScalarField> face_scalar_fields_;
+    std::string visible_face_scalar_field_ = "(None)";
     std::unordered_map<std::string, VectorField> vertex_vector_fields_;
     std::string visible_vertex_vector_field_ = "(None)";
     std::unordered_map<std::string, VectorField> face_vector_fields_;
     std::string visible_face_vector_field_ = "(None)";
     std::vector<glm::vec3> vertices_;
+    std::vector<glm::uvec3> faces_;
+    std::vector<glm::vec3> vertices_display_;
     std::vector<glm::vec3> face_centers_;
     size_t num_vertex_vector_field_vertices_ = 0;
-    size_t num_vertex_vector_field_triangles_ = 0;
     size_t num_face_vector_field_vertices_ = 0;
-    size_t num_face_vector_field_triangles_ = 0;
 
     void createMesh(const TriangleMeshData &data);
 
     SurfaceMesh(const TriangleMeshData &data);
 
-    void setVertexColorAttribute(const glm::vec3 &perPointColor);
-    void setVertexColorAttribute(const std::vector<glm::vec3> &perPointColors);
+    void setVertexColorAttribute(const glm::vec3 &vertex_color);
+    void setVertexColorAttribute(const std::vector<glm::vec3> &vertex_colors);
+    void setFaceColorAttribute(const glm::vec3 &face_color);
+    void setFaceColorAttribute(const std::vector<glm::vec3> &face_colors);
     void setVertexArrowMesh(const TriangleMeshData &mesh);
     void setFaceArrowMesh(const TriangleMeshData &mesh);
+    size_t numVerticesDisplay() const;
 
   public:
     static std::shared_ptr<SurfaceMesh> create(const TriangleMeshData &data);
 
     /**
-     * Add a scalar field (list of per-vertex scalars) for the surface mesh
+     * Add a vertex scalar field (list of per-vertex scalars) for the surface mesh
      *
      * @param name Name of the scalar field for retrieving it and displaying in the GUI
      * @param sf Scalarfield
      */
-    void addScalarField(std::string name, const ScalarField &sf);
+    void addVertexScalarField(std::string name, const ScalarField &sf);
 
     /**
-     * Removes the scalar field
+     * Removes the vertex scalar field
      *
-     * @param name Name of the scalar field
+     * @param name Name of the vertex scalar field
      */
-    void removeScalarField(std::string name);
+    void removeVertexScalarField(std::string name);
 
     /**
-     * Get the scalar field given its name
+     * Get the vertex scalar field given its name
      *
-     * @param name Name of the scalar field
+     * @param name Name of the vertex scalar field
      * @return sf const-ref to Scalarfield
      */
-    const ScalarField &scalarField(std::string name) const;
+    const ScalarField &vertexScalarField(std::string name) const;
 
     /**
-     * Get the scalar field given its name
+     * Get the vertex scalar field given its name
      *
-     * @param name Name of the scalar field
+     * @param name Name of the vertex scalar field
      * @return sf ref to Scalarfield
      */
-    ScalarField &scalarField(std::string name);
+    ScalarField &vertexScalarField(std::string name);
 
     /**
-     * Show the scalar field in the viewport
+     * Show the vertex scalar field in the viewport
      *
      * @param name Name of the scalar field
      */
-    void showScalarField(std::string name);
+    void showVertexScalarField(std::string name);
 
     /**
-     * Hide all scalar fields in the viewport
+     * Hide all vertex scalar fields in the viewport
      */
     void hideAllScalarFields();
+
+    /**
+     * Add a face scalar field (list of per-vertex scalars) for the surface mesh
+     *
+     * @param name Name of the scalar field for retrieving it and displaying in the GUI
+     * @param sf Scalarfield
+     */
+    void addFaceScalarField(std::string name, const ScalarField &sf);
+
+    /**
+     * Removes the face scalar field
+     *
+     * @param name Name of the vertex scalar field
+     */
+    void removeFaceScalarField(std::string name);
+
+    /**
+     * Get the face scalar field given its name
+     *
+     * @param name Name of the vertex scalar field
+     * @return sf const-ref to Scalarfield
+     */
+    const ScalarField &faceScalarField(std::string name) const;
+
+    /**
+     * Get the face scalar field given its name
+     *
+     * @param name Name of the vertex scalar field
+     * @return sf ref to Scalarfield
+     */
+    ScalarField &faceScalarField(std::string name);
+
+    /**
+     * Show the face scalar field in the viewport
+     *
+     * @param name Name of the scalar field
+     */
+    void showFaceScalarField(std::string name);
 
     /**
      * Add a vector field (list of per-vertex vectors) for the surface mesh

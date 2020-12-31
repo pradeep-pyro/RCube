@@ -1,6 +1,6 @@
+#include "RCubeViewer/VectorField.h"
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Colormap.h"
-#include "RCubeViewer/VectorField.h"
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -76,9 +76,9 @@ bool VectorField::updateArrows(const std::vector<glm::vec3> &points)
             }
         }
         // Create the arrows mesh
-        size_t vertices_per_arrow, triangles_per_arrow;
-        mesh_ = pointsVectorsToArrows(points, vectors_, lengths, vertices_per_arrow,
-                                      triangles_per_arrow);
+        size_t vertices_per_arrow;
+        pointsVectorsToArrows(points, vectors_, lengths, vertices_per_arrow,
+                              mesh_);
         // Set colors for arrows based on colormap
         std::vector<glm::vec3> colors;
         float min_length = *std::min_element(lengths.begin(), lengths.end());

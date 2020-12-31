@@ -7,7 +7,11 @@
 namespace rcube
 {
 
-TriangleMeshData cone(float radius, float height, int radial_segments, float theta_start,
-                      float theta_end, bool bottom_cap);
+TriangleMeshData coneIndexed(float radius, float height, int radial_segments,
+                             float theta_start = 0.f, float theta_end = glm::two_pi<float>(),
+                             bool bottom_cap = true);
+
+TriangleMeshData cone(float radius, float height, int radial_segments, float theta_start = 0.f,
+                      float theta_end = glm::two_pi<float>(), bool bottom_cap = true);
 
 } // namespace rcube

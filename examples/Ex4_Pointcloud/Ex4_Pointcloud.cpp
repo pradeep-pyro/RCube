@@ -25,7 +25,7 @@ int main()
     auto sphere = icoSphere(0.5f, 4);
 
     // Convert points to mesh for visualization
-    std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.01f);
+    std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.03f);
     
     // Add some scalar fields
     ScalarField xs, ys, zs;
@@ -61,7 +61,7 @@ int main()
         Pickable *pick_comp = entity.get<Pickable>();
         if (pick_comp->picked)
         {
-            size_t index = pick_comp->primitive;
+            size_t index = pick_comp->id;
             ImGui::LabelText("Picked point", std::to_string(index).c_str());
             // Get the pointcloud
             std::shared_ptr<Pointcloud> pc =

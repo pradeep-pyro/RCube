@@ -10,11 +10,6 @@ namespace rcube
 namespace viewer
 {
 
-TriangleMeshData VectorField::createArrowMesh()
-{
-    size_t num_v, num_i;
-    return pointsVectorsToArrows({glm::vec3(0, 0, 0)}, {glm::vec3(1, 0, 0)}, {1.f}, num_v, num_i);
-}
 const std::vector<glm::vec3> &VectorField::vectors() const
 {
     return vectors_;
@@ -42,7 +37,7 @@ void VectorField::setCmap(Colormap cmap)
     cmap_ = cmap;
     dirty_ = true;
 }
-bool VectorField::updateArrows(const std::vector<glm::vec3> &points)
+bool VectorField::updateArrows(const std::vector<glm::vec3> &points, bool indexed)
 {
     // Don't recompute the arrows if nothing has changed
     if (dirty_)
@@ -77,8 +72,16 @@ bool VectorField::updateArrows(const std::vector<glm::vec3> &points)
         }
         // Create the arrows mesh
         size_t vertices_per_arrow;
-        pointsVectorsToArrows(points, vectors_, lengths, vertices_per_arrow,
-                              mesh_);
+        if (indexed)
+        {
+            size_t triangles_per_arrow;
+            mesh_ = pointsVectorsToArrowsIndexed(points, vectors_, lengths, vertices_per_arrow,
+                                                 triangles_per_arrow);
+        }
+        else
+        {
+            mesh_ = pointsVectorsToArrows(points, vectors_, lengths, vertices_per_arrow);
+        }
         // Set colors for arrows based on colormap
         std::vector<glm::vec3> colors;
         float min_length = *std::min_element(lengths.begin(), lengths.end());

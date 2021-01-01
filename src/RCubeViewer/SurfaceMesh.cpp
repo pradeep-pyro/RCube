@@ -32,9 +32,8 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
     // of the face vector field
     // First, find the number of vertices needed for the arrow meshes
     size_t num_arrow_vertices;
-    TriangleMeshData dummy_arrow;
-    pointsVectorsToArrows({glm::vec3(0, 0, 0)}, {glm::vec3(0, 1, 0)}, {1.f}, num_arrow_vertices,
-                          dummy_arrow);
+    TriangleMeshData dummy_arrow = 
+    pointsVectorsToArrows({glm::vec3(0, 0, 0)}, {glm::vec3(0, 1, 0)}, {1.f}, num_arrow_vertices);
     // Total number of vertices for the vertex vector field is num_arrow_vertices multiplied
     // by number of vertices
     num_vertex_vector_field_vertices_ = num_arrow_vertices * numVertices();
@@ -60,10 +59,10 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
     size_t k = 0;
     for (const glm::uvec3 &ind : data.indices)
     {
-        for (size_t j = 0; j < 3; ++j)
+        for (auto j = 0; j < 3; ++j)
         {
-            pos[k] = data.vertices.at(size_t(ind[j]));
-            nor[k] = data.normals.at(size_t(ind[j]));
+            pos[k] = data.vertices.at(static_cast<size_t>(ind[j]));
+            nor[k] = data.normals.at(static_cast<size_t>(ind[j]));
             col[k] = color_;
             ++k;
         }
@@ -367,7 +366,7 @@ void SurfaceMesh::drawGUI()
         {
             current_sf = "(None)";
         }
-        bool temp;
+        static bool temp;
         ImGui::Selectable("Per-vertex", temp, ImGuiSelectableFlags_Disabled);
         for (auto &kv : vertex_scalar_fields_)
         {

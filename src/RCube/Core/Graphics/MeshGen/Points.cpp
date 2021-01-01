@@ -67,11 +67,11 @@ TriangleMeshData pointsToBoxes(const std::vector<glm::vec3> &points, float side,
     return data;
 }
 
-TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
-                                       const std::vector<glm::vec3> &vectors,
-                                       const std::vector<float> &lengths,
-                                       size_t &num_vertices_per_point,
-                                       size_t &num_triangles_per_point)
+TriangleMeshData pointsVectorsToArrowsIndexed(const std::vector<glm::vec3> &points,
+                                              const std::vector<glm::vec3> &vectors,
+                                              const std::vector<float> &lengths,
+                                              size_t &num_vertices_per_point,
+                                              size_t &num_triangles_per_point)
 {
     assert(points.size() == vectors.size());
     assert(points.size() == lengths.size());
@@ -81,7 +81,8 @@ TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
     {
         // Create an arrow as a cone
         float h = lengths[i];
-        TriangleMeshData arrow_mesh = cone(0.1f * h, h, 10, 0, glm::pi<float>() * 2.f, false);
+        TriangleMeshData arrow_mesh =
+            coneIndexed(0.1f * h, h, 8, 0, glm::pi<float>() * 2.f, false);
         // Rotate the arrow from y-axis to vector orientation
         glm::quat q = glm::rotation(glm::vec3(0.f, 1.f, 0.f), vectors[i]);
         // Shift the arrow such that the vector's tail is at origin
@@ -105,13 +106,13 @@ TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
     return data;
 }
 
-void pointsVectorsToArrows(const std::vector<glm::vec3> &points,
+TriangleMeshData pointsVectorsToArrows(const std::vector<glm::vec3> &points,
                            const std::vector<glm::vec3> &vectors, const std::vector<float> &lengths,
-                           size_t &num_vertices_per_point,
-                           TriangleMeshData &data)
+                           size_t &num_vertices_per_point)
 {
     assert(points.size() == vectors.size());
     assert(points.size() == lengths.size());
+    TriangleMeshData data;
     data.indexed = false;
     data.clear();
     for (size_t i = 0; i < points.size(); ++i)
@@ -138,6 +139,7 @@ void pointsVectorsToArrows(const std::vector<glm::vec3> &points,
         num_vertices_per_point = arrow_mesh.vertices.size();
         data.append(arrow_mesh);
     }
+    return data;
 }
 
 } // namespace rcube

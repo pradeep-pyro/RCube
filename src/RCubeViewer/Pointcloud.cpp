@@ -1,5 +1,5 @@
-#include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Pointcloud.h"
+#include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/MessageBox.h"
 #include "imgui.h"
 
@@ -10,24 +10,57 @@ namespace viewer
 
 void Pointcloud::createMesh()
 {
+    TriangleMeshData points_mesh;
     if (glyph_ == PointcloudGlyph::Sphere)
     {
-        points_mesh_ = pointsToSpheres(points_, point_size_, num_vertices_per_point_,
+        points_mesh = pointsToSpheres(points_, 0.5f * point_size_, num_vertices_per_point_,
                                        num_triangles_per_point_);
     }
     else
     {
-        points_mesh_ =
-            pointsToBoxes(points_, point_size_, num_vertices_per_point_, num_triangles_per_point_);
+        points_mesh =
+            pointsToBoxes(points_, std::sqrt(2.f) * 0.5f * point_size_, num_vertices_per_point_, num_triangles_per_point_);
+    }
+    size_t num_arrow_vertices, num_arrow_faces;
+    TriangleMeshData dummy_arrow = pointsVectorsToArrowsIndexed(
+        {glm::vec3(0, 0, 0)}, {glm::vec3(0, 1, 0)}, {1.f}, num_arrow_vertices, num_arrow_faces);
+    // Total number of vertices and faces for the vector field
+    num_vector_field_vertices_ = num_arrow_vertices * numPoints();
+    num_vector_field_faces_ = num_arrow_faces * numPoints();
+
+    attributes_["positions"]->data().resize(
+        3 * (numPoints() * verticesPerPoint() + num_vector_field_vertices_), 0.f);
+    attributes_["normals"]->data().resize(
+        3 * (numPoints() * verticesPerPoint() + num_vector_field_vertices_), 0.f);
+    attributes_["colors"]->data().resize(
+        3 * (numPoints() * verticesPerPoint() + num_vector_field_vertices_), 0.f);
+    indices_->data().resize(
+        3 * (numPoints() * trianglesPerPoint() + num_vector_field_faces_), 0);
+
+    glm::vec3 *pos = attributes_["positions"]->ptrVec3();
+    glm::vec3 *nor = attributes_["normals"]->ptrVec3();
+    glm::vec3 *col = attributes_["colors"]->ptrVec3();
+    for (size_t i = 0; i < points_mesh.vertices.size(); ++i)
+    {
+        pos[i] = points_mesh.vertices[i];
+        nor[i] = points_mesh.normals[i];
+        col[i] = color_;
+    }
+    glm::uvec3 *ind = indices_->ptrUVec3();
+    for (size_t i = 0; i < points_mesh.indices.size(); ++i)
+    {
+        ind[i] = points_mesh.indices[i];
     }
 
-    attributes_["positions"]->setData(points_mesh_.vertices);
-    attributes_["normals"]->setData(points_mesh_.normals);
-    attributes_["colors"]->setData(
-        std::vector<glm::vec3>(points_mesh_.vertices.size(), glm::vec3(1, 1, 1)));
-    indices_->setData(points_mesh_.indices);
-
-    updateBVH();
+    // TODO(pradeep): Make sphere primitives for BVH (this is more efficient than
+    // the triangle mesh)
+    std::vector<PrimitivePtr> prims;
+    prims.reserve(points_.size());
+    for (size_t i = 0; i < points_.size(); ++i)
+    {
+        prims.push_back(std::shared_ptr<Point>(new Point(i, points_[i], 0.5f * point_size_)));
+    }
+    updateBVH(prims);
 
     if (visible_scalar_field_ != "(None)")
     {
@@ -123,19 +156,6 @@ void Pointcloud::setPointcloudColorAttribute(const glm::vec3 &perPointColor)
 }
 void Pointcloud::setPointcloudArrowAttributes(const TriangleMeshData &mesh)
 {
-    if (attributes_["positions"]->count() != numPoints() * verticesPerPoint() + mesh.vertices.size())
-    {
-        attributes_["positions"]->data().resize(numPoints() * verticesPerPoint() * 3 +
-                                                mesh.vertices.size() * 3);
-        attributes_["normals"]->data().resize(numPoints() * verticesPerPoint() * 3 +
-                                              mesh.vertices.size() * 3);
-        attributes_["colors"]->data().resize(numPoints() * verticesPerPoint() * 3 +
-                                             mesh.vertices.size() * 3);
-    }
-    if (indices_->count() != numPoints() * trianglesPerPoint() + mesh.indices.size())
-    {
-        indices_->data().resize(numPoints() * trianglesPerPoint() * 3 + mesh.indices.size() * 3);
-    }
     glm::vec3 *positions = attributes_["positions"]->ptrVec3();
     glm::vec3 *normals = attributes_["normals"]->ptrVec3();
     glm::vec3 *colors = attributes_["colors"]->ptrVec3();
@@ -148,10 +168,10 @@ void Pointcloud::setPointcloudArrowAttributes(const TriangleMeshData &mesh)
     }
     glm::uvec3 *indices = indices_->ptrUVec3();
     k = numPoints() * num_triangles_per_point_;
-    unsigned int offset(numPoints() * verticesPerPoint());
+    size_t offset = numPoints() * verticesPerPoint();
     for (size_t i = 0; i < mesh.indices.size(); ++i)
     {
-        indices[k + i] = offset + mesh.indices[i];
+        indices[k + i] = unsigned int(offset) + mesh.indices[i];
     }
     uploadToGPU();
 }
@@ -174,13 +194,9 @@ void Pointcloud::updatePoints(const std::vector<glm::vec3> &points, float point_
                                      std::to_string(points.size()));
         return;
     }
-    TriangleMeshData trimesh =
-        pointsToSpheres(points, point_size, num_vertices_per_point_, num_triangles_per_point_);
-    attributes_["positions"]->setData(trimesh.vertices);
-    attributes_["normals"]->setData(trimesh.normals);
-    indices_->setData(trimesh.indices);
-    uploadToGPU();
-    updateBVH();
+    points_ = points;
+    point_size_ = point_size;
+    createMesh();
 }
 void Pointcloud::drawGUI()
 {
@@ -343,7 +359,7 @@ VectorField &Pointcloud::vectorField(std::string name)
 void Pointcloud::showVectorField(std::string name)
 {
     VectorField &vf = vectorField(name);
-    bool update = vf.updateArrows(points_);
+    bool update = vf.updateArrows(points_, true);
     if (update || visible_vector_field_ != name)
     {
         setPointcloudArrowAttributes(vf.mesh_);

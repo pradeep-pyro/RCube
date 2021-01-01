@@ -25,8 +25,6 @@ class VectorField
     Colormap cmap_ = Colormap::Viridis;
     bool dirty_ = true;
 
-    static TriangleMeshData createArrowMesh();
-
   public:
     /**
      * Returns the vector field
@@ -71,8 +69,11 @@ class VectorField
     /**
      * Updates the arrows of the vector field if necessary
      * Note: called by RCubeViewer internally
+     *
+     * @param points List of points denoting the tail of each vector
+     * @param indexed Whether the mesh generated for the arrows is indexed (default: false)
      */
-    bool updateArrows(const std::vector<glm::vec3> &points);
+    bool updateArrows(const std::vector<glm::vec3> &points, bool indexed = false);
 };
 
 } // namespace viewer

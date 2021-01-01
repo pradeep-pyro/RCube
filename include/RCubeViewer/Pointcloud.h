@@ -36,7 +36,8 @@ class Pointcloud : public Mesh
     float point_size_ = 0.01f;
     glm::vec3 color_ = glm::vec3(1.f, 1.f, 1.f);
     PointcloudGlyph glyph_;
-    TriangleMeshData points_mesh_;
+    size_t num_vector_field_vertices_ = 0;
+    size_t num_vector_field_faces_ = 0;
     std::unordered_map<std::string, ScalarField> scalar_fields_;
     std::string visible_scalar_field_ = "(None)";
     std::unordered_map<std::string, VectorField> vector_fields_;
@@ -60,7 +61,7 @@ class Pointcloud : public Mesh
      */
     static std::shared_ptr<Pointcloud> create(const std::vector<glm::vec3> &points,
                                               float point_size,
-                                              PointcloudGlyph glyph = PointcloudGlyph::Sphere);
+                                              PointcloudGlyph glyph = PointcloudGlyph::Box);
 
     /**
      * Returns the number of vertices used by the mesh to represent each point

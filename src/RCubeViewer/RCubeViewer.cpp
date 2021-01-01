@@ -10,6 +10,7 @@
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Systems/CameraControllerSystem.h"
 #include "RCubeViewer/Systems/PickSystem.h"
+#include "RCubeViewer/Systems/PickTooltipSystem.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "imgui.h"
@@ -46,6 +47,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution, props.MSAA));
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
+    world_.addSystem(std::make_unique<PickTooltipSystem>());
 
     // Create a default camera
     camera_ = createCamera();
@@ -168,8 +170,8 @@ void RCubeViewer::draw()
     customGUI(*this);
 
     // Render everything in the scene
-    ImGui::Render();
     world_.update();
+    ImGui::Render();
 
     // Draw GUI
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

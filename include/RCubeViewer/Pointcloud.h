@@ -19,6 +19,8 @@ namespace viewer
  */
 class Pointcloud : public Mesh
 {
+    friend class PickTooltipSystem;
+
   public:
     /**
      * Enum to specify how each point is rendered

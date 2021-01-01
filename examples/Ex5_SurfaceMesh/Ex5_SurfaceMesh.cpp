@@ -1,6 +1,3 @@
-#include "RCube/Core/Graphics/MeshGen/Cone.h"
-#include "RCube/Core/Graphics/MeshGen/Obj.h"
-#include "RCubeViewer/Colormap.h"
 #include "RCubeViewer/RCubeViewer.h"
 #include "RCubeViewer/Components/Pickable.h"
 #include "RCubeViewer/SurfaceMesh.h"
@@ -50,32 +47,11 @@ int main()
     normals.setVectors(icosphere.normals);
     surf->addVertexVectorField("Normals", normals);
 
-    // Make pointcloud pickable with mouse click
+    // Make the SurfaceMesh pickable with mouse click
     entity.add<Pickable>();
 
-    // Custom window to show picked point
-    viewer.customGUI = [&](RCubeViewer &v) {
-        ImGui::Begin("Pick");
-        Pickable *pick_comp = entity.get<Pickable>();
-        if (pick_comp->picked)
-        {
-            size_t index = pick_comp->primitive;
-            ImGui::LabelText("Picked point", std::to_string(index).c_str());
-            // Get the surface mesh
-            std::shared_ptr<SurfaceMesh> pc =
-                std::dynamic_pointer_cast<SurfaceMesh>(entity.get<Drawable>()->mesh);
-
-            //// Display the fields values for the picked vertex/face
-            ImGui::Separator();
-            ImGui::LabelText("Height", std::to_string(surf->vertexScalarField("Height").data()[index]).c_str());
-            ImGui::Separator();
-            const glm::vec3 nor = pc->vertexVectorField("Normals").vectors()[index];
-            ImGui::LabelText("Normal.x", std::to_string(nor.x).c_str());
-            ImGui::LabelText("Normal.y", std::to_string(nor.y).c_str());
-            ImGui::LabelText("Normal.z", std::to_string(nor.z).c_str());
-        }
-        ImGui::End();
-    };
+    // Show wireframe
+    entity.get<Material>()->wireframe = true;
 
     // Show viewer
     viewer.execute();

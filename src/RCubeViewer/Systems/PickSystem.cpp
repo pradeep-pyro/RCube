@@ -35,7 +35,7 @@ void PickSystem::update(bool)
     {
         return;
     }
-    if (InputState::instance().isMouseJustDown(InputState::Mouse::Left))
+    /*if (InputState::instance().isMouseJustDown(InputState::Mouse::Left))*/
     {
         const glm::dvec2 xy = InputState::instance().mousePos();
         // For each camera that is controlled by the user actively (hopefully only 1),

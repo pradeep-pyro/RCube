@@ -13,6 +13,8 @@ namespace viewer
 
 class SurfaceMesh : public Mesh
 {
+    friend class PickTooltipSystem;
+
     glm::vec3 color_ = glm::vec3(1.f, 1.f, 1.f);
     std::unordered_map<std::string, ScalarField> vertex_scalar_fields_;
     std::string visible_vertex_scalar_field_ = "(None)";

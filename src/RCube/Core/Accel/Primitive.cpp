@@ -126,27 +126,36 @@ float Triangle::area() const
     return 0.5f * glm::length(glm::cross(v0, v1));
 }
 
-float Triangle::closestVertex(const glm::vec3 &pt, glm::vec3 &closest_vertex,
-                              size_t &closest_vertex_index) const
+size_t Triangle::closestVertexIndex(const glm::vec3 &pt, float &dist) const
 {
     float d0 = glm::length(v0_ - pt);
     float d1 = glm::length(v1_ - pt);
     float d2 = glm::length(v2_ - pt);
     if (d0 < d1 && d0 < d2)
     {
-        closest_vertex = v0_;
-        closest_vertex_index = 0;
-        return d0;
+        dist = d0;
+        return 0;
     }
     if (d1 < d0 && d1 < d2)
     {
-        closest_vertex = v1_;
-        closest_vertex_index = 1;
-        return d1;
+        dist = d1;
+        return 1;
     }
-    closest_vertex = v2_;
-    closest_vertex_index = 2;
-    return d2;
+    dist = d2;
+    return 2;
+}
+
+const glm::vec3 & Triangle::vertex(size_t ind) const
+{
+    if (ind == 0)
+    {
+        return v0_;
+    }
+    if (ind == 1)
+    {
+        return v1_;
+    }
+    return v2_;
 }
 
 } // namespace rcube

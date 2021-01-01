@@ -55,7 +55,9 @@ class Triangle : public Primitive
 
     float area() const;
 
-    float closestVertex(const glm::vec3 &pt, glm::vec3 &closest_vertex, size_t &closest_vertex_index) const;
+    size_t closestVertexIndex(const glm::vec3 &pt, float &dist) const;
+
+    const glm::vec3 &vertex(size_t ind) const;
 };
 
 } // namespace rcube

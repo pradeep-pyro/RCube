@@ -56,30 +56,30 @@ int main()
     entity.add<Pickable>();
 
     // Custom window to show picked point
-    viewer.customGUI = [&](RCubeViewer &v) {
-        ImGui::Begin("Pick");
-        Pickable *pick_comp = entity.get<Pickable>();
-        if (pick_comp->picked)
-        {
-            size_t index = pick_comp->primitive->id();
-            ImGui::LabelText("Picked point", std::to_string(index).c_str());
-            // Get the pointcloud
-            std::shared_ptr<Pointcloud> pc =
-                std::dynamic_pointer_cast<Pointcloud>(entity.get<Drawable>()->mesh);
+    //viewer.customGUI = [&](RCubeViewer &v) {
+    //    ImGui::Begin("Pick");
+    //    Pickable *pick_comp = entity.get<Pickable>();
+    //    if (pick_comp->picked)
+    //    {
+    //        size_t index = pick_comp->primitive->id();
+    //        ImGui::LabelText("Picked point", std::to_string(index).c_str());
+    //        // Get the pointcloud
+    //        std::shared_ptr<Pointcloud> pc =
+    //            std::dynamic_pointer_cast<Pointcloud>(entity.get<Drawable>()->mesh);
 
-            //// Display the fields values for the picked point
-            ImGui::Separator();
-            ImGui::LabelText("Xs", std::to_string(pc->scalarField("Xs").data()[index]).c_str());
-            ImGui::LabelText("Ys", std::to_string(pc->scalarField("Ys").data()[index]).c_str());
-            ImGui::LabelText("Zs", std::to_string(pc->scalarField("Zs").data()[index]).c_str());
-            ImGui::Separator();
-            const glm::vec3 nor = pc->vectorField("Normals").vectors()[index];
-            ImGui::LabelText("Normal.x", std::to_string(nor.x).c_str());
-            ImGui::LabelText("Normal.y", std::to_string(nor.y).c_str());
-            ImGui::LabelText("Normal.z", std::to_string(nor.z).c_str());
-        }
-        ImGui::End();
-    };
+    //        //// Display the fields values for the picked point
+    //        ImGui::Separator();
+    //        ImGui::LabelText("Xs", std::to_string(pc->scalarField("Xs").data()[index]).c_str());
+    //        ImGui::LabelText("Ys", std::to_string(pc->scalarField("Ys").data()[index]).c_str());
+    //        ImGui::LabelText("Zs", std::to_string(pc->scalarField("Zs").data()[index]).c_str());
+    //        ImGui::Separator();
+    //        const glm::vec3 nor = pc->vectorField("Normals").vectors()[index];
+    //        ImGui::LabelText("Normal.x", std::to_string(nor.x).c_str());
+    //        ImGui::LabelText("Normal.y", std::to_string(nor.y).c_str());
+    //        ImGui::LabelText("Normal.z", std::to_string(nor.z).c_str());
+    //    }
+    //    ImGui::End();
+    //};
 
     // Show viewer
     viewer.execute();

@@ -58,7 +58,7 @@ void PickSystem::update(bool)
             // Closest hit info
             float min_dist = std::numeric_limits<float>::infinity();
             Entity closest;
-            size_t closest_id = 0;
+            PrimitivePtr closest_primitive;
             glm::vec3 closest_point;
             bool hit = false;
 
@@ -77,13 +77,13 @@ void PickSystem::update(bool)
                 glm::vec3 ray_dir_model = glm::normalize(model_inv * glm::vec4(ray_wor, 0.0));
                 Ray ray_model(ray_origin_model, ray_dir_model);
                 glm::vec3 pt;
-                size_t id;
-                if (dr->mesh->rayIntersect(ray_model, pt, id))
+                PrimitivePtr prim;
+                if (dr->mesh->rayIntersect(ray_model, pt, prim))
                 {
                     hit = true;
                     min_dist = std::min(glm::length(pt - ray_model.origin()), min_dist);
                     closest_point = pt;
-                    closest_id = id;
+                    closest_primitive = prim;
                     closest = ent;
                 }
                 else
@@ -94,10 +94,9 @@ void PickSystem::update(bool)
             if (hit)
             {
                 Pickable *closest_pick = world_->getComponent<Pickable>(closest);
-                Drawable *closest_dr = world_->getComponent<Drawable>(closest);
                 closest_pick->picked = true;
                 closest_pick->point = closest_point;
-                closest_pick->id = closest_id;
+                closest_pick->primitive = closest_primitive;
             }
         }
     }

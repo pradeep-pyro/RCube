@@ -458,19 +458,17 @@ void Mesh::updateBVH(const std::vector<PrimitivePtr> &prims)
     bvh_ = buildBVH(prims);
 }
 
-bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id)
+bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim)
 {
     if (bvh_ == nullptr)
     {
         return false;
     }
-    PrimitivePtr prim;
     bool hit = bvh_->rayIntersect(ray, pt, prim);
     if (!hit)
     {
         return false;
     }
-    id = prim->id();
     return true;
 }
 

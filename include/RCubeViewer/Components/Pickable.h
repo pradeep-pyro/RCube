@@ -14,7 +14,8 @@ class Pickable : public Component<Pickable>
     bool active = true;
     bool picked = false;
     glm::vec3 point = glm::vec3(0.0, 0.0, 0.0);
-    size_t id = 0;
+    PrimitivePtr primitive = nullptr; // Primitive that was picked, e.g., triangle, sphere based on
+                                      // what went into the BVH
 };
 
 } // namespace viewer

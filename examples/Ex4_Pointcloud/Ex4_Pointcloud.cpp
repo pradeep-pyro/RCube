@@ -61,7 +61,7 @@ int main()
         Pickable *pick_comp = entity.get<Pickable>();
         if (pick_comp->picked)
         {
-            size_t index = pick_comp->id;
+            size_t index = pick_comp->primitive->id();
             ImGui::LabelText("Picked point", std::to_string(index).c_str());
             // Get the pointcloud
             std::shared_ptr<Pointcloud> pc =

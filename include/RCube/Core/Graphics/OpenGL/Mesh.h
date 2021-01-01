@@ -145,7 +145,7 @@ class Mesh
 
     void updateBVH(const std::vector<PrimitivePtr> &prims);
 
-    bool rayIntersect(const Ray &ray, glm::vec3 &pt, size_t &id);
+    bool rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim);
 
     void enableAttribute(std::string name);
 

@@ -97,13 +97,7 @@ void PickSystem::update(bool)
                 Drawable *closest_dr = world_->getComponent<Drawable>(closest);
                 closest_pick->picked = true;
                 closest_pick->point = closest_point;
-                closest_pick->triangle = closest_id;
-                auto pointcloud = std::dynamic_pointer_cast<Pointcloud>(closest_dr->mesh);
-                if (pointcloud != nullptr)
-                {
-                    closest_pick->primitive = static_cast<size_t>(
-                        std::floor((double)closest_id / (double)pointcloud->trianglesPerPoint()));
-                }
+                closest_pick->id = closest_id;
             }
         }
     }

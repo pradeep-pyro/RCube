@@ -50,6 +50,12 @@ class Triangle : public Primitive
     virtual glm::vec3 position() const;
 
     AABB aabb() const override;
+
+    glm::vec3 barycentricCoordinate(const glm::vec3 &point) const;
+
+    float area() const;
+
+    float closestVertex(const glm::vec3 &pt, glm::vec3 &closest_vertex, size_t &closest_vertex_index) const;
 };
 
 } // namespace rcube

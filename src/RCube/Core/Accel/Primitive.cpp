@@ -100,4 +100,53 @@ AABB Triangle::aabb() const
     return AABB{glm::min(v0_, glm::min(v1_, v2_)), glm::max(v0_, glm::max(v1_, v2_))};
 }
 
+glm::vec3 Triangle::barycentricCoordinate(const glm::vec3 &p) const
+{
+    // From https://gamedev.stackexchange.com/a/23745
+    glm::vec3 bary;
+    const glm::vec3 v0 = v1_ - v0_;
+    const glm::vec3 v1 = v2_ - v0_;
+    const glm::vec3 v2 = p - v0_;
+    float d00 = glm::dot(v0, v0);
+    float d01 = glm::dot(v0, v1);
+    float d11 = glm::dot(v1, v1);
+    float d20 = glm::dot(v2, v0);
+    float d21 = glm::dot(v2, v1);
+    float denom = d00 * d11 - d01 * d01;
+    bary[1] = (d11 * d20 - d01 * d21) / denom;
+    bary[2] = (d00 * d21 - d01 * d20) / denom;
+    bary[0] = 1.0f - bary[1] - bary[2];
+    return bary;
+}
+
+float Triangle::area() const
+{
+    const glm::vec3 v0 = v1_ - v0_;
+    const glm::vec3 v1 = v2_ - v0_;
+    return 0.5f * glm::length(glm::cross(v0, v1));
+}
+
+float Triangle::closestVertex(const glm::vec3 &pt, glm::vec3 &closest_vertex,
+                              size_t &closest_vertex_index) const
+{
+    float d0 = glm::length(v0_ - pt);
+    float d1 = glm::length(v1_ - pt);
+    float d2 = glm::length(v2_ - pt);
+    if (d0 < d1 && d0 < d2)
+    {
+        closest_vertex = v0_;
+        closest_vertex_index = 0;
+        return d0;
+    }
+    if (d1 < d0 && d1 < d2)
+    {
+        closest_vertex = v1_;
+        closest_vertex_index = 1;
+        return d1;
+    }
+    closest_vertex = v2_;
+    closest_vertex_index = 2;
+    return d2;
+}
+
 } // namespace rcube

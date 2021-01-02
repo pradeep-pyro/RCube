@@ -30,20 +30,33 @@ int main()
     height.setData(height_field);
     surf->addVertexScalarField("Height", height);
     
-    // Create a per-face scalar field
+    // Create random per-face scalar and vector fields
     std::uniform_real_distribution<float> unif(0, 1);
-    std::vector<float> rnd_field;
+    std::vector<float> face_scalar_field;
+    std::vector<glm::vec3> face_vector_field;
     std::mt19937_64 rng;
     for (auto &ind : icosphere.indices)
     {
-        rnd_field.push_back(unif(rng));
+        face_scalar_field.push_back(unif(rng));
+        face_vector_field.push_back(glm::vec3(unif(rng), unif(rng), unif(rng)));
     }
-    ScalarField rnd;
-    rnd.setData(rnd_field);
-    surf->addFaceScalarField("Random", rnd);
+    ScalarField sf_rnd;
+    sf_rnd.setData(face_scalar_field);
+    surf->addFaceScalarField("Random", sf_rnd);
+    VectorField vf_rnd;
+    vf_rnd.setVectors(face_vector_field);
+    surf->addFaceVectorField("Random", vf_rnd);
     
-    // Create a per-vertex vector field
+    // Create a per-vertex normal vector field
     VectorField normals;
+    normals.setVectors(icosphere.normals);
+    surf->addVertexVectorField("Normals", normals);
+
+    // Create a per-face vector field
+    VectorField rnd_vec_field;
+    std::vector<glm::vec3> rnd_vecs;
+    rnd_vecs.reserve(icosphere.indices.size());
+    rnd_vec_field.setVectors(rnd_vecs);
     normals.setVectors(icosphere.normals);
     surf->addVertexVectorField("Normals", normals);
 

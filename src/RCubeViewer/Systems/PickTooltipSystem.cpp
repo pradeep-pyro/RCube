@@ -114,7 +114,13 @@ void PickTooltipSystem::update(bool)
                             float val = sm->faceScalarField(name).data()[index];
                             ImGui::LabelText(name.c_str(), std::to_string(val).c_str());
                         }
-                        // TODO(pradeep): add face vector fields when ready
+                        if (sm->visible_face_vector_field_ != "(None)")
+                        {
+                            ImGui::Separator();
+                            const std::string name = sm->visible_face_vector_field_;
+                            const glm::vec3 vec = sm->faceVectorField(name).vectors()[index];
+                            vec3LabelText(name, vec);
+                        }
                     }
                     ImGui::EndTooltip();
                 }

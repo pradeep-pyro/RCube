@@ -32,8 +32,8 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
     // of the face vector field
     // First, find the number of vertices needed for the arrow meshes
     size_t num_arrow_vertices;
-    TriangleMeshData dummy_arrow = 
-    pointsVectorsToArrows({glm::vec3(0, 0, 0)}, {glm::vec3(0, 1, 0)}, {1.f}, num_arrow_vertices);
+    TriangleMeshData dummy_arrow = pointsVectorsToArrows({glm::vec3(0, 0, 0)}, {glm::vec3(0, 1, 0)},
+                                                         {1.f}, num_arrow_vertices);
     // Total number of vertices for the vertex vector field is num_arrow_vertices multiplied
     // by number of vertices
     num_vertex_vector_field_vertices_ = num_arrow_vertices * numVertices();
@@ -268,6 +268,18 @@ VectorField &SurfaceMesh::faceVectorField(std::string name)
 
 void SurfaceMesh::setFaceArrowMesh(const TriangleMeshData &mesh)
 {
+    size_t voffset = numVerticesDisplay() + num_vertex_vector_field_vertices_;
+    glm::vec3 *pos = attributes_["positions"]->ptrVec3();
+    glm::vec3 *nor = attributes_["normals"]->ptrVec3();
+    glm::vec3 *col = attributes_["colors"]->ptrVec3();
+    for (size_t i = 0; i < mesh.vertices.size(); ++i)
+    {
+        const size_t k = voffset + i;
+        pos[k] = mesh.vertices.at(i);
+        nor[k] = mesh.normals.at(i);
+        col[k] = mesh.colors.at(i);
+    }
+    uploadToGPU();
 }
 
 size_t SurfaceMesh::numVerticesDisplay() const
@@ -303,10 +315,10 @@ void SurfaceMesh::showVertexVectorField(std::string name)
 
 void SurfaceMesh::showFaceVectorField(std::string name)
 {
-    VectorField &vf = vertexVectorField(name);
+    VectorField &vf = faceVectorField(name);
     if (vf.updateArrows(face_centers_) || visible_face_vector_field_ != name)
     {
-        setVertexArrowMesh(vf.mesh_);
+        setFaceArrowMesh(vf.mesh_);
         visible_face_vector_field_ = name;
     }
 }
@@ -317,11 +329,14 @@ void SurfaceMesh::hideAllVertexVectorFields()
     {
         size_t voffset = numVerticesDisplay() * 3;
         std::fill(attributes_["positions"]->data().begin() + voffset,
-                  attributes_["positions"]->data().end(), 0.f);
+                  attributes_["positions"]->data().begin() + num_vertex_vector_field_vertices_ * 3,
+                  0.f);
         std::fill(attributes_["normals"]->data().begin() + voffset,
-                  attributes_["normals"]->data().end(), 0.f);
+                  attributes_["normals"]->data().begin() + num_vertex_vector_field_vertices_ * 3,
+                  0.f);
         std::fill(attributes_["colors"]->data().begin() + voffset,
-                  attributes_["colors"]->data().end(), 0.f);
+                  attributes_["colors"]->data().begin() + num_vertex_vector_field_vertices_ * 3,
+                  0.f);
         uploadToGPU();
         visible_vertex_vector_field_ = "(None)";
     }
@@ -329,6 +344,18 @@ void SurfaceMesh::hideAllVertexVectorFields()
 
 void SurfaceMesh::hideAllFaceVectorFields()
 {
+    if (visible_face_vector_field_ != "(None)")
+    {
+        size_t voffset = (numVerticesDisplay() + num_vertex_vector_field_vertices_) * 3;
+        std::fill(attributes_["positions"]->data().begin() + voffset,
+                  attributes_["positions"]->data().end(), 0.f);
+        std::fill(attributes_["normals"]->data().begin() + voffset,
+                  attributes_["normals"]->data().end(), 0.f);
+        std::fill(attributes_["colors"]->data().begin() + voffset,
+                  attributes_["colors"]->data().end(), 0.f);
+        uploadToGPU();
+        visible_face_vector_field_ = "(None)";
+    }
 }
 
 glm::vec3 SurfaceMesh::color() const
@@ -466,11 +493,12 @@ void SurfaceMesh::drawGUI()
     if (current_vf != nullptr && current_vf != "(None)")
     {
         showVertexVectorField(current_vf);
-        if (ImGui::SliderFloat("Max. length", &vertexVectorField(current_vf).max_length_, 0.f, 1.f))
+        if (ImGui::SliderFloat("Max. length###vvf1", &vertexVectorField(current_vf).max_length_,
+                               0.f, 1.f))
         {
             vertexVectorField(current_vf).dirty_ = true;
         }
-        if (ImGui::Checkbox("Scale by magnitude",
+        if (ImGui::Checkbox("Scale by magnitude###vvf2",
                             &vertexVectorField(current_vf).scale_by_magnitude_))
         {
             vertexVectorField(current_vf).dirty_ = true;
@@ -479,6 +507,48 @@ void SurfaceMesh::drawGUI()
     if (current_vf == "(None)")
     {
         hideAllVertexVectorFields();
+    }
+    // -> Face
+    ImGui::Separator();
+    static const char *current_fvf = "(None)";
+    if (ImGui::BeginCombo("Face vector field", current_fvf))
+    {
+        bool is_selected = (current_fvf == "(None)");
+        if (ImGui::Selectable("(None)", is_selected))
+        {
+            current_fvf = "(None)";
+        }
+        for (auto &kv : face_vector_fields_)
+        {
+            bool is_selected = (current_fvf == kv.first.c_str());
+            if (ImGui::Selectable(kv.first.c_str(), is_selected))
+            {
+                current_fvf = kv.first.c_str();
+            }
+            if (is_selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (current_fvf != nullptr && current_fvf != "(None)")
+    {
+        showFaceVectorField(current_fvf);
+        if (ImGui::SliderFloat("Max. length###fvf1", &faceVectorField(current_fvf).max_length_, 0.f,
+                               1.f))
+        {
+            faceVectorField(current_fvf).dirty_ = true;
+        }
+        if (ImGui::Checkbox("Scale by magnitude###fvf2",
+                            &faceVectorField(current_fvf).scale_by_magnitude_))
+        {
+            faceVectorField(current_fvf).dirty_ = true;
+        }
+    }
+    if (current_fvf == "(None)")
+    {
+        hideAllFaceVectorFields();
     }
 }
 

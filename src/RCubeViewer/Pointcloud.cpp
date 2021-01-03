@@ -1,6 +1,7 @@
 #include "RCubeViewer/Pointcloud.h"
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/MessageBox.h"
+#include "glm/gtx/string_cast.hpp"
 #include "imgui.h"
 
 namespace rcube
@@ -14,12 +15,12 @@ void Pointcloud::createMesh()
     if (glyph_ == PointcloudGlyph::Sphere)
     {
         points_mesh = pointsToSpheres(points_, 0.5f * point_size_, num_vertices_per_point_,
-                                       num_triangles_per_point_);
+                                      num_triangles_per_point_);
     }
     else
     {
-        points_mesh =
-            pointsToBoxes(points_, std::sqrt(2.f) * 0.5f * point_size_, num_vertices_per_point_, num_triangles_per_point_);
+        points_mesh = pointsToBoxes(points_, std::sqrt(2.f) * 0.5f * point_size_,
+                                    num_vertices_per_point_, num_triangles_per_point_);
     }
     size_t num_arrow_vertices, num_arrow_faces;
     TriangleMeshData dummy_arrow = pointsVectorsToArrowsIndexed(
@@ -28,14 +29,15 @@ void Pointcloud::createMesh()
     num_vector_field_vertices_ = num_arrow_vertices * numPoints();
     num_vector_field_faces_ = num_arrow_faces * numPoints();
 
+    attributes_["positions"]->data().clear();
+    indices_->data().clear();
     attributes_["positions"]->data().resize(
         3 * (numPoints() * verticesPerPoint() + num_vector_field_vertices_), 0.f);
     attributes_["normals"]->data().resize(
         3 * (numPoints() * verticesPerPoint() + num_vector_field_vertices_), 0.f);
     attributes_["colors"]->data().resize(
         3 * (numPoints() * verticesPerPoint() + num_vector_field_vertices_), 0.f);
-    indices_->data().resize(
-        3 * (numPoints() * trianglesPerPoint() + num_vector_field_faces_), 0);
+    indices_->data().resize(3 * (numPoints() * trianglesPerPoint() + num_vector_field_faces_), 0);
 
     glm::vec3 *pos = attributes_["positions"]->ptrVec3();
     glm::vec3 *nor = attributes_["normals"]->ptrVec3();
@@ -51,8 +53,9 @@ void Pointcloud::createMesh()
     {
         ind[i] = points_mesh.indices[i];
     }
+    uploadToGPU();
 
-    // TODO(pradeep): Make sphere primitives for BVH (this is more efficient than
+    // Make sphere primitives for BVH (this is more efficient than
     // the triangle mesh)
     std::vector<PrimitivePtr> prims;
     prims.reserve(points_.size());
@@ -71,7 +74,10 @@ void Pointcloud::createMesh()
         vectorField(visible_vector_field_).dirty_ = true;
         setPointcloudArrowAttributes(vectorField(visible_vector_field_).mesh_);
     }
-    uploadToGPU();
+    else
+    {
+        hideAllVectorFields();
+    }
 }
 
 Pointcloud::Pointcloud(const std::vector<glm::vec3> &points, float point_size,
@@ -171,7 +177,7 @@ void Pointcloud::setPointcloudArrowAttributes(const TriangleMeshData &mesh)
     size_t offset = numPoints() * verticesPerPoint();
     for (size_t i = 0; i < mesh.indices.size(); ++i)
     {
-        indices[k + i] = unsigned int(offset) + mesh.indices[i];
+        indices[k + i] = glm::uvec3(offset, offset, offset) + mesh.indices[i];
     }
     uploadToGPU();
 }
@@ -370,10 +376,17 @@ void rcube::viewer::Pointcloud::hideAllVectorFields()
 {
     if (visible_vector_field_ != "(None)")
     {
-        attributes_["positions"]->data().resize(numPoints() * num_vertices_per_point_ * 3);
-        attributes_["normals"]->data().resize(numPoints() * num_vertices_per_point_ * 3);
-        attributes_["colors"]->data().resize(numPoints() * num_vertices_per_point_ * 3);
-        indices_->data().resize(numPoints() * num_triangles_per_point_ * 3);
+        size_t voffset = numPoints() * verticesPerPoint() * 3;
+        std::fill(attributes_["positions"]->data().begin() + voffset,
+                  attributes_["positions"]->data().end(), 0.f);
+        std::fill(attributes_["normals"]->data().begin() + voffset,
+                  attributes_["normals"]->data().end(), 0.f);
+        std::fill(attributes_["colors"]->data().begin() + voffset,
+                  attributes_["colors"]->data().end(), 0.f);
+        std::fill(attributes_["colors"]->data().begin() + voffset,
+                  attributes_["colors"]->data().end(), 0.f);
+        size_t foffset = numPoints() * trianglesPerPoint() * 3;
+        std::fill(indices_->data().begin() + voffset, indices_->data().end(), 0);
         uploadToGPU();
         visible_vector_field_ = "(None)";
     }

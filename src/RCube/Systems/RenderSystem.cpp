@@ -426,6 +426,7 @@ const std::string BrightnessFragmentShader = R"(
 in vec2 v_texcoord;
 out vec4 out_color;
 layout (binding=0) uniform sampler2D fbo_texture;
+uniform float bloom_threshold;
 
 float luminance(const vec3 rgb)
 {
@@ -435,7 +436,7 @@ float luminance(const vec3 rgb)
 void main()
 {
     vec3 pixel = texture(fbo_texture, v_texcoord).rgb;
-    vec3 result = (luminance(pixel) > 0.8) ? pixel : vec3(0, 0, 0);
+    vec3 result = (luminance(pixel) > bloom_threshold) ? pixel : vec3(0, 0, 0);
     out_color = vec4(result, 1.0);
 }
 )";
@@ -482,8 +483,7 @@ vec3 tonemapReinhard(const vec3 color)
 }
 
 void main() {
-    // Bloom
-    const float exposure = 1.0;
+    // Bloom https://learnopengl.com/Advanced-Lighting/Bloom
     vec3 hdr_color = texture(scene, v_texcoord).rgb;
     vec3 bloom_color = texture(blur, v_texcoord).rgb;
     vec3 result = hdr_color + bloom_color;
@@ -821,7 +821,7 @@ void DeferredRenderSystem::lightingPass(Camera *cam)
     renderer_.draw(rtl, dcs);
 }
 
-void DeferredRenderSystem::postprocessPass()
+void DeferredRenderSystem::postprocessPass(Camera *cam)
 {
     RenderSettings state;
     state.stencil.test = false;
@@ -837,6 +837,9 @@ void DeferredRenderSystem::postprocessPass()
         dc.settings.depth.write = false;
         dc.mesh = mi;
         dc.shader = shader_brightness_;
+        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("bloom_threshold").set(cam->bloom_threshold);
+        };
         dc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
         RenderTarget rt;
         rt.clear_color_buffer = true;
@@ -982,7 +985,7 @@ void DeferredRenderSystem::update(bool force)
         // Render passes
         geometryPass();
         lightingPass(cam);
-        postprocessPass();
+        postprocessPass(cam);
         finalPass(cam);
     }
 }

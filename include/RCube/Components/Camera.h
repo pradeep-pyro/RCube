@@ -58,10 +58,7 @@ class Camera : public Component<Camera>
     std::shared_ptr<TextureCubemap> irradiance;
     std::shared_ptr<TextureCubemap> prefilter;
     std::shared_ptr<Texture2D> brdfLUT;
-
-    std::vector<std::shared_ptr<ShaderProgram>>
-        postprocess; /// Postprocessing effects applied to the scene in order
-
+    float bloom_threshold = 1.f;
     /**
      * Computes and returns the frustum representing the camera's view
      * @return View frustum

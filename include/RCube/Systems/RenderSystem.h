@@ -30,7 +30,7 @@ class DeferredRenderSystem : public System
     void initializePostprocess();
     void geometryPass();
     void lightingPass(Camera *cam);
-    void postprocessPass();
+    void postprocessPass(Camera *cam);
     void finalPass(Camera *cam);
 
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);

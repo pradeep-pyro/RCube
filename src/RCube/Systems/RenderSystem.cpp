@@ -875,10 +875,6 @@ void DeferredRenderSystem::postprocessPass()
             rt.framebuffer = framebuffer_blur_[int(horizontal)]->id();
             renderer_.draw(rt, {dc});
             horizontal = !horizontal;
-            if (first_iter)
-            {
-                first_iter = false;
-            }
         }
     }
     {

@@ -73,14 +73,19 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->use_skybox = true;
 
     // Create a sunlight
-    auto dirl = createDirLight();
-    dirl.add(Name("Sun"));
-    dirl.get<DirectionalLight>()->intensity = 20.f;
-    dirl.get<DirectionalLight>()->cast_shadow = true;
+    if (props.sunlight)
+    {
+        auto dirl = createDirLight();
+        dirl.add(Name("SunLight"));
+        dirl.get<DirectionalLight>()->intensity = 20.f;
+        dirl.get<DirectionalLight>()->cast_shadow = true;
+    }
 
     // Create a ground plane
-    ground_ = createGroundPlane();
-    ground_.get<Drawable>()->visible = props.ground_plane;
+    if (props.ground_plane)
+    {
+        ground_ = createGroundPlane();
+    }
 
     world_.initialize();
 

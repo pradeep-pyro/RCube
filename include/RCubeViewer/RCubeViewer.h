@@ -34,6 +34,7 @@ struct RCubeViewerProps
     float camera_fov = glm::radians(30.f); // Vertical FOV of the camera in radians
     bool camera_orthographic = false;
     bool ground_plane = true;
+    bool sunlight = true;
 };
 
 class RCubeViewer : public rcube::Window

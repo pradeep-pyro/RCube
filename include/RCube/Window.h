@@ -100,6 +100,7 @@ class Window
     virtual void onMouseRelease(int key, int mods);
     virtual void onMouseMove(double xpos, double ypos);
     virtual void onScroll(double xoffset, double yoffset);
+    double time();
     glm::dvec2 getMousePosition() const;
     void shouldClose(bool flag);
 
@@ -114,6 +115,8 @@ class Window
     bool fullscreen_ = false;
     glm::ivec2 wndpos_ = glm::ivec2(0, 0);
     glm::ivec2 wndsz_ = glm::ivec2(1280, 720);
+
+    double time_ = 0.0;
 };
 
 } // namespace rcube

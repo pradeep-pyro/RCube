@@ -131,7 +131,7 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severi
     if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
         return;
     
-    if (id == 1281)
+    if (id == 1281 || id == 131076)
     {
         std::cerr << "---------------" << std::endl;
     }
@@ -348,6 +348,11 @@ void Window::onScroll(double xoffset, double yoffset)
 {
 }
 
+double Window::time()
+{
+    return glfwGetTime();
+}
+
 glm::dvec2 Window::getMousePosition() const
 {
     glm::dvec2 xy;
@@ -365,6 +370,7 @@ void Window::execute()
         glfwPollEvents();
         InputState::instance().update(window_);
         glfwSwapBuffers(window_);
+        time_ = time();
     }
     beforeTerminate(); // User should override this method
     glfwDestroyWindow(window_);

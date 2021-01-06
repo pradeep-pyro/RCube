@@ -416,14 +416,83 @@ void main()
 
     vec3 result = direct + indirect;
 
-    // Tone mapping
-    result = tonemapReinhard(result);
-
-    // Gamma correction
-    result = pow(result, vec3(1.0 / 2.2));
-
     // Output
     out_color = vec4(result , 1.0);
+}
+)";
+
+const std::string BrightnessFragmentShader = R"(
+#version 450
+in vec2 v_texcoord;
+out vec4 out_color;
+layout (binding=0) uniform sampler2D fbo_texture;
+
+float luminance(const vec3 rgb)
+{
+    return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+}
+
+void main()
+{
+    vec3 pixel = texture(fbo_texture, v_texcoord).rgb;
+    vec3 result = (luminance(pixel) > 0.8) ? pixel : vec3(0, 0, 0);
+    out_color = vec4(result, 1.0);
+}
+)";
+
+const static std::string BlurFragmentShader = R"(
+#version 450
+in vec2 v_texcoord;
+out vec4 out_color;
+layout (binding=0) uniform sampler2D fbo_texture;
+
+uniform bool horizontal;
+uniform float weight[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+
+// https://learnopengl.com/Advanced-Lighting/Bloom
+void main() {
+    vec3 result = weight[0] * texture(fbo_texture, v_texcoord).rgb;
+    vec2 texel_size = 1.0 / vec2(textureSize(fbo_texture, 0));
+    if (horizontal) {
+        for (int i = 1; i < 5; ++i) {
+            result += weight[i] * texture(fbo_texture, v_texcoord + vec2(texel_size.x * float(i), 0)).rgb;
+            result += weight[i] * texture(fbo_texture, v_texcoord - vec2(texel_size.x * float(i), 0)).rgb;
+        }
+    }
+    else {
+        for (int i = 1; i < 5; ++i) {
+            result += weight[i] * texture(fbo_texture, v_texcoord + vec2(0, texel_size.x * float(i))).rgb;
+            result += weight[i] * texture(fbo_texture, v_texcoord - vec2(0, texel_size.x * float(i))).rgb;
+        }
+    }
+    out_color = vec4(result, 1.0);
+}
+)";
+
+const static std::string PostprocessFragmentShader = R"(
+#version 450
+in vec2 v_texcoord;
+out vec4 out_color;
+layout (binding=0) uniform sampler2D scene;
+layout (binding=1) uniform sampler2D blur;
+
+vec3 tonemapReinhard(const vec3 color)
+{
+    return color / (color + vec3(1.0));
+}
+
+void main() {
+    // Bloom
+    const float exposure = 1.0;
+    vec3 hdr_color = texture(scene, v_texcoord).rgb;
+    vec3 bloom_color = texture(blur, v_texcoord).rgb;
+    vec3 result = hdr_color + bloom_color;
+    // Tone mapping
+    result = tonemapReinhard(result);
+    // Gamma correction
+    const float gamma = 2.2;
+    result = pow(result, vec3(1.0 / gamma));
+    out_color = vec4(result, 1.0);
 }
 )";
 
@@ -513,6 +582,8 @@ void DeferredRenderSystem::initialize()
     dirlight_data_.resize(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24);
     // Initialize renderer
     renderer_.initialize();
+    // Initialize bloom
+    initializePostprocess();
 }
 
 void DeferredRenderSystem::cleanup()
@@ -534,8 +605,8 @@ void DeferredRenderSystem::setCameraUBO(const glm::vec3 &eye_pos, const glm::mat
 
 void DeferredRenderSystem::setDirectionalLightsUBO()
 {
-    
-    std::vector<Entity> dirlights = getFilteredEntities({DirectionalLight::family()});;
+
+    std::vector<Entity> dirlights = getFilteredEntities({DirectionalLight::family()});
     // Copy lights
     assert(dirlights.size() < RCUBE_MAX_DIRECTIONAL_LIGHTS);
     size_t k = 0;
@@ -564,15 +635,290 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
         {
             for (int j = 0; j < 4; ++j)
             {
-                dirlight_data_[k++] = dl->cast_shadow ? light_matrix[i][j] : 0.0;
+                dirlight_data_[k++] = dl->cast_shadow ? light_matrix[i][j] : 0.f;
             }
         }
     }
     const int num_lights = static_cast<int>(dirlights.size());
     ubo_dirlights_->setData(dirlight_data_.data(), dirlight_data_.size(), 0);
-    ubo_dirlights_->setData(&num_lights, 1,
-                            RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float));
+    ubo_dirlights_->setData(&num_lights, 1, RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float));
     ubo_dirlights_->bindBase(1);
+}
+
+void DeferredRenderSystem::initializePostprocess()
+{
+    // Bloom framebuffer to store brightness map
+    auto brightness =
+        Texture2D::create(resolution_[0] / 2, resolution_[1] / 2, 1, TextureInternalFormat::RGB16F);
+    brightness->setFilterMode(TextureFilterMode::Linear);
+    brightness->setWrapMode(TextureWrapMode::ClampToEdge);
+    framebuffer_brightness_ = Framebuffer::create();
+    framebuffer_brightness_->setColorAttachment(0, brightness);
+    // Two pingpong HDR framebuffers for separable Gaussian blurring
+    auto pingpong1 =
+        Texture2D::create(resolution_[0] / 2, resolution_[1] / 2, 1, TextureInternalFormat::RGB16F);
+    pingpong1->setFilterMode(TextureFilterMode::Linear);
+    pingpong1->setWrapMode(TextureWrapMode::ClampToEdge);
+    auto pingpong2 =
+        Texture2D::create(resolution_[0] / 2, resolution_[1] / 2, 1, TextureInternalFormat::RGB16F);
+    pingpong2->setFilterMode(TextureFilterMode::Linear);
+    pingpong2->setWrapMode(TextureWrapMode::ClampToEdge);
+    framebuffer_blur_[0] = Framebuffer::create();
+    framebuffer_blur_[0]->setColorAttachment(0, pingpong1);
+    framebuffer_blur_[1] = Framebuffer::create();
+    framebuffer_blur_[1]->setColorAttachment(0, pingpong2);
+    // HDR framebuffer for postprocessing
+    framebuffer_pp_ = Framebuffer::create();
+    auto pp_color =
+        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
+    framebuffer_pp_->setColorAttachment(0, pp_color);
+
+    shader_blur_ = common::fullScreenQuadShader(BlurFragmentShader);
+    shader_brightness_ = common::fullScreenQuadShader(BrightnessFragmentShader);
+    shader_pp_ = common::fullScreenQuadShader(PostprocessFragmentShader);
+}
+
+void DeferredRenderSystem::geometryPass()
+{
+    const auto &renderable_entities = registered_entities_[filters_[2]];
+
+    RenderTarget rt_geom_pass;
+    rt_geom_pass.clear_color_buffer = true;
+    rt_geom_pass.clear_depth_buffer = true;
+    rt_geom_pass.clear_stencil_buffer = true;
+    rt_geom_pass.framebuffer = gbuffer_->id();
+    rt_geom_pass.viewport_origin = glm::ivec2(0, 0);
+    rt_geom_pass.viewport_size = resolution_;
+
+    RenderSettings state;
+    state.depth.test = true;
+    state.depth.write = true;
+    state.stencil.test = true;
+    state.stencil.func = StencilFunc::Always;
+    state.stencil.func_ref = 1;
+    state.stencil.func_mask = 0xFF;
+    state.stencil.write = 0xFF;
+    state.stencil.op_pass = StencilOp::Replace;
+    state.stencil.op_depth_fail = StencilOp::Replace;
+    state.stencil.op_stencil_fail = StencilOp::Replace;
+    state.cull.enabled = false;
+
+    std::vector<DrawCall> drawcalls_geom_pass;
+    drawcalls_geom_pass.reserve(renderable_entities.size());
+    for (const auto &render_entity : renderable_entities)
+    {
+        Drawable *dr = world_->getComponent<Drawable>(render_entity);
+        if (!dr->visible)
+        {
+            continue;
+        }
+        Mesh *mesh = dr->mesh.get();
+        Transform *tr = world_->getComponent<Transform>(render_entity);
+        auto pbr = world_->getComponent<Material>(render_entity);
+
+        DrawCall dc;
+        dc.settings = state;
+        dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
+        if (pbr->albedo_texture != nullptr)
+        {
+            dc.textures.push_back({pbr->albedo_texture->id(), 0});
+        }
+        if (pbr->roughness_texture != nullptr)
+        {
+            dc.textures.push_back({pbr->roughness_texture->id(), 1});
+        }
+        if (pbr->metallic_texture != nullptr)
+        {
+            dc.textures.push_back({pbr->metallic_texture->id(), 2});
+        }
+        if (pbr->normal_texture != nullptr)
+        {
+            dc.textures.push_back({pbr->normal_texture->id(), 3});
+        }
+        dc.shader = gbuffer_shader_;
+        dc.update_uniforms = [tr, pbr](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("albedo").set(glm::pow(pbr->albedo, glm::vec3(2.2f)));
+            shader->uniform("roughness").set(pbr->roughness);
+            shader->uniform("metallic").set(pbr->metallic);
+            shader->uniform("use_albedo_texture").set(pbr->albedo_texture != nullptr);
+            shader->uniform("use_roughness_texture").set(pbr->roughness_texture != nullptr);
+            shader->uniform("use_normal_texture").set(pbr->normal_texture != nullptr);
+            shader->uniform("use_metallic_texture").set(pbr->metallic_texture != nullptr);
+            shader->uniform("model_matrix").set(tr->worldTransform());
+            shader->uniform("normal_matrix").set(glm::mat3(tr->worldTransform()));
+            shader->uniform("wireframe.show").set(pbr->wireframe);
+            shader->uniform("wireframe.color").set(glm::pow(pbr->wireframe_color, glm::vec3(2.2f)));
+            shader->uniform("wireframe.thickness").set(pbr->wireframe_thickness);
+        };
+        drawcalls_geom_pass.push_back(dc);
+    }
+    renderer_.draw(rt_geom_pass, drawcalls_geom_pass);
+    gbuffer_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true, true);
+}
+
+void DeferredRenderSystem::lightingPass(Camera *cam)
+{
+    std::vector<DrawCall> dcs;
+    RenderTarget rtl;
+    rtl.framebuffer = framebuffer_hdr_->id();
+    rtl.clear_color_buffer = true;
+    rtl.clear_depth_buffer = false;
+    rtl.clear_stencil_buffer = false;
+    rtl.viewport_origin = glm::ivec2(0, 0);
+    rtl.viewport_size = resolution_;
+    if (!cam->use_skybox || cam->skybox == nullptr)
+    {
+        rtl.clear_color[0] = cam->background_color[0];
+        rtl.clear_color[1] = cam->background_color[1];
+        rtl.clear_color[2] = cam->background_color[2];
+    }
+    DrawCall dc_light;
+    RenderSettings &sl = dc_light.settings;
+    sl.depth.test = true;
+    sl.depth.write = false;
+    sl.stencil.test = false;
+    sl.cull.enabled = false;
+    dc_light.shader = lighting_shader_;
+    dc_light.textures.push_back({gbuffer_->colorAttachment(0)->id(), 0});
+    dc_light.textures.push_back({gbuffer_->colorAttachment(1)->id(), 1});
+    dc_light.textures.push_back({gbuffer_->colorAttachment(2)->id(), 2});
+    // dc_light.textures.push_back({shadow_atlas_->id(), 3});
+    const bool use_ibl =
+        cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
+    if (use_ibl)
+    {
+        dc_light.textures.push_back({cam->brdfLUT->id(), 4});
+        dc_light.cubemaps.push_back({cam->prefilter->id(), 5});
+        dc_light.cubemaps.push_back({cam->irradiance->id(), 6});
+    }
+    dc_light.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+        shader->uniform("use_image_based_lighting").set(use_ibl);
+    };
+    dc_light.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
+    dcs.push_back(dc_light);
+
+    // Draw skybox
+    if (cam->use_skybox && !cam->orthographic)
+    {
+        DrawCall dc_skybox;
+        RenderSettings &s = dc_skybox.settings;
+        s.depth.write = false;
+        s.depth.func = DepthFunc::LessOrEqual;
+        s.stencil.test = true;
+        s.stencil.op_stencil_fail = StencilOp::Keep;
+        s.stencil.op_depth_fail = StencilOp::Keep;
+        s.stencil.op_pass = StencilOp::Keep;
+        s.stencil.func = StencilFunc::NotEqual;
+        s.stencil.func_ref = 1;
+        s.stencil.func_mask = 0xFF;
+        s.stencil.write = 0x00;
+        dc_skybox.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.skyboxMesh());
+        dc_skybox.shader = renderer_.skyboxShader();
+        dc_skybox.cubemaps.push_back({cam->skybox->id(), 0});
+        dcs.push_back(dc_skybox);
+    }
+    setDirectionalLightsUBO();
+    renderer_.draw(rtl, dcs);
+}
+
+void DeferredRenderSystem::postprocessPass()
+{
+    RenderSettings state;
+    state.stencil.test = false;
+    state.stencil.write = false;
+    state.depth.test = false;
+    state.depth.write = false;
+    DrawCall::MeshInfo mi = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
+    {
+        // Pass 1: extract bright colors from the HDR framebuffer
+        DrawCall dc;
+        dc.settings = state;
+        dc.settings.depth.test = false;
+        dc.settings.depth.write = false;
+        dc.mesh = mi;
+        dc.shader = shader_brightness_;
+        dc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
+        RenderTarget rt;
+        rt.clear_color_buffer = true;
+        rt.clear_depth_buffer = false;
+        rt.clear_stencil_buffer = false;
+        rt.viewport_origin = glm::ivec2(0, 0);
+        rt.viewport_size = resolution_ / 2;
+        rt.framebuffer = framebuffer_brightness_->id();
+        renderer_.draw(rt, {dc});
+    }
+    {
+        // Pass 2: Gaussian Blur
+        const size_t blur_amount = 10;
+        bool horizontal = true;
+        for (size_t i = 0; i < blur_amount; ++i)
+        {
+            DrawCall dc;
+            dc.settings = state;
+            dc.settings.depth.test = false;
+            dc.settings.depth.write = false;
+            dc.mesh = mi;
+            dc.shader = shader_blur_;
+            dc.textures.push_back(
+                {i == 0 ? framebuffer_brightness_->colorAttachment(0)->id()
+                        : framebuffer_blur_[int(!horizontal)]->colorAttachment(0)->id(),
+                 0});
+            dc.update_uniforms = [horizontal](std::shared_ptr<ShaderProgram> shader) {
+                shader->uniform("horizontal").set(horizontal);
+            };
+            RenderTarget rt;
+            rt.clear_color_buffer = true;
+            rt.clear_depth_buffer = false;
+            rt.clear_stencil_buffer = false;
+            rt.viewport_origin = glm::ivec2(0, 0);
+            rt.viewport_size = resolution_ / 2;
+            rt.framebuffer = framebuffer_blur_[int(horizontal)]->id();
+            renderer_.draw(rt, {dc});
+            horizontal = !horizontal;
+            if (first_iter)
+            {
+                first_iter = false;
+            }
+        }
+    }
+    {
+        // Pass 3: Apply postprocess effects: bloom and tonemap
+        DrawCall dc;
+        dc.settings = state;
+        dc.settings.depth.test = false;
+        dc.settings.depth.write = false;
+        dc.mesh = mi;
+        dc.shader = shader_pp_;
+        dc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
+        dc.textures.push_back({framebuffer_blur_[0]->colorAttachment(0)->id(), 1});
+        RenderTarget rt;
+        rt.clear_color_buffer = true;
+        rt.clear_depth_buffer = false;
+        rt.clear_stencil_buffer = false;
+        rt.viewport_origin = glm::ivec2(0, 0);
+        rt.viewport_size = resolution_;
+        rt.framebuffer = framebuffer_pp_->id();
+        renderer_.draw(rt, {dc});
+    }
+}
+
+void DeferredRenderSystem::finalPass(Camera *cam)
+{
+    RenderTarget rt;
+    rt.viewport_origin = cam->viewport_origin;
+    rt.viewport_size = cam->viewport_size;
+    rt.framebuffer = 0;
+    rt.clear_color_buffer = true;
+    rt.clear_depth_buffer = false;
+    rt.clear_stencil_buffer = false;
+    DrawCall dc;
+    dc.settings.depth.test = false;
+    dc.settings.depth.write = false;
+    dc.textures.push_back({framebuffer_pp_->colorAttachment(0)->id(), 0});
+    dc.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
+    dc.shader = renderer_.fullscreenQuadShader();
+    dc.settings.cull.enabled = false;
+    renderer_.draw(rt, {dc});
 }
 
 void DeferredRenderSystem::update(bool force)
@@ -582,7 +928,7 @@ void DeferredRenderSystem::update(bool force)
     const auto &renderable_entities = registered_entities_[filters_[2]];
 
     //// Shadow pass
-    //for (auto light : dirlight_entities)
+    // for (auto light : dirlight_entities)
 
     //{
     //    DirectionalLight *dirL = world_->getComponent<DirectionalLight>(light);
@@ -600,9 +946,8 @@ void DeferredRenderSystem::update(bool force)
     //    assert(framebuffer_shadow_->isComplete());
     //    const glm::vec3 opp_dirL = -glm::normalize(dirL->direction);
     //    const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-    //    const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    //    const glm::mat4 light_matrix = light_proj * light_view;
-    //    std::vector<DrawCall> dcsh;
+    //    const glm::mat4 light_view = glm::lookAt(opp_dirL, glm::vec3(0, 0, 0), glm::vec3(0, 1,
+    //    0)); const glm::mat4 light_matrix = light_proj * light_view; std::vector<DrawCall> dcsh;
     //    dcsh.reserve(dirlight_entities.size());
     //    for (auto renderable : renderable_entities)
     //    {
@@ -638,161 +983,11 @@ void DeferredRenderSystem::update(bool force)
         setCameraUBO(tr->worldPosition(), cam->world_to_view, cam->view_to_projection,
                      cam->projection_to_viewport);
 
-        //////////////////////////////////////////////////////////////////////////////////////
-        // Geometry pass
-        //////////////////////////////////////////////////////////////////////////////////////
-        RenderTarget rt_geom_pass;
-        rt_geom_pass.clear_color_buffer = true;
-        rt_geom_pass.clear_depth_buffer = true;
-        rt_geom_pass.clear_stencil_buffer = true;
-        rt_geom_pass.framebuffer = gbuffer_->id();
-        rt_geom_pass.viewport_origin = glm::ivec2(0, 0);
-        rt_geom_pass.viewport_size = resolution_;
-
-        RenderSettings state;
-        state.depth.test = true;
-        state.depth.write = true;
-        state.stencil.test = true;
-        state.stencil.func = StencilFunc::Always;
-        state.stencil.func_ref = 1;
-        state.stencil.func_mask = 0xFF;
-        state.stencil.write = 0xFF;
-        state.stencil.op_pass = StencilOp::Replace;
-        state.stencil.op_depth_fail = StencilOp::Replace;
-        state.stencil.op_stencil_fail = StencilOp::Replace;
-        state.cull.enabled = false;
-
-        std::vector<DrawCall> drawcalls_geom_pass;
-        drawcalls_geom_pass.reserve(renderable_entities.size());
-        for (const auto &render_entity : renderable_entities)
-        {
-            Drawable *dr = world_->getComponent<Drawable>(render_entity);
-            if (!dr->visible)
-            {
-                continue;
-            }
-            Mesh *mesh = dr->mesh.get();
-            Transform *tr = world_->getComponent<Transform>(render_entity);
-            auto pbr = world_->getComponent<Material>(render_entity);
-
-            DrawCall dc;
-            dc.settings = state;
-            dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
-            if (pbr->albedo_texture != nullptr)
-            {
-                dc.textures.push_back({pbr->albedo_texture->id(), 0});
-            }
-            if (pbr->roughness_texture != nullptr)
-            {
-                dc.textures.push_back({pbr->roughness_texture->id(), 1});
-            }
-            if (pbr->metallic_texture != nullptr)
-            {
-                dc.textures.push_back({pbr->metallic_texture->id(), 2});
-            }
-            if (pbr->normal_texture != nullptr)
-            {
-                dc.textures.push_back({pbr->normal_texture->id(), 3});
-            }
-            dc.shader = gbuffer_shader_;
-            dc.update_uniforms = [tr, pbr](std::shared_ptr<ShaderProgram> shader) {
-                shader->uniform("albedo").set(glm::pow(pbr->albedo, glm::vec3(2.2f)));
-                shader->uniform("roughness").set(pbr->roughness);
-                shader->uniform("metallic").set(pbr->metallic);
-                shader->uniform("use_albedo_texture").set(pbr->albedo_texture != nullptr);
-                shader->uniform("use_roughness_texture").set(pbr->roughness_texture != nullptr);
-                shader->uniform("use_normal_texture").set(pbr->normal_texture != nullptr);
-                shader->uniform("use_metallic_texture").set(pbr->metallic_texture != nullptr);
-                shader->uniform("model_matrix").set(tr->worldTransform());
-                shader->uniform("normal_matrix").set(glm::mat3(tr->worldTransform()));
-                shader->uniform("wireframe.show").set(pbr->wireframe);
-                shader->uniform("wireframe.color").set(glm::pow(pbr->wireframe_color, glm::vec3(2.2f)));
-                shader->uniform("wireframe.thickness").set(pbr->wireframe_thickness);
-            };
-            drawcalls_geom_pass.push_back(dc);
-        }
-        renderer_.draw(rt_geom_pass, drawcalls_geom_pass);
-        gbuffer_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_, false, true,
-                       true);
-
-        //////////////////////////////////////////////////////////////////////////////////////
-        // Lighting pass
-        //////////////////////////////////////////////////////////////////////////////////////
-        std::vector<DrawCall> dcs;
-        RenderTarget rtl;
-        rtl.framebuffer = framebuffer_hdr_->id();
-        rtl.clear_color_buffer = true;
-        rtl.clear_depth_buffer = false;
-        rtl.clear_stencil_buffer = false;
-        rtl.viewport_origin = glm::ivec2(0, 0);
-        rtl.viewport_size = resolution_;
-        if (!cam->use_skybox || cam->skybox == nullptr)
-        {
-            rtl.clear_color[0] = cam->background_color[0];
-            rtl.clear_color[1] = cam->background_color[1];
-            rtl.clear_color[2] = cam->background_color[2];
-        }
-        DrawCall dc_light;
-        RenderSettings &sl = dc_light.settings;
-        sl.depth.test = true;
-        sl.depth.write = false;
-        sl.stencil.test = false;
-        sl.cull.enabled = false;
-        dc_light.shader = lighting_shader_;
-        dc_light.textures.push_back({gbuffer_->colorAttachment(0)->id(), 0});
-        dc_light.textures.push_back({gbuffer_->colorAttachment(1)->id(), 1});
-        dc_light.textures.push_back({gbuffer_->colorAttachment(2)->id(), 2});
-        //dc_light.textures.push_back({shadow_atlas_->id(), 3});
-        const bool use_ibl =
-            cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
-        if (use_ibl)
-        {
-            dc_light.textures.push_back({cam->brdfLUT->id(), 4});
-            dc_light.cubemaps.push_back({cam->prefilter->id(), 5});
-            dc_light.cubemaps.push_back({cam->irradiance->id(), 6});
-        }
-        dc_light.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
-            shader->uniform("use_image_based_lighting").set(use_ibl);
-        };
-        dc_light.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
-        dcs.push_back(dc_light);
-
-        // Draw skybox
-        if (cam->use_skybox && !cam->orthographic)
-        {
-            DrawCall dc_skybox;
-            RenderSettings &s = dc_skybox.settings;
-            s.depth.write = false;
-            s.depth.func = DepthFunc::LessOrEqual;
-            s.stencil.test = true;
-            s.stencil.op_stencil_fail = StencilOp::Keep;
-            s.stencil.op_depth_fail = StencilOp::Keep;
-            s.stencil.op_pass = StencilOp::Keep;
-            s.stencil.func = StencilFunc::NotEqual;
-            s.stencil.func_ref = 1;
-            s.stencil.func_mask = 0xFF;
-            s.stencil.write = 0x00;
-            dc_skybox.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.skyboxMesh());
-            dc_skybox.shader = renderer_.skyboxShader();
-            dc_skybox.cubemaps.push_back({cam->skybox->id(), 0});
-            dcs.push_back(dc_skybox);
-        }
-        setDirectionalLightsUBO();
-        renderer_.draw(rtl, dcs);
-        RenderTarget rtsc;
-        rtsc.viewport_origin = cam->viewport_origin;
-        rtsc.viewport_size = cam->viewport_size;
-        rtsc.framebuffer = 0;
-        rtsc.clear_color_buffer = false;
-        rtsc.clear_depth_buffer = false;
-        rtsc.clear_stencil_buffer = false;
-        DrawCall dcsc;
-        dcsc.settings.depth.test = false;
-        dcsc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
-        dcsc.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
-        dcsc.shader = renderer_.fullscreenQuadShader();
-        dcsc.settings.cull.enabled = false;
-        renderer_.draw(rtsc, {dcsc});
+        // Render passes
+        geometryPass();
+        lightingPass(cam);
+        postprocessPass();
+        finalPass(cam);
     }
 }
 

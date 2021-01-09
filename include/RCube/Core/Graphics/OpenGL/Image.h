@@ -17,10 +17,11 @@ class Image
   public:
     Image() = default;
 
-    static Image fromFile(const std::string &filename, int n_channels)
+    static Image fromFile(const std::string &filename, int n_channels, bool flip_vertically = false)
     {
         int w, h, c;
         int desired_c = n_channels;
+        stbi_set_flip_vertically_on_load(int(flip_vertically));
         unsigned char *pix = stbi_load(filename.c_str(), &w, &h, &c, desired_c);
         if (pix == nullptr)
         {

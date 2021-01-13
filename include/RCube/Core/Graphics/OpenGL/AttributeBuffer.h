@@ -329,7 +329,7 @@ class AttributeIndexBuffer
         {
             buffer_->release();
         }
-        data_.swap(std::vector<unsigned int>{});
+        data_.clear();
     }
 };
 

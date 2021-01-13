@@ -7,7 +7,7 @@ namespace rcube
 namespace viewer
 {
 // Taken from https://github.com/libigl/libigl/blob/master/include/igl/colormap.cpp
-static float viridis[256][3] = {
+static double viridis[256][3] = {
     {0.267004, 0.004874, 0.329415}, {0.268510, 0.009605, 0.335427}, {0.269944, 0.014625, 0.341379},
     {0.271305, 0.019942, 0.347269}, {0.272594, 0.025563, 0.353093}, {0.273809, 0.031497, 0.358853},
     {0.274952, 0.037752, 0.364543}, {0.276022, 0.044167, 0.370164}, {0.277018, 0.050344, 0.375715},
@@ -95,7 +95,7 @@ static float viridis[256][3] = {
     {0.964894, 0.902323, 0.123941}, {0.974417, 0.903590, 0.130215}, {0.983868, 0.904867, 0.136897},
     {0.993248, 0.906157, 0.143936}};
 
-static float magma[256][3] = {
+static double magma[256][3] = {
     {0.001462, 0.000466, 0.013866}, {0.002258, 0.001295, 0.018331}, {0.003279, 0.002305, 0.023708},
     {0.004512, 0.003490, 0.029965}, {0.005950, 0.004843, 0.037130}, {0.007588, 0.006356, 0.044973},
     {0.009426, 0.008022, 0.052844}, {0.011465, 0.009828, 0.060750}, {0.013708, 0.011771, 0.068667},
@@ -183,7 +183,7 @@ static float magma[256][3] = {
     {0.988033, 0.970012, 0.727077}, {0.987691, 0.977154, 0.734536}, {0.987387, 0.984288, 0.742002},
     {0.987053, 0.991438, 0.749504}};
 
-void colormap(const float palette[256][3], float value, glm::vec3 &rgb)
+void colormap(const double palette[256][3], float value, glm::vec3 &rgb)
 {
     const float zero = 0.0;
     const float one = 1.0;
@@ -194,12 +194,12 @@ void colormap(const float palette[256][3], float value, glm::vec3 &rgb)
     unsigned int most =
         static_cast<unsigned int>(std::ceil(value_clamped * static_cast<float>(255)));
 
-    const float r_min = palette[least][0];
-    const float r_max = palette[most][0];
-    const float g_min = palette[least][1];
-    const float g_max = palette[most][1];
-    const float b_min = palette[least][2];
-    const float b_max = palette[most][2];
+    const float r_min = static_cast<float>(palette[least][0]);
+    const float r_max = static_cast<float>(palette[most][0]);
+    const float g_min = static_cast<float>(palette[least][1]);
+    const float g_max = static_cast<float>(palette[most][1]);
+    const float b_min = static_cast<float>(palette[least][2]);
+    const float b_max = static_cast<float>(palette[most][2]);
 
     float t = std::max(zero, std::min(one, fmod(value_clamped * static_cast<float>(256), one)));
 

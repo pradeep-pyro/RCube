@@ -237,8 +237,8 @@ struct RenderSettings
         bool test = true;
         bool write = true;
         DepthFunc func = DepthFunc::Less;
-        double near = 0.0;
-        double far = 1.0;
+        double znear = 0.0;
+        double zfar = 1.0;
     };
 
     struct Stencil

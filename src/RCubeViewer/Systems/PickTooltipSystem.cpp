@@ -81,8 +81,8 @@ void PickTooltipSystem::update(bool)
 
                     float dist = 1e6f;
                     // TODO(pradeep): can avoid closest vertex check
-                    size_t vijk = tri->closestVertexIndex(pick->point, dist);
-                    if (tri->barycentricCoordinate(pick->point)[vijk] > 0.85f)
+                    glm::length_t vijk = static_cast<glm::length_t>(tri->closestVertexIndex(pick->point, dist));
+                    if (tri->barycentricCoordinate(pick->point)[glm::length_t(vijk)] > 0.85f)
                     {
                         // Vertex was selected
                         size_t vertex_ind = sm->faces_[index][vijk];

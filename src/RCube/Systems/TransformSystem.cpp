@@ -34,6 +34,13 @@ void TransformSystem::updateHierarchy(Transform *comp, bool force)
             updateHierarchy(child, true);
         }
     }
+    else
+    {
+        for (auto child : comp->children())
+        {
+            updateHierarchy(child, force);
+        }
+    }
 }
 
 TransformSystem::TransformSystem()

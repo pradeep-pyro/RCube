@@ -57,7 +57,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->background_color = props.background_color;
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Make a default skybox
-    camera_.get<Camera>()->skybox = TextureCubemap::create(256, 256);
+    camera_.get<Camera>()->skybox = TextureCubemap::create(256, 256, 1, true, TextureInternalFormat::sRGB8);
     glm::vec3 color_top = glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f);
     glm::vec3 color_bot = glm::vec3(1.f, 1.f, 1.f);
     Image front_back = gradientV(256, 256, color_top, color_bot, 2.f);

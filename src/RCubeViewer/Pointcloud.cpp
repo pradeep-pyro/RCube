@@ -386,7 +386,7 @@ void rcube::viewer::Pointcloud::hideAllVectorFields()
         std::fill(attributes_["colors"]->data().begin() + voffset,
                   attributes_["colors"]->data().end(), 0.f);
         size_t foffset = numPoints() * trianglesPerPoint() * 3;
-        std::fill(indices_->data().begin() + voffset, indices_->data().end(), 0);
+        std::fill(indices_->data().begin() + foffset, indices_->data().end(), 0);
         uploadToGPU();
         visible_vector_field_ = "(None)";
     }

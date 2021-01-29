@@ -1,4 +1,5 @@
 #include "RCube/Components/Camera.h"
+#include "RCube/Core/Graphics/TexGen/Gradient.h"
 #include "imgui.h"
 
 namespace rcube
@@ -30,6 +31,21 @@ Frustum Camera::frustum()
     return fr;
 }
 
+void Camera::createGradientSkyBox(const glm::vec3 &color_top, const glm::vec3 &color_bot)
+{
+    skybox = TextureCubemap::create(256, 256, 1, true, TextureInternalFormat::sRGB8);
+    Image front_back = gradientV(256, 256, color_top, color_bot, 2.f);
+    Image top = gradientV(256, 256, color_top, color_top, 2.f);
+    Image bottom = gradientV(256, 256, color_bot, color_bot, 2.f);
+    skybox->setFilterModeMin(rcube::TextureFilterMode::Trilinear);
+    skybox->setData(TextureCubemap::PositiveY, top);
+    skybox->setData(TextureCubemap::NegativeY, bottom);
+    skybox->setData(TextureCubemap::PositiveX, front_back);
+    skybox->setData(TextureCubemap::NegativeX, front_back);
+    skybox->setData(TextureCubemap::NegativeZ, front_back);
+    skybox->setData(TextureCubemap::PositiveZ, front_back);
+}
+
 void Camera::drawGUI()
 {
     ImGui::Checkbox("Orthographic", &orthographic);
@@ -43,7 +59,6 @@ void Camera::drawGUI()
     }
     ImGui::InputFloat("Near Plane", &near_plane);
     ImGui::InputFloat("Far Plane", &far_plane);
-    ImGui::ColorEdit3("Background Color", glm::value_ptr(background_color));
     ImGui::InputFloat("Bloom Threshold", &bloom_threshold);
 }
 

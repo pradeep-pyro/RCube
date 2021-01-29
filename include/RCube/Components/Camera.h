@@ -51,14 +51,12 @@ class Camera : public Component<Camera>
     glm::ivec2 viewport_origin = glm::ivec2(0); /// Origin of the viewport where the scene is drawn
     glm::ivec2 viewport_size =
         glm::ivec2(1280, 720); /// Size of the viewport where the scene is drawn
-    glm::vec3 background_color =
-        glm::vec3(1); /// Background color for the scene when viewed from this camera
     std::shared_ptr<TextureCubemap> skybox; /// Skybox texture
     bool use_skybox = false;                /// Whether to draw a skybox
     std::shared_ptr<TextureCubemap> irradiance;
     std::shared_ptr<TextureCubemap> prefilter;
     std::shared_ptr<Texture2D> brdfLUT;
-    float bloom_threshold = 1.f;
+    float bloom_threshold = 1000.f;
     /**
      * Computes and returns the frustum representing the camera's view
      * @return View frustum
@@ -79,6 +77,8 @@ class Camera : public Component<Camera>
     {
         return projection_to_viewport;
     }
+
+    void createGradientSkyBox(const glm::vec3 &color_top, const glm::vec3 &color_bot);
 
     void drawGUI();
 

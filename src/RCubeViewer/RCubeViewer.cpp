@@ -54,22 +54,9 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Transform>()->lookAt(glm::vec3(0.f, 0.f, 1.5f), glm::vec3(0.f, 0.f, 0.f),
                                      YAXIS_POSITIVE);
     camera_.get<Camera>()->fov = props.camera_fov;
-    camera_.get<Camera>()->background_color = props.background_color;
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Make a default skybox
-    camera_.get<Camera>()->skybox = TextureCubemap::create(256, 256, 1, true, TextureInternalFormat::sRGB8);
-    glm::vec3 color_top = glm::vec3(123.f / 255.f, 154.f / 255.f, 203.f / 255.f);
-    glm::vec3 color_bot = glm::vec3(1.f, 1.f, 1.f);
-    Image front_back = gradientV(256, 256, color_top, color_bot, 2.f);
-    Image top = gradientV(256, 256, color_top, color_top, 2.f);
-    Image bottom = gradientV(256, 256, color_bot, color_bot, 2.f);
-    camera_.get<Camera>()->skybox->setFilterModeMin(rcube::TextureFilterMode::Trilinear);
-    camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveY, top);
-    camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeY, bottom);
-    camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveX, front_back);
-    camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeX, front_back);
-    camera_.get<Camera>()->skybox->setData(TextureCubemap::NegativeZ, front_back);
-    camera_.get<Camera>()->skybox->setData(TextureCubemap::PositiveZ, front_back);
+    camera_.get<Camera>()->createGradientSkyBox(props.background_color_top, props.background_color_bottom);
     camera_.get<Camera>()->use_skybox = true;
 
     // Create a sunlight

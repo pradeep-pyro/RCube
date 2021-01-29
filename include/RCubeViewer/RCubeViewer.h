@@ -30,7 +30,10 @@ struct RCubeViewerProps
     std::string title = "RCubeViewer";             // Title of the viewer window
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
     int MSAA = 0;                                  // Number of samples for multisampling
-    glm::vec3 background_color = glm::vec3(0.2f, 0.2f, 0.2f); // Background color
+    glm::vec3 background_color_top =
+        glm::vec3(82.f / 255.f, 87.f / 255.f, 110.f / 255.f); // Background top color
+    glm::vec3 background_color_bottom =
+        glm::vec3(82.f / 255.f, 87.f / 255.f, 110.f / 255.f); // Background bottom color
     float camera_fov = glm::radians(30.f); // Vertical FOV of the camera in radians
     bool camera_orthographic = false;
     bool ground_plane = true;
@@ -70,7 +73,7 @@ class RCubeViewer : public rcube::Window
     }
 
     // Function to setup custom GUI windows
-    std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer &/*viewer*/) {};
+    std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer & /*viewer*/) {};
 
   protected:
     virtual void initialize() override;

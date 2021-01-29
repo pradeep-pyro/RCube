@@ -262,6 +262,9 @@ void Pointcloud::drawGUI()
     if (current_sf != nullptr && current_sf != "(None)")
     {
         showScalarField(current_sf);
+        ImGui::PlotHistogram("Histogram", scalarField(current_sf).histogram_.data(),
+                             scalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f, 1.0f,
+                             ImVec2(0, 80.0f));
         if (ImGui::InputFloat("Min. value", &scalarField(current_sf).vmin_))
         {
             scalarField(current_sf).dirty_ = true;

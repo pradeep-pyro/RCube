@@ -284,7 +284,7 @@ void SurfaceMesh::setFaceArrowMesh(const TriangleMeshData &mesh)
 
 size_t SurfaceMesh::numVerticesDisplay() const
 {
-    return face_centers_.size() * 3;
+    return faces_.size() * 3;
 }
 
 void SurfaceMesh::setVertexArrowMesh(const TriangleMeshData &mesh)
@@ -329,13 +329,16 @@ void SurfaceMesh::hideAllVertexVectorFields()
     {
         size_t voffset = numVerticesDisplay() * 3;
         std::fill(attributes_["positions"]->data().begin() + voffset,
-                  attributes_["positions"]->data().begin() + num_vertex_vector_field_vertices_ * 3,
+                  attributes_["positions"]->data().begin() + voffset +
+                      num_vertex_vector_field_vertices_ * 3,
                   0.f);
         std::fill(attributes_["normals"]->data().begin() + voffset,
-                  attributes_["normals"]->data().begin() + num_vertex_vector_field_vertices_ * 3,
+                  attributes_["normals"]->data().begin() + voffset +
+                      num_vertex_vector_field_vertices_ * 3,
                   0.f);
         std::fill(attributes_["colors"]->data().begin() + voffset,
-                  attributes_["colors"]->data().begin() + num_vertex_vector_field_vertices_ * 3,
+                  attributes_["colors"]->data().begin() + voffset +
+                      num_vertex_vector_field_vertices_ * 3,
                   0.f);
         uploadToGPU();
         visible_vertex_vector_field_ = "(None)";
@@ -430,6 +433,9 @@ void SurfaceMesh::drawGUI()
         if (is_vertex_based)
         {
             showVertexScalarField(current_sf);
+            ImGui::PlotHistogram("Histogram", vertexScalarField(current_sf).histogram_.data(),
+                                 vertexScalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f,
+                                 1.0f, ImVec2(0, 80.0f));
             if (ImGui::InputFloat("Min. value###sf1", &vertexScalarField(current_sf).vmin_))
             {
                 vertexScalarField(current_sf).dirty_ = true;
@@ -446,6 +452,9 @@ void SurfaceMesh::drawGUI()
         else
         {
             showFaceScalarField(current_sf);
+            ImGui::PlotHistogram("Histogram", faceScalarField(current_sf).histogram_.data(),
+                                 faceScalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f,
+                                 1.0f, ImVec2(0, 80.0f));
             if (ImGui::InputFloat("Min. value###sf4", &faceScalarField(current_sf).vmin_))
             {
                 faceScalarField(current_sf).dirty_ = true;

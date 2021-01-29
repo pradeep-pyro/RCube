@@ -20,6 +20,7 @@ class ScalarField
     friend class SurfaceMesh;
     std::vector<glm::vec3> colors_;
     std::vector<float> data_;
+    std::vector<float> histogram_;
     Colormap cmap_ = Colormap::Viridis;
     float vmin_ = 0.f;
     float vmax_ = 1.f;
@@ -86,6 +87,8 @@ class ScalarField
      * @return Whether colors were actually updated
      */
     bool updateColors();
+
+    void updateHistogram();
 };
 
 } // namespace viewer

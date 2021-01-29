@@ -16,6 +16,7 @@ const std::vector<float> &ScalarField::data() const
 void ScalarField::setData(const std::vector<float> &data)
 {
     data_ = data;
+    updateHistogram();
     dirty_ = true;
 }
 float ScalarField::dataMinRange() const
@@ -61,6 +62,42 @@ bool ScalarField::updateColors()
         return true;
     }
     return false;
+}
+
+void ScalarField::updateHistogram()
+{
+    auto minmax = std::minmax_element(std::begin(data_), std::end(data_));
+    float vmin = *minmax.first;
+    float vmax = *minmax.second;
+    const size_t bins = 10;
+    float step = (vmax - vmin) / float(bins);
+    std::vector<std::pair<float, float>> bin_ranges;
+    for (size_t i = 0; i < bins; ++i)
+    {
+        bin_ranges.push_back({vmin + step * float(i), vmin + step * float(i + 1)});
+    }
+    histogram_.resize(bins, 0.f);
+    float sum = 0.f;
+    for (float val : data_)
+    {
+        for (size_t ii = 0; ii < bin_ranges.size(); ++ii)
+        {
+            const auto &bin_range = bin_ranges[ii];
+            if (val >= bin_range.first && val < bin_range.second)
+            {
+                histogram_[ii] += 1.f;
+                sum += 1.f;
+                break;
+            }
+        }
+    }
+    if (sum > 0.f)
+    {
+        for (float &val : histogram_)
+        {
+            val /= sum;
+        }
+    }
 }
 
 } // namespace viewer

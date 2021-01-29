@@ -766,11 +766,11 @@ void DeferredRenderSystem::lightingPass(Camera *cam)
     rtl.clear_stencil_buffer = false;
     rtl.viewport_origin = glm::ivec2(0, 0);
     rtl.viewport_size = resolution_;
-    if (!cam->use_skybox || cam->skybox == nullptr)
+    if (!cam->use_skybox || cam->skybox == nullptr || cam->orthographic)
     {
-        rtl.clear_color[0] = cam->background_color[0];
-        rtl.clear_color[1] = cam->background_color[1];
-        rtl.clear_color[2] = cam->background_color[2];
+        rtl.clear_color[0] = 0.3f;
+        rtl.clear_color[1] = 0.3f;
+        rtl.clear_color[2] = 0.3f;
     }
     DrawCall dc_light;
     RenderSettings &sl = dc_light.settings;

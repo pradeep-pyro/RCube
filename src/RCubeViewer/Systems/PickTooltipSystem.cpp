@@ -4,6 +4,7 @@
 #include "RCubeViewer/Components/Pickable.h"
 #include "RCubeViewer/Pointcloud.h"
 #include "RCubeViewer/SurfaceMesh.h"
+
 #include "imgui.h"
 
 namespace rcube
@@ -37,7 +38,10 @@ void PickTooltipSystem::update(bool)
             continue;
         }
         Pickable *pick = world_->getComponent<Pickable>(ent);
-        if (pick->active && pick->picked)
+        if (pick->active && pick->picked &&
+            !InputState::instance().isMouseDown(InputState::Mouse::Left) &&
+            !InputState::instance().isMouseDown(InputState::Mouse::Middle) &&
+            !InputState::instance().isMouseDown(InputState::Mouse::Right))
         {
             ///////////////////////////////
             // Pointcloud
@@ -81,7 +85,8 @@ void PickTooltipSystem::update(bool)
 
                     float dist = 1e6f;
                     // TODO(pradeep): can avoid closest vertex check
-                    glm::length_t vijk = static_cast<glm::length_t>(tri->closestVertexIndex(pick->point, dist));
+                    glm::length_t vijk =
+                        static_cast<glm::length_t>(tri->closestVertexIndex(pick->point, dist));
                     if (tri->barycentricCoordinate(pick->point)[glm::length_t(vijk)] > 0.85f)
                     {
                         // Vertex was selected

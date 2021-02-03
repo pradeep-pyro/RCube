@@ -48,15 +48,18 @@ void Camera::createGradientSkyBox(const glm::vec3 &color_top, const glm::vec3 &c
 
 void Camera::drawGUI()
 {
+    /*
+    // TODO(pradeep): disabling as FOV 1 in perspective
+    // gives something similar with skybox support
     ImGui::Checkbox("Orthographic", &orthographic);
     if (orthographic)
     {
         ImGui::InputFloat("Orthographic Width", &orthographic_size);
     }
     else
-    {
-        ImGui::SliderAngle("FOV (deg.)", &fov, 5.f, 89.f);
-    }
+    {*/
+    ImGui::SliderAngle("FOV (deg.)", &fov, 1.f, 89.f);
+    //}
     ImGui::InputFloat("Near Plane", &near_plane);
     ImGui::InputFloat("Far Plane", &far_plane);
     ImGui::InputFloat("Bloom Threshold", &bloom_threshold);

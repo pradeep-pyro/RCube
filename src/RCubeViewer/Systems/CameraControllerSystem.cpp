@@ -1,4 +1,5 @@
 #include "RCubeViewer/Systems/CameraControllerSystem.h"
+#include "imgui.h"
 
 namespace rcube
 {
@@ -36,6 +37,11 @@ CameraControllerSystem::CameraControllerSystem() : System()
 }
 void CameraControllerSystem::update(bool /*force*/)
 {
+    if (ImGui::GetIO().WantCaptureMouse)
+    {
+        InputState::instance().setScrollAmount(0, 0);
+        return;
+    }
     const int x = static_cast<int>(InputState::instance().mousePos()[0]);
     const int y = static_cast<int>(InputState::instance().mousePos()[1]);
     const glm::dvec2 scroll = InputState::instance().scrollAmount();

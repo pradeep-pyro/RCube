@@ -30,6 +30,7 @@ class SurfaceMesh : public Mesh
     std::vector<glm::vec3> face_centers_;
     size_t num_vertex_vector_field_vertices_ = 0;
     size_t num_face_vector_field_vertices_ = 0;
+    std::unordered_map<size_t, glm::vec3> selected_face_colors_;
 
     void createMesh(const TriangleMeshData &data);
 
@@ -219,13 +220,55 @@ class SurfaceMesh : public Mesh
      */
     virtual void drawGUI() override;
 
+    /**
+     * Returns the color of the mesh
+     * @return RGB color
+     */
     glm::vec3 color() const;
 
+    /**
+     * Sets the color of the mesh
+     * NOTE: this can also be set from the Material, but doing so will multiply the color with every
+     * per-vertex color. This may tint/shade some of the scalar fields.
+     *
+     * @param RGB color
+     */
     void setColor(const glm::vec3 &col);
 
+    /**
+     * Gives the number of vertices in the mesh
+     *
+     * @param Number of vertices
+     */
     size_t numVertices() const;
 
+    /**
+     * Gives the number of faces in the mesh
+     *
+     * @param Number of faces
+     */
     size_t numFaces() const;
+
+    /**
+     * Makes the given face appear to be selected by shading its color
+     * Internally the original color (e.g. from scalar fields) are kept track of,
+     * and will be restored when the face is unselected.
+     *
+     * @param Face index
+     */
+    void selectFace(size_t index);
+
+    /**
+     * Makes the given face appear to be unselected by restoring its original color
+     *
+     * @param Face index
+     */
+    void unselectFace(size_t index);
+    
+    /**
+     * Makes all faces appear to be unselected by restoring their original color
+     */
+    void unselectFaces();
 };
 
 } // namespace viewer

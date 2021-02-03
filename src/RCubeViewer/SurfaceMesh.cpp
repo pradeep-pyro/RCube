@@ -149,6 +149,48 @@ size_t SurfaceMesh::numFaces() const
     return face_centers_.size();
 }
 
+void SurfaceMesh::selectFace(size_t index)
+{
+    glm::vec3 *color_buffer = attributes_["colors"]->ptrVec3();
+    glm::vec3 original_color = color_buffer[index * 3];
+    selected_face_colors_[index] = original_color;
+    glm::vec3 shaded_color = original_color * glm::vec3(0.25f, 1, 1);
+    color_buffer[index * 3 + 0] = shaded_color;
+    color_buffer[index * 3 + 1] = shaded_color;
+    color_buffer[index * 3 + 2] = shaded_color;
+    uploadToGPU();
+}
+
+void SurfaceMesh::unselectFace(size_t index)
+{
+    if (selected_face_colors_.find(index) == selected_face_colors_.end())
+    {
+        return;
+    }
+    glm::vec3 *color_buffer = attributes_["colors"]->ptrVec3();
+    glm::vec3 original_color = selected_face_colors_[index];
+    color_buffer[index * 3 + 0] = original_color;
+    color_buffer[index * 3 + 1] = original_color;
+    color_buffer[index * 3 + 2] = original_color;
+    uploadToGPU();
+    selected_face_colors_.erase(index);
+}
+
+void SurfaceMesh::unselectFaces()
+{
+    for (const auto &kv : selected_face_colors_)
+    {
+        size_t index = kv.first;
+        glm::vec3 *color_buffer = attributes_["colors"]->ptrVec3();
+        glm::vec3 original_color = kv.second;
+        color_buffer[index * 3 + 0] = original_color;
+        color_buffer[index * 3 + 1] = original_color;
+        color_buffer[index * 3 + 2] = original_color;
+    }
+    uploadToGPU();
+    selected_face_colors_.clear();
+}
+
 void SurfaceMesh::addVertexScalarField(std::string name, const ScalarField &sf)
 {
     vertex_scalar_fields_[name] = sf;

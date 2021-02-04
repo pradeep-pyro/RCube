@@ -53,6 +53,11 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
                                               num_vertex_vector_field_vertices_ +
                                               num_face_vector_field_vertices_),
                                          0.f);
+    attributes_["wires"]->data().resize(numVerticesDisplay() + num_vertex_vector_field_vertices_ +
+                                            num_face_vector_field_vertices_,
+                                        0.f);
+    std::fill(attributes_["wires"]->data().begin(),
+              attributes_["wires"]->data().begin() + numVerticesDisplay(), 0.25f);
     glm::vec3 *pos = attributes_["positions"]->ptrVec3();
     glm::vec3 *nor = attributes_["normals"]->ptrVec3();
     glm::vec3 *col = attributes_["colors"]->ptrVec3();
@@ -82,7 +87,8 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
 SurfaceMesh::SurfaceMesh(const TriangleMeshData &data)
     : Mesh({AttributeBuffer::create("positions", GLuint(AttributeLocation::POSITION), 3),
             AttributeBuffer::create("normals", GLuint(AttributeLocation::NORMAL), 3),
-            AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3)},
+            AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
+            AttributeBuffer::create("wires", GLuint(5), 1)},
            MeshPrimitive::Triangles, false)
 {
     createMesh(data);
@@ -149,46 +155,105 @@ size_t SurfaceMesh::numFaces() const
     return face_centers_.size();
 }
 
-void SurfaceMesh::selectFace(size_t index)
+size_t SurfaceMesh::highlightedPrimitive() const
 {
-    glm::vec3 *color_buffer = attributes_["colors"]->ptrVec3();
-    glm::vec3 original_color = color_buffer[index * 3];
-    selected_face_colors_[index] = original_color;
-    glm::vec3 shaded_color = original_color * glm::vec3(0.25f, 1, 1);
-    color_buffer[index * 3 + 0] = shaded_color;
-    color_buffer[index * 3 + 1] = shaded_color;
-    color_buffer[index * 3 + 2] = shaded_color;
-    uploadToGPU();
+    return highlighted_primitive_;
 }
 
-void SurfaceMesh::unselectFace(size_t index)
+void SurfaceMesh::selectFace(size_t index)
 {
-    if (selected_face_colors_.find(index) == selected_face_colors_.end())
+    selected_faces_.insert(index);
+    float *wires_highlight = attributes_["wires"]->ptr();
+    // Select the current face
+    wires_highlight[index * 3 + 0] = 1.f;
+    wires_highlight[index * 3 + 1] = 1.f;
+    wires_highlight[index * 3 + 2] = 1.f;
+    uploadToGPU("wires");
+}
+
+void SurfaceMesh::unselect()
+{
+    // Nothing to do if no face is selected already
+    if (selected_faces_.empty())
     {
         return;
     }
-    glm::vec3 *color_buffer = attributes_["colors"]->ptrVec3();
-    glm::vec3 original_color = selected_face_colors_[index];
-    color_buffer[index * 3 + 0] = original_color;
-    color_buffer[index * 3 + 1] = original_color;
-    color_buffer[index * 3 + 2] = original_color;
-    uploadToGPU();
-    selected_face_colors_.erase(index);
+    // Clear all selections
+    float *wires_highlight = attributes_["wires"]->ptr();
+    for (size_t index : selected_faces_)
+    {
+        wires_highlight[index * 3 + 0] = 0.25f;
+        wires_highlight[index * 3 + 1] = 0.25f;
+        wires_highlight[index * 3 + 2] = 0.25f;
+    }
+    selected_faces_.clear();
+    uploadToGPU("wires");
 }
 
-void SurfaceMesh::unselectFaces()
+bool SurfaceMesh::isFaceHighlighted() const
 {
-    for (const auto &kv : selected_face_colors_)
+    return highlighted_ && highlighted_primitive_is_face_;
+}
+
+bool SurfaceMesh::isVertexHighlighted() const
+{
+    return highlighted_ && !highlighted_primitive_is_face_;
+}
+
+void SurfaceMesh::highlightFace(size_t index)
+{
+    // Check if this face is already highlighted
+    if (isFaceHighlighted() && highlightedPrimitive() == index)
     {
-        size_t index = kv.first;
-        glm::vec3 *color_buffer = attributes_["colors"]->ptrVec3();
-        glm::vec3 original_color = kv.second;
-        color_buffer[index * 3 + 0] = original_color;
-        color_buffer[index * 3 + 1] = original_color;
-        color_buffer[index * 3 + 2] = original_color;
+        return;
     }
-    uploadToGPU();
-    selected_face_colors_.clear();
+    float *wires_highlight = attributes_["wires"]->ptr();
+    // Unhighlight the previously highlighted primitive
+    if (highlighted_)
+    {
+        // If the face was previously selected then set it's state to selected rather
+        // than completely unhighlighting and unselecting
+        float value = 0.25f;
+        if (selected_faces_.find(highlighted_primitive_) != selected_faces_.end())
+        {
+            value = 1.f;
+        }
+        wires_highlight[highlighted_primitive_ * 3 + 0] = value;
+        wires_highlight[highlighted_primitive_ * 3 + 1] = value;
+        wires_highlight[highlighted_primitive_ * 3 + 2] = value;
+    }
+    // Highlight the current face
+    wires_highlight[index * 3 + 0] = 0.5f;
+    wires_highlight[index * 3 + 1] = 0.5f;
+    wires_highlight[index * 3 + 2] = 0.5f;
+    highlighted_ = true;
+    highlighted_primitive_ = index;
+    highlighted_primitive_is_face_ = true;
+    uploadToGPU("wires");
+}
+
+void SurfaceMesh::unhighlight()
+{
+    // Nothing to do if no face is highlighted already
+    if (!highlighted_)
+    {
+        return;
+    }
+    // If a face is highlight and it is not selected, then unhighlight it
+    if (highlighted_primitive_is_face_ && selected_faces_.find(highlighted_primitive_) == selected_faces_.end())
+    {
+        float *wires_highlight = attributes_["wires"]->ptr();
+        wires_highlight[highlighted_primitive_ * 3 + 0] = 0.25f;
+        wires_highlight[highlighted_primitive_ * 3 + 1] = 0.25f;
+        wires_highlight[highlighted_primitive_ * 3 + 2] = 0.25f;
+        uploadToGPU("wires");
+    }
+    highlighted_ = false;
+}
+
+bool SurfaceMesh::isHighlighted() const
+{
+    return highlighted_;
 }
 
 void SurfaceMesh::addVertexScalarField(std::string name, const ScalarField &sf)

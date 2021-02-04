@@ -38,15 +38,17 @@ void PickTooltipSystem::update(bool)
             continue;
         }
         Pickable *pick = world_->getComponent<Pickable>(ent);
-        if (pick->active && pick->picked &&
-            !InputState::instance().isMouseDown(InputState::Mouse::Left) &&
-            !InputState::instance().isMouseDown(InputState::Mouse::Middle) &&
-            !InputState::instance().isMouseDown(InputState::Mouse::Right))
+
+        // Do special things if the Mesh is a Pointcloud or SurfaceMesh
+        Pointcloud *pc = dynamic_cast<Pointcloud *>(dr->mesh.get());
+        SurfaceMesh *sm = dynamic_cast<SurfaceMesh *>(dr->mesh.get());
+
+        if (pick->active)
         {
-            ///////////////////////////////
-            // Pointcloud
+            if (pick->picked)
             {
-                Pointcloud *pc = dynamic_cast<Pointcloud *>(dr->mesh.get());
+                ///////////////////////////////
+                // Pointcloud
                 if (pc != nullptr)
                 {
                     ImGui::BeginTooltip();
@@ -72,11 +74,8 @@ void PickTooltipSystem::update(bool)
                     }
                     ImGui::EndTooltip();
                 }
-            }
-            ///////////////////////////////
-            // SurfaceMesh
-            {
-                SurfaceMesh *sm = dynamic_cast<SurfaceMesh *>(dr->mesh.get());
+                ///////////////////////////////
+                // SurfaceMesh
                 if (sm != nullptr)
                 {
                     ImGui::BeginTooltip();
@@ -126,8 +125,31 @@ void PickTooltipSystem::update(bool)
                             const glm::vec3 vec = sm->faceVectorField(name).vectors()[index];
                             vec3LabelText(name, vec);
                         }
+                        if (!InputState::instance().isMouseDown(InputState::Mouse::Left))
+                        {
+                            sm->highlightFace(index);
+                        }
+                        else
+                        {
+                            sm->selectFace(index);
+                        }
                     }
                     ImGui::EndTooltip();
+                }
+            } // if (pick->picked)
+            else
+            {
+                if (sm != nullptr)
+                {
+                    if (!InputState::instance().isMouseDown(InputState::Mouse::Left))
+                    {
+                        sm->unhighlight();
+                    }
+                    else
+                    {
+                        sm->unselect();
+                    }
+                    
                 }
             }
         }

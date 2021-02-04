@@ -25,6 +25,7 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 uv;
 layout (location = 3) in vec3 color;
 layout (location = 4) in vec3 tangent;
+layout (location = 5) in float wire;
 
 layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
@@ -38,6 +39,7 @@ out vec2 vert_uv;
 out vec3 vert_color;
 out vec3 vert_normal;
 out mat3 vert_tbn;
+out float vert_wire;
 
 uniform mat4 model_matrix;
 uniform mat3 normal_matrix;
@@ -54,6 +56,7 @@ void main()
     vec3 T = normalize(vec3(model_matrix * vec4(tangent, 0.0)));
     vec3 B = cross(normal, T);
     vert_tbn = mat3(T, B, normal);
+    vert_wire = wire;
 }
 )";
 
@@ -80,6 +83,8 @@ in vec3 vert_color[];
 out vec3 geom_color;
 in mat3 vert_tbn[];
 out mat3 geom_tbn;
+in float vert_wire[];
+out float geom_wire;
 
 noperspective out vec3 dist;
 
@@ -109,6 +114,7 @@ void main() {
     geom_uv = vert_uv[0];
     geom_color = vert_color[0];
     geom_tbn = vert_tbn[0];
+    geom_wire = vert_wire[0];
     gl_Position = gl_in[0].gl_Position;
     EmitVertex();
 
@@ -119,6 +125,7 @@ void main() {
     geom_uv = vert_uv[1];
     geom_color = vert_color[1];
     geom_tbn = vert_tbn[1];
+    geom_wire = vert_wire[1];
     gl_Position = gl_in[1].gl_Position;
     EmitVertex();
 
@@ -129,6 +136,7 @@ void main() {
     geom_uv = vert_uv[2];
     geom_color = vert_color[2];
     geom_tbn = vert_tbn[2];
+    geom_wire = vert_wire[2];
     gl_Position = gl_in[2].gl_Position;
     EmitVertex();
     EndPrimitive();
@@ -143,6 +151,7 @@ in vec3 geom_normal;
 in vec2 geom_uv;
 in vec3 geom_color;
 in mat3 geom_tbn;
+in float geom_wire;
 noperspective in vec3 dist;
 
 layout(location=0) out vec4 g_position;
@@ -171,18 +180,27 @@ struct Wireframe {
 uniform Wireframe wireframe;
 uniform bool show_wireframe;
 
+const vec3 PINK = pow(vec3(255.0 / 255.0, 20.0 / 255.0, 147.0 / 255.0), vec3(2.2));
+const vec3 PURPLE = pow(vec3(138.0 / 255.0, 43.0 / 255.0, 226.0 / 255.0), vec3(2.2));
+
 void main() {
     vec3 alb = albedo * geom_color;
     alb = use_albedo_texture ? texture(albedo_tex, geom_uv).rgb : alb;
     
-    if (wireframe.show) {
+    // geom_wire == 0: wireframe is not rendered
+    // geom_wire > 0 and < 0.5: wireframe is rendered
+    // geom_wire >= 0.5 and < 1: wireframe is rendered in PURPLE
+    // geom_wire == 1: wireframe is rendered in PINK
+    if (wireframe.show && geom_wire > 0.0) {
         // Find the smallest distance
         float d = min(dist.x, dist.y);
         d = min(d, dist.z);
-        if (d < wireframe.thickness)
+        float thickness = geom_wire >= 0.4 ? 2.0 * wireframe.thickness : wireframe.thickness;
+        if (d < thickness)
         {
-            float mix_val = smoothstep(wireframe.thickness - 1.0, wireframe.thickness + 1.0, d);
-            alb = mix(wireframe.color, alb, mix_val);
+            float mix_val = smoothstep(thickness - 1, thickness + 1, d);
+            vec3 wcolor = geom_wire > 0.9 ? PINK : ((geom_wire >= 0.4 && geom_wire < 0.9) ? PURPLE : wireframe.color);
+            alb = mix(wcolor, alb, mix_val);
         }
     }
     

@@ -5,6 +5,7 @@
 #include "RCubeViewer/VectorField.h"
 #include "imgui.h"
 #include <unordered_map>
+#include <unordered_set>
 
 namespace rcube
 {
@@ -30,7 +31,10 @@ class SurfaceMesh : public Mesh
     std::vector<glm::vec3> face_centers_;
     size_t num_vertex_vector_field_vertices_ = 0;
     size_t num_face_vector_field_vertices_ = 0;
-    std::unordered_map<size_t, glm::vec3> selected_face_colors_;
+    std::unordered_set<size_t> selected_faces_;
+    size_t highlighted_primitive_;
+    size_t highlighted_ = false;
+    bool highlighted_primitive_is_face_;
 
     void createMesh(const TriangleMeshData &data);
 
@@ -250,25 +254,66 @@ class SurfaceMesh : public Mesh
     size_t numFaces() const;
 
     /**
-     * Makes the given face appear to be selected by shading its color
-     * Internally the original color (e.g. from scalar fields) are kept track of,
-     * and will be restored when the face is unselected.
+     * Makes the given face appear to be selected by changing its edge color.
+     * RCubeViewer's PickTooltipSystem will call this method
+     * automatically when the user clicks on a face.
+     * Can be called manually too.
      *
      * @param Face index
+     */
+    void highlightFace(size_t index);
+
+    /**
+     * Makes all vertices and faces appear to be unhighlighted.
+     * RCubeViewer's PickTooltipSystem will call this method
+     * automatically when the user hovers away from a vertex or face.
+     * Can be called manually too.
+     */
+    void unhighlight();
+
+    /**
+     * Returns if any vertex or face is highlighted
+     *
+     * @return Whether highlighted
+     */
+    bool isHighlighted() const;
+
+    /**
+     * Returns if any face is highlighted
+     *
+     * @return Whether face is highlighted
+     */
+    bool isFaceHighlighted() const;
+
+    /**
+     * Returns if any vertex is highlighted
+     *
+     * @return Whether vertex is highlighted
+     */
+    bool isVertexHighlighted() const;
+
+    /**
+     * Returns the index of the highlighted primitive. Could be a vertex or
+     * face index. Check the primitive type by calling isVertexHighlighted()
+     * or isFaceHighlighted().
+     *
+     * @return Index of the highlighted primitive
+     */
+    size_t highlightedPrimitive() const;
+
+    /**
+     * Select the given face. RCubeViewer's PickTooltipSystem will call this method
+     * automatically when the user clicks on a face. Can be called manually too.
+     *
+     * @param Index of face to select
      */
     void selectFace(size_t index);
 
     /**
-     * Makes the given face appear to be unselected by restoring its original color
-     *
-     * @param Face index
+     * Unselects all vertices and faces. RCubeViewer's PickTooltipSystem will call this method
+     * automatically when the user clicks outside the mesh. Can be called manually too.
      */
-    void unselectFace(size_t index);
-    
-    /**
-     * Makes all faces appear to be unselected by restoring their original color
-     */
-    void unselectFaces();
+    void unselect();
 };
 
 } // namespace viewer

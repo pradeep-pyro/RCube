@@ -191,7 +191,8 @@ void main() {
     // geom_wire > 0 and < 0.5: wireframe is rendered
     // geom_wire >= 0.5 and < 1: wireframe is rendered in PURPLE
     // geom_wire == 1: wireframe is rendered in PINK
-    if (wireframe.show && geom_wire > 0.0) {
+    // Draw a wireframe if it's set as visible globally or if the edge is set as visible
+    if (wireframe.show || geom_wire >= 0.4) {
         // Find the smallest distance
         float d = min(dist.x, dist.y);
         d = min(d, dist.z);

@@ -63,6 +63,8 @@ class RCubeViewer : public rcube::Window
 
     EntityHandle getEntity(std::string name);
 
+    void removeEntity(EntityHandle ent);
+
     EntityHandle camera();
 
     void updateImageBasedLighting();

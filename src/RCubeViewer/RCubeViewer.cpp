@@ -56,7 +56,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Camera>()->fov = props.camera_fov;
     camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Make a default skybox
-    camera_.get<Camera>()->createGradientSkyBox(props.background_color_top, props.background_color_bottom);
+    camera_.get<Camera>()->createGradientSkyBox(props.background_color_top,
+                                                props.background_color_bottom);
     camera_.get<Camera>()->use_skybox = true;
 
     // Create a sunlight
@@ -137,6 +138,11 @@ EntityHandle RCubeViewer::getEntity(std::string name)
         }
     }
     return EntityHandle();
+}
+
+void RCubeViewer::removeEntity(EntityHandle ent)
+{
+    world_.removeEntity(ent);
 }
 
 EntityHandle RCubeViewer::camera()

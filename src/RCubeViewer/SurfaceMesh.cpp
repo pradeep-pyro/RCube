@@ -57,7 +57,7 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
                                             num_face_vector_field_vertices_,
                                         0.f);
     std::fill(attributes_["wires"]->data().begin(),
-              attributes_["wires"]->data().begin() + numVerticesDisplay(), 0.25f);
+              attributes_["wires"]->data().begin() + numVerticesDisplay(), 1.f);
     glm::vec3 *pos = attributes_["positions"]->ptrVec3();
     glm::vec3 *nor = attributes_["normals"]->ptrVec3();
     glm::vec3 *col = attributes_["colors"]->ptrVec3();
@@ -165,9 +165,9 @@ void SurfaceMesh::selectFace(size_t index)
     selected_faces_.insert(index);
     float *wires_highlight = attributes_["wires"]->ptr();
     // Select the current face
-    wires_highlight[index * 3 + 0] = 1.f;
-    wires_highlight[index * 3 + 1] = 1.f;
-    wires_highlight[index * 3 + 2] = 1.f;
+    wires_highlight[index * 3 + 0] = 3.f;
+    wires_highlight[index * 3 + 1] = 3.f;
+    wires_highlight[index * 3 + 2] = 3.f;
     uploadToGPU("wires");
 }
 
@@ -182,9 +182,9 @@ void SurfaceMesh::unselect()
     float *wires_highlight = attributes_["wires"]->ptr();
     for (size_t index : selected_faces_)
     {
-        wires_highlight[index * 3 + 0] = 0.25f;
-        wires_highlight[index * 3 + 1] = 0.25f;
-        wires_highlight[index * 3 + 2] = 0.25f;
+        wires_highlight[index * 3 + 0] = 1.f;
+        wires_highlight[index * 3 + 1] = 1.f;
+        wires_highlight[index * 3 + 2] = 1.f;
     }
     selected_faces_.clear();
     uploadToGPU("wires");
@@ -213,19 +213,19 @@ void SurfaceMesh::highlightFace(size_t index)
     {
         // If the face was previously selected then set it's state to selected rather
         // than completely unhighlighting and unselecting
-        float value = 0.25f;
+        float value = 1.f;
         if (selected_faces_.find(highlighted_primitive_) != selected_faces_.end())
         {
-            value = 1.f;
+            value = 3.f;
         }
         wires_highlight[highlighted_primitive_ * 3 + 0] = value;
         wires_highlight[highlighted_primitive_ * 3 + 1] = value;
         wires_highlight[highlighted_primitive_ * 3 + 2] = value;
     }
     // Highlight the current face
-    wires_highlight[index * 3 + 0] = 0.5f;
-    wires_highlight[index * 3 + 1] = 0.5f;
-    wires_highlight[index * 3 + 2] = 0.5f;
+    wires_highlight[index * 3 + 0] = 2.f;
+    wires_highlight[index * 3 + 1] = 2.f;
+    wires_highlight[index * 3 + 2] = 2.f;
     highlighted_ = true;
     highlighted_primitive_ = index;
     highlighted_primitive_is_face_ = true;
@@ -239,13 +239,13 @@ void SurfaceMesh::unhighlight()
     {
         return;
     }
-    // If a face is highlight and it is not selected, then unhighlight it
+    // If a face is highlighted and it is not selected, then unhighlight it
     if (highlighted_primitive_is_face_ && selected_faces_.find(highlighted_primitive_) == selected_faces_.end())
     {
         float *wires_highlight = attributes_["wires"]->ptr();
-        wires_highlight[highlighted_primitive_ * 3 + 0] = 0.25f;
-        wires_highlight[highlighted_primitive_ * 3 + 1] = 0.25f;
-        wires_highlight[highlighted_primitive_ * 3 + 2] = 0.25f;
+        wires_highlight[highlighted_primitive_ * 3 + 0] = 1.f;
+        wires_highlight[highlighted_primitive_ * 3 + 1] = 1.f;
+        wires_highlight[highlighted_primitive_ * 3 + 2] = 1.f;
         uploadToGPU("wires");
     }
     highlighted_ = false;

@@ -39,7 +39,7 @@ out vec2 vert_uv;
 out vec3 vert_color;
 out vec3 vert_normal;
 out mat3 vert_tbn;
-out float vert_wire;
+flat out float vert_wire;
 
 uniform mat4 model_matrix;
 uniform mat3 normal_matrix;
@@ -83,7 +83,7 @@ in vec3 vert_color[];
 out vec3 geom_color;
 in mat3 vert_tbn[];
 out mat3 geom_tbn;
-in float vert_wire[];
+flat in float vert_wire[];
 out float geom_wire;
 
 noperspective out vec3 dist;
@@ -187,20 +187,21 @@ void main() {
     vec3 alb = albedo * geom_color;
     alb = use_albedo_texture ? texture(albedo_tex, geom_uv).rgb : alb;
     
-    // geom_wire == 0: wireframe is not rendered
-    // geom_wire > 0 and < 0.5: wireframe is rendered
-    // geom_wire >= 0.5 and < 1: wireframe is rendered in PURPLE
-    // geom_wire == 1: wireframe is rendered in PINK
+    int edge_flag = int(round(geom_wire));
+    // edge_flag == 0: wireframe is not rendered
+    // edge_flag == 1: wireframe is rendered
+    // edge_flag == 2: wireframe is rendered in PURPLE
+    // edge_flag == 3: wireframe is rendered in PINK
     // Draw a wireframe if it's set as visible globally or if the edge is set as visible
-    if (wireframe.show || geom_wire >= 0.4) {
+    if (edge_flag > 0) {
         // Find the smallest distance
         float d = min(dist.x, dist.y);
         d = min(d, dist.z);
-        float thickness = geom_wire >= 0.4 ? 2.0 * wireframe.thickness : wireframe.thickness;
+        float thickness = edge_flag > 1 ? 2.0 * wireframe.thickness : wireframe.thickness;
         if (d < thickness)
         {
             float mix_val = smoothstep(thickness - 1, thickness + 1, d);
-            vec3 wcolor = geom_wire > 0.9 ? PINK : ((geom_wire >= 0.4 && geom_wire < 0.9) ? PURPLE : wireframe.color);
+            vec3 wcolor = edge_flag == 3 ? PINK : (edge_flag == 2 ? PURPLE : (wireframe.show ? wireframe.color : alb));
             alb = mix(wcolor, alb, mix_val);
         }
     }

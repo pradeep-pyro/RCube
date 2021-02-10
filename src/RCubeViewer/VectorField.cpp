@@ -43,30 +43,35 @@ bool VectorField::updateArrows(const std::vector<glm::vec3> &points, bool indexe
     if (dirty_)
     {
         std::vector<float> lengths;
+        lengths.reserve(vectors_.size());
+        for (const glm::vec3 &vec : vectors_)
+        {
+            const float length = glm::length(vec);
+            lengths.push_back(length);
+        }
+        // Compute colors for arrows
+        std::vector<glm::vec3> colors;
+        auto minmax_length = std::minmax_element(lengths.begin(), lengths.end());
+        colormap(cmap_, lengths, *minmax_length.first, *minmax_length.second, colors);
+
         // If scale_by_magnitude_ is true...
         if (!scale_by_magnitude_)
         {
             // ...then, set all vectors' length to max_length_
-            lengths.resize(vectors_.size(), max_length_);
+            std::fill(lengths.begin(), lengths.end(), max_length_);
         }
         else
         {
-            // ...else, scale the vector lengths sch that the longest is max_length_ long.
+            // ...else, scale the vector lengths such that the longest is max_length_ long.
             // Find the longest vector's length
-            float longest_length = 0.f;
-            lengths.reserve(vectors_.size());
-            for (const glm::vec3 &vec : vectors_)
+            float longest_length = *std::max_element(lengths.begin(), lengths.end());
+            for (float &len : lengths)
             {
-                const float length = glm::length(vec);
-                longest_length = std::max(longest_length, length);
-                lengths.push_back(length);
-            }
-            // Make sure not to divide by 0
-            if (longest_length > 1e-6)
-            {
-                for (float &len : lengths)
+                len *= max_length_;
+                // Make sure not to divide by 0
+                if (longest_length > 1e-6)
                 {
-                    len = len / longest_length * max_length_;
+                    len = len / longest_length;
                 }
             }
         }
@@ -83,9 +88,6 @@ bool VectorField::updateArrows(const std::vector<glm::vec3> &points, bool indexe
             mesh_ = pointsVectorsToArrows(points, vectors_, lengths, vertices_per_arrow);
         }
         // Set colors for arrows based on colormap
-        std::vector<glm::vec3> colors;
-        float min_length = *std::min_element(lengths.begin(), lengths.end());
-        colormap(cmap_, lengths, min_length, max_length_, colors);
         // The color must be set for each of the vertices in the arrow's mesh
         size_t k = 0;
         for (size_t i = 0; i < colors.size(); ++i)

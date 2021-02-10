@@ -314,6 +314,11 @@ class SurfaceMesh : public Mesh
      * automatically when the user clicks outside the mesh. Can be called manually too.
      */
     void unselect();
+
+    /**
+     * Get the indices of the currently selected faces.
+     */
+    const std::unordered_set<size_t> &selectedFaces() const;
 };
 
 } // namespace viewer

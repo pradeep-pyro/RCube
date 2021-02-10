@@ -190,6 +190,11 @@ void SurfaceMesh::unselect()
     uploadToGPU("wires");
 }
 
+const std::unordered_set<size_t> &SurfaceMesh::selectedFaces() const
+{
+    return selected_faces_;
+}
+
 bool SurfaceMesh::isFaceHighlighted() const
 {
     return highlighted_ && highlighted_primitive_is_face_;
@@ -240,7 +245,8 @@ void SurfaceMesh::unhighlight()
         return;
     }
     // If a face is highlighted and it is not selected, then unhighlight it
-    if (highlighted_primitive_is_face_ && selected_faces_.find(highlighted_primitive_) == selected_faces_.end())
+    if (highlighted_primitive_is_face_ &&
+        selected_faces_.find(highlighted_primitive_) == selected_faces_.end())
     {
         float *wires_highlight = attributes_["wires"]->ptr();
         wires_highlight[highlighted_primitive_ * 3 + 0] = 1.f;

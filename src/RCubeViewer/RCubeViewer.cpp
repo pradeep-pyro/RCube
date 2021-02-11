@@ -45,6 +45,7 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
     world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution, props.MSAA));
+    //world_.addSystem(std::make_unique<ForwardRenderSystem>(props.resolution, props.MSAA));
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
     world_.addSystem(std::make_unique<PickTooltipSystem>());

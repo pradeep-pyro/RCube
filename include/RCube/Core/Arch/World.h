@@ -170,7 +170,7 @@ class World
 struct EntityHandle
 {
     Entity entity;
-    World *world;
+    World *world = nullptr;
     /**
      * Add a component to the entity
      * @param comp Component to add

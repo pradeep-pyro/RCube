@@ -86,6 +86,7 @@ class Camera : public Component<Camera>
     friend class CameraSystem;         // This will update the camera matrices
     friend class RenderSystem;         // This will make use of the matrices
     friend class DeferredRenderSystem; // This will make use of the matrices
+    friend class ForwardRenderSystem;
     glm::mat4 world_to_view;           /// World to camera transformation
     glm::mat4 view_to_projection;      /// Camera to projection transformation
     glm::mat4 projection_to_viewport;  /// Projectin to viewport transformation

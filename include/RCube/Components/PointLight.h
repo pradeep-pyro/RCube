@@ -1,7 +1,9 @@
-#ifndef POINTLIGHT_H
-#define POINTLIGHT_H
+#pragma once
 
-#include "RCube/Components/BaseLight.h"
+#include "RCube/Core/Arch/Component.h"
+#include "glm/glm.hpp"
+
+#define RCUBE_MAX_POINT_LIGHTS 100
 
 namespace rcube
 {
@@ -12,10 +14,17 @@ namespace rcube
  * To create a valid point light, add a PointLight component and a
  * Transform component (light's position) to an entity.
  */
-class PointLight : public BaseLight
+class PointLight : public Component<PointLight>
 {
+    bool cast_shadow_ = false;
+    float intensity_ = 1.f;
+    glm::vec3 position_ = glm::vec3(0, 0, 0);
+    float radius_ = 1.f;
+    glm::vec3 color_ = glm::vec3(1, 1, 1);
+
   public:
     PointLight(float radius = 1.f, glm::vec3 color = glm::vec3(1.f));
+
     /**
      * Get the radius of the point light
      * @return Radius
@@ -38,8 +47,35 @@ class PointLight : public BaseLight
      * @param rgb Color
      */
     void setColor(const glm::vec3 &rgb);
+
+    /**
+     * Whether this light casts a shadow
+     * @return Cast shadow or not
+     */
+    bool castShadow() const;
+
+    /**
+     * Sets whether this light casts a shadow
+     * @param Cast shadow or not
+     */
+    void setCastShadow(bool val);
+
+    /**
+     * Get the intensity of the light
+     * @return Intensity
+     */
+    float intensity() const;
+
+    /**
+     * Get the intensity of the light
+     * @return Intensity
+     */
+    void setIntensity(float val);
+
+    /**
+     * Draw and control this component's data using ImGui
+     */
+    void drawGUI();
 };
 
 } // namespace rcube
-
-#endif // POINTLIGHT_H

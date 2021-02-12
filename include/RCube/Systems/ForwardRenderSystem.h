@@ -27,6 +27,7 @@ class ForwardRenderSystem : public System
     void setCameraUBO(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
                       const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
     void setDirectionalLightsUBO();
+    void setPointLightsUBO();
     void initializePostprocess();
     void renderOpaqueGeometry(Camera *cam);
     void renderTransparentGeometry(Camera *cam);
@@ -47,9 +48,11 @@ class ForwardRenderSystem : public System
     // Uniform buffer objects for camera and lights
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_camera_;
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_dirlights_;
+    std::shared_ptr<Buffer<BufferType::Uniform>> ubo_pointlights_;
     unsigned int msaa_;
     // Buffers
     std::vector<float> dirlight_data_;
+    std::vector<float> pointlight_data_;
 };
 
 } // namespace rcube

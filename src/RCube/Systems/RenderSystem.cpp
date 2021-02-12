@@ -1,5 +1,4 @@
 #include "RCube/Systems/RenderSystem.h"
-#include "RCube/Components/BaseLight.h"
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
@@ -13,7 +12,7 @@
 #include "glm/gtx/string_cast.hpp"
 #include "RCube/Systems/Shaders.h"
 
-#define RCUBE_MAX_DIRECTIONAL_LIGHTS 50
+#define RCUBE_MAX_DIRECTIONAL_LIGHTS 5
 
 namespace rcube
 {
@@ -559,8 +558,8 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
     for (const Entity &l : dirlights)
     {
         DirectionalLight *dl = world_->getComponent<DirectionalLight>(l);
-        const glm::vec3 dir = glm::normalize(dl->direction);
-        const glm::vec3 &col = dl->color;
+        const glm::vec3 dir = glm::normalize(dl->direction());
+        const glm::vec3 &col = dl->color();
         // Light's viewproj matrix
         const glm::vec3 opp_dir = -dir;
         const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
@@ -572,16 +571,16 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
         dirlight_data_[k++] = dir.x;
         dirlight_data_[k++] = dir.y;
         dirlight_data_[k++] = dir.z;
-        dirlight_data_[k++] = float(dl->cast_shadow);
+        dirlight_data_[k++] = float(dl->castShadow());
         dirlight_data_[k++] = col.r;
         dirlight_data_[k++] = col.g;
         dirlight_data_[k++] = col.b;
-        dirlight_data_[k++] = dl->intensity;
+        dirlight_data_[k++] = dl->intensity();
         for (int i = 0; i < 4; ++i)
         {
             for (int j = 0; j < 4; ++j)
             {
-                dirlight_data_[k++] = dl->cast_shadow ? light_matrix[i][j] : 0.f;
+                dirlight_data_[k++] = dl->castShadow() ? light_matrix[i][j] : 0.f;
             }
         }
     }

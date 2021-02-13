@@ -9,7 +9,6 @@
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
-#include "RCube/Systems/RenderSystem.h"
 #include "RCube/Systems/Shaders.h"
 #include "glm/gtx/string_cast.hpp"
 

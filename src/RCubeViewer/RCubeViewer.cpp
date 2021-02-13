@@ -5,7 +5,7 @@
 #include "RCube/Core/Graphics/MeshGen/Plane.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Core/Graphics/TexGen/Gradient.h"
-#include "RCube/Systems/RenderSystem.h"
+#include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Systems/CameraControllerSystem.h"

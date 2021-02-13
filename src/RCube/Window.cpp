@@ -1,3 +1,4 @@
+#include "glad/glad.h"
 #include "RCube/Window.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/RCube.h"

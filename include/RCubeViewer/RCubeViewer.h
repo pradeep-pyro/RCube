@@ -12,7 +12,7 @@
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Systems/CameraSystem.h"
-#include "RCube/Systems/RenderSystem.h"
+#include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"

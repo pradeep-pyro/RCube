@@ -1,4 +1,4 @@
-#include "RCube/Systems/RenderSystem.h"
+#include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/PointLight.h"
@@ -9,7 +9,7 @@
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
-#include "RCube/Systems/RenderSystem.h"
+#include "RCube/Systems/DeferredRenderSystem.h"
 #include "glm/gtx/string_cast.hpp"
 #include "RCube/Systems/Shaders.h"
 

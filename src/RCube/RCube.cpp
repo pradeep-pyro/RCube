@@ -1,5 +1,6 @@
 #include "RCube/RCube.h"
 #include "glad/glad.h"
+#include <stdexcept>
 
 namespace rcube
 {

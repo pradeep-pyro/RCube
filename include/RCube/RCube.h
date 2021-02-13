@@ -1,12 +1,4 @@
-#ifndef RCUBE_H
-#define RCUBE_H
-
-#include <memory>
-
-#include "RCube/Core/Arch/World.h"
-#include "RCube/Systems/CameraSystem.h"
-#include "RCube/Systems/RenderSystem.h"
-#include "RCube/Systems/TransformSystem.h"
+#pragma once
 
 namespace rcube
 {
@@ -20,5 +12,3 @@ typedef void (*procAddress)(const char *);
 void initGL(procAddress p = nullptr);
 
 } // namespace rcube
-
-#endif // RCUBE_H

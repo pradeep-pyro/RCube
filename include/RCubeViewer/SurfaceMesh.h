@@ -59,6 +59,8 @@ class SurfaceMesh : public Mesh
      */
     void addVertexScalarField(std::string name, const ScalarField &sf);
 
+    void addVertexScalarField(std::string name);
+
     /**
      * Removes the vertex scalar field
      *
@@ -89,6 +91,8 @@ class SurfaceMesh : public Mesh
      */
     void showVertexScalarField(std::string name);
 
+    bool hasVertexScalarField(std::string name) const;
+
     /**
      * Hide all vertex scalar fields in the viewport
      */
@@ -101,6 +105,8 @@ class SurfaceMesh : public Mesh
      * @param sf Scalarfield
      */
     void addFaceScalarField(std::string name, const ScalarField &sf);
+
+    void addFaceScalarField(std::string name);
 
     /**
      * Removes the face scalar field
@@ -132,6 +138,8 @@ class SurfaceMesh : public Mesh
      */
     void showFaceScalarField(std::string name);
 
+    bool hasFaceScalarField(std::string name);
+
     /**
      * Add a vector field (list of per-vertex vectors) for the surface mesh
      *
@@ -139,6 +147,8 @@ class SurfaceMesh : public Mesh
      * @param vf Vectorfield
      */
     void addVertexVectorField(std::string name, const VectorField &vf);
+
+    void addVertexVectorField(std::string name);
 
     /**
      * Removes the vertex vector field
@@ -154,6 +164,8 @@ class SurfaceMesh : public Mesh
      * @param vf Vectorfield
      */
     void addFaceVectorField(std::string name, const VectorField &vf);
+
+    void addFaceVectorField(std::string name);
 
     /**
      * Removes the face vector field
@@ -201,12 +213,16 @@ class SurfaceMesh : public Mesh
      */
     void showVertexVectorField(std::string name);
 
+    bool hasVertexVectorField(std::string name) const;
+
     /**
      * Show the face vector field in the viewport
      *
      * @param name Name of the vector field
      */
     void showFaceVectorField(std::string name);
+
+    bool hasFaceVectorField(std::string name) const;
 
     /**
      * Hide all vertex vector fields in the viewport

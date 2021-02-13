@@ -267,6 +267,20 @@ void SurfaceMesh::addVertexScalarField(std::string name, const ScalarField &sf)
     vertex_scalar_fields_[name] = sf;
 }
 
+void SurfaceMesh::addVertexScalarField(std::string name)
+{
+    ScalarField sf;
+    sf.setData(std::vector<float>(numVertices(), 0.f));
+    addVertexScalarField(name, sf);
+}
+
+void SurfaceMesh::addFaceScalarField(std::string name)
+{
+    ScalarField sf;
+    sf.setData(std::vector<float>(numFaces(), 0.f));
+    addFaceScalarField(name, sf);
+}
+
 void SurfaceMesh::addFaceScalarField(std::string name, const ScalarField &sf)
 {
     face_scalar_fields_[name] = sf;
@@ -300,6 +314,11 @@ void SurfaceMesh::showFaceScalarField(std::string name)
     }
 }
 
+bool SurfaceMesh::hasFaceScalarField(std::string name)
+{
+    return face_scalar_fields_.find(name) != face_scalar_fields_.end();
+}
+
 void SurfaceMesh::removeVertexScalarField(std::string name)
 {
     vertex_scalar_fields_.erase(name);
@@ -328,6 +347,11 @@ void SurfaceMesh::showVertexScalarField(std::string name)
     }
 }
 
+bool SurfaceMesh::hasVertexScalarField(std::string name) const
+{
+    return vertex_scalar_fields_.find(name) != vertex_scalar_fields_.end();
+}
+
 void SurfaceMesh::hideAllScalarFields()
 {
     if (visible_vertex_scalar_field_ == "(None)" && visible_face_scalar_field_ == "(None)")
@@ -344,6 +368,13 @@ void SurfaceMesh::addVertexVectorField(std::string name, const VectorField &vf)
     vertex_vector_fields_[name] = vf;
 }
 
+void SurfaceMesh::addVertexVectorField(std::string name)
+{
+    VectorField vf;
+    vf.setVectors(std::vector<glm::vec3>(numVertices(), glm::vec3(0, 0, 0)));
+    addVertexVectorField(name, vf);
+}
+
 void SurfaceMesh::removeVertexVectorField(std::string name)
 {
     vertex_vector_fields_.erase(name);
@@ -352,6 +383,13 @@ void SurfaceMesh::removeVertexVectorField(std::string name)
 void SurfaceMesh::addFaceVectorField(std::string name, const VectorField &vf)
 {
     face_vector_fields_[name] = vf;
+}
+
+void SurfaceMesh::addFaceVectorField(std::string name)
+{
+    VectorField vf;
+    vf.setVectors(std::vector<glm::vec3>(numFaces(), glm::vec3(0, 0, 0)));
+    addFaceVectorField(name, vf);
 }
 
 void SurfaceMesh::removeFaceVectorField(std::string name)
@@ -426,6 +464,11 @@ void SurfaceMesh::showVertexVectorField(std::string name)
     }
 }
 
+bool SurfaceMesh::hasVertexVectorField(std::string name) const
+{
+    return vertex_vector_fields_.find(name) != vertex_vector_fields_.end();
+}
+
 void SurfaceMesh::showFaceVectorField(std::string name)
 {
     VectorField &vf = faceVectorField(name);
@@ -434,6 +477,11 @@ void SurfaceMesh::showFaceVectorField(std::string name)
         setFaceArrowMesh(vf.mesh_);
         visible_face_vector_field_ = name;
     }
+}
+
+bool SurfaceMesh::hasFaceVectorField(std::string name) const
+{
+    return face_vector_fields_.find(name) != face_vector_fields_.end();
 }
 
 void SurfaceMesh::hideAllVertexVectorFields()
@@ -547,7 +595,7 @@ void SurfaceMesh::drawGUI()
         {
             showVertexScalarField(current_sf);
             ImGui::PlotHistogram("Histogram", vertexScalarField(current_sf).histogram_.data(),
-                                 int(vertexScalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f,
+                                 vertexScalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f,
                                  1.0f, ImVec2(0, 80.0f));
             if (ImGui::InputFloat("Min. value###sf1", &vertexScalarField(current_sf).vmin_))
             {
@@ -566,7 +614,7 @@ void SurfaceMesh::drawGUI()
         {
             showFaceScalarField(current_sf);
             ImGui::PlotHistogram("Histogram", faceScalarField(current_sf).histogram_.data(),
-                                 int(faceScalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f,
+                                 faceScalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f,
                                  1.0f, ImVec2(0, 80.0f));
             if (ImGui::InputFloat("Min. value###sf4", &faceScalarField(current_sf).vmin_))
             {

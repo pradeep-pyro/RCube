@@ -99,7 +99,7 @@ void Transform::lookAt(const glm::vec3 &position, const glm::vec3 &target, const
 void Transform::drawGUI()
 {
     // TODO: think of a way to handle transform hierarchy
-    if (ImGui::InputFloat3("Position", glm::value_ptr(position_), 2))
+    if (ImGui::InputFloat3("Position", glm::value_ptr(position_), "%.2f"))
     {
         dirty_ = true;
     }
@@ -118,7 +118,7 @@ void Transform::drawGUI()
         setOrientation(glm::quat(euler));
     }
 
-    if (ImGui::InputFloat3("Scale", glm::value_ptr(scale_), 2))
+    if (ImGui::InputFloat3("Scale", glm::value_ptr(scale_), "%.2f"))
     {
         dirty_ = true;
     }

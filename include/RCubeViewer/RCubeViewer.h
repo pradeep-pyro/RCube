@@ -1,3 +1,5 @@
+#pragma once
+
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"

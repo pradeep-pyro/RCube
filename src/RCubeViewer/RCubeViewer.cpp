@@ -44,8 +44,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution, props.MSAA));
-    //world_.addSystem(std::make_unique<ForwardRenderSystem>(props.resolution, props.MSAA));
+    //world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution));
+    world_.addSystem(std::make_unique<ForwardRenderSystem>(props.resolution, props.MSAA));
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
     world_.addSystem(std::make_unique<PickTooltipSystem>());
@@ -66,8 +66,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     {
         auto dirl = createDirLight();
         dirl.add(Name("SunLight"));
-        dirl.get<DirectionalLight>()->intensity = 20.f;
-        dirl.get<DirectionalLight>()->cast_shadow = true;
+        dirl.get<DirectionalLight>()->setIntensity(20.f);
+        dirl.get<DirectionalLight>()->setCastShadow(true);
     }
 
     // Create a ground plane
@@ -310,6 +310,14 @@ void RCubeViewer::drawGUI()
                         if (ImGui::BeginTabItem("DirectionalLight"))
                         {
                             ent.get<DirectionalLight>()->drawGUI();
+                            ImGui::EndTabItem();
+                        }
+                    }
+                    if (ent.has<PointLight>())
+                    {
+                        if (ImGui::BeginTabItem("PointLight"))
+                        {
+                            ent.get<PointLight>()->drawGUI();
                             ImGui::EndTabItem();
                         }
                     }

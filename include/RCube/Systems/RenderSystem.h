@@ -12,7 +12,7 @@ namespace rcube
 class DeferredRenderSystem : public System
 {
   public:
-    DeferredRenderSystem(glm::ivec2 resolution = glm::ivec2(1280, 720), unsigned int msaa = 0);
+    DeferredRenderSystem(glm::ivec2 resolution = glm::ivec2(1280, 720));
     virtual ~DeferredRenderSystem() override = default;
     virtual void initialize() override;
     virtual void cleanup() override;
@@ -27,6 +27,7 @@ class DeferredRenderSystem : public System
     void setCameraUBO(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,
                       const glm::mat4 &view_to_projection, const glm::mat4 &projection_to_viewport);
     void setDirectionalLightsUBO();
+    void setPointLightsUBO();
     void initializePostprocess();
     void geometryPass();
     void lightingPass(Camera *cam);
@@ -51,9 +52,11 @@ class DeferredRenderSystem : public System
     // Uniform buffer objects for camera and lights
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_camera_;
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_dirlights_;
+    std::shared_ptr<Buffer<BufferType::Uniform>> ubo_pointlights_;
     unsigned int msaa_;
     // Buffers
     std::vector<float> dirlight_data_;
+    std::vector<float> pointlight_data_;
 };
 
 } // namespace rcube

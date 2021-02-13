@@ -1,4 +1,7 @@
 #include "RCube/Components/PointLight.h"
+#include "RCube/Components/DirectionalLight.h"
+#include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
 
 namespace rcube
 {
@@ -6,29 +9,55 @@ namespace rcube
 PointLight::PointLight(float radius, glm::vec3 rgb)
 {
     setRadius(radius);
-    light_.color = rgb;
-    light_.cone_angle = glm::pi<float>();
-    light_.pos_w = 1.f; // homogenous coordinate of position
+    setColor(rgb);
 }
 
 float PointLight::radius() const
 {
-    return light_.radius;
+    return radius_;
 }
 
 void PointLight::setRadius(float val)
 {
-    light_.radius = val;
+    radius_ = val;
 }
 
 const glm::vec3 &PointLight::color() const
 {
-    return light_.color;
+    return color_;
 }
 
 void PointLight::setColor(const glm::vec3 &rgb)
 {
-    light_.color = rgb;
+    color_ = rgb;
+}
+
+bool PointLight::castShadow() const
+{
+    return cast_shadow_;
+}
+
+void PointLight::setCastShadow(bool val)
+{
+    cast_shadow_ = val;
+}
+
+float PointLight::intensity() const
+{
+    return intensity_;
+}
+
+void PointLight::setIntensity(float val)
+{
+    intensity_ = val;
+}
+
+void PointLight::drawGUI()
+{
+    ImGui::ColorEdit3("Color", glm::value_ptr(color_));
+    ImGui::InputFloat("Radius", &radius_);
+    ImGui::InputFloat("Intensity", &intensity_);
+    ImGui::Checkbox("Cast shadow", &cast_shadow_);
 }
 
 } // namespace rcube

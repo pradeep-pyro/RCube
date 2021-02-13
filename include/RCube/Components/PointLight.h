@@ -3,7 +3,7 @@
 #include "RCube/Core/Arch/Component.h"
 #include "glm/glm.hpp"
 
-#define RCUBE_MAX_POINT_LIGHTS 100
+#define RCUBE_MAX_POINT_LIGHTS 50
 
 namespace rcube
 {

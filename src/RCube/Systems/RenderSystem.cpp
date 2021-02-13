@@ -1,6 +1,7 @@
 #include "RCube/Systems/RenderSystem.h"
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
+#include "RCube/Components/PointLight.h"
 #include "RCube/Components/Drawable.h"
 #include "RCube/Components/Material.h"
 #include "RCube/Components/Transform.h"
@@ -11,8 +12,6 @@
 #include "RCube/Systems/RenderSystem.h"
 #include "glm/gtx/string_cast.hpp"
 #include "RCube/Systems/Shaders.h"
-
-#define RCUBE_MAX_DIRECTIONAL_LIGHTS 5
 
 namespace rcube
 {
@@ -227,9 +226,8 @@ void main() {
 const std::string PBRLightingPassShader = R"(
 #version 420
 
-#define RCUBE_MAX_DIRLIGHTS 50
-
-#define MAX_LIGHTS 99
+#define RCUBE_MAX_DIRLIGHTS 5
+#define RCUBE_MAX_POINTLIGHTS 50
 
 out vec4 out_color;
 
@@ -257,7 +255,6 @@ struct DirectionalLight
     float cast_shadow;
     vec3 color;
     float intensity;
-    mat4 view_proj;
 };
 
 layout (std140, binding=1) uniform DirectionalLights {
@@ -279,6 +276,28 @@ layout (std140, binding=2) uniform Lights {
 
 uniform mat4 light_viewproj;
 */
+
+struct PointLight
+{
+    vec3 position;
+    float cast_shadow;
+    vec3 color;
+    float radius;
+    float intensity;
+    float padding1_;
+    float padding2_;
+    float padding3_;
+};
+
+layout (std140, binding=2) uniform PointLights {
+    PointLight pointlights[RCUBE_MAX_POINTLIGHTS];
+    int num_pointlights;
+};
+
+struct PerLightDotProducts
+{
+    float LdotN, HdotV, HdotN;
+};
 
 in vec2 v_texcoord;
 
@@ -357,14 +376,56 @@ vec3 diffuseLambertian(vec3 albedo) {
 //    return shadow;
 //}
 
-vec3 radianceDirLight(int index, float LdotN)
+
+vec3 lightDirectContribution(const PerLightDotProducts dots, float NdotV, float roughness, float metallic, const vec3 albedo, const vec3 specular_color)
 {
-    return dirlights[index].intensity * LdotN * dirlights[index].color;
+    // Cook-Torrance specular BRDF
+    float D = DGgx(dots.HdotN, roughness);
+    float G = GSmith(NdotV, dots.LdotN, roughness);
+    vec3 F = FSchlick(dots.HdotV, specular_color);
+    vec3 numer = D * G * F;
+    float denom = 4 * NdotV * dots.LdotN + 0.001;
+    vec3 specular = numer / denom;
+    vec3 kS = F;
+
+    // Lambertian BRDF
+    vec3 diffuse = diffuseLambertian(albedo);
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic; // Metallic materials have ~0 diffuse contribution
+
+    return kD * diffuse + specular;
 }
 
-vec3 tonemapReinhard(const vec3 color)
+void computePerLightDotProducts(const vec3 L, const vec3 N, const vec3 V, inout PerLightDotProducts dots)
 {
-    return color / (color + vec3(1.0));
+    const vec3 H = normalize(L + V);  // Halfway vector
+    dots.LdotN = clamp(dot(L, N), 0, 1);
+    dots.HdotV = clamp(dot(H, V), 0, 1);
+    dots.HdotN = clamp(dot(H, N), 0, 1);
+}
+
+vec3 dirLightDirectContribution(int index, const vec3 N, const vec3 V, float NdotV, float roughness, float metallic, vec3 albedo, vec3 specular_color)
+{
+    vec3 L = -normalize(dirlights[index].direction);
+    PerLightDotProducts dots;
+    computePerLightDotProducts(L, N, V, dots); 
+
+    // Radiance
+    vec3 radiance = dirlights[index].intensity * dots.LdotN * dirlights[index].color;
+    return radiance * lightDirectContribution(dots, NdotV, roughness, metallic, albedo, specular_color);
+}
+
+vec3 pointLightDirectContribution(int index, const vec3 N, const vec3 V, float NdotV, vec3 surface_position, float roughness, float metallic, vec3 albedo, vec3 specular_color)
+{
+    vec3 StoL = pointlights[index].position - surface_position; // Surface to light
+    vec3 L = normalize(StoL);
+    float dist = length(StoL);
+    PerLightDotProducts dots;
+    computePerLightDotProducts(L, N, V, dots); 
+
+    // Radiance
+    vec3 radiance = pointlights[index].intensity * dots.LdotN * pointlights[index].color * falloff(dist, pointlights[index].radius);
+    return radiance * lightDirectContribution(dots, NdotV, roughness, metallic, albedo, specular_color);
 }
 
 void main()
@@ -380,38 +441,21 @@ void main()
 
     // Surface to eye
     vec3 V = normalize(vec3(eye_pos - position));
-    float NdotV = max(dot(N, V), 0);
     // Specular color
     vec3 specular_color = vec3(0.04);
     specular_color = mix(specular_color, albedo, metallic);
+
+    // Direct lighting
     vec3 direct = vec3(0.0);
+    const float NdotV = max(dot(N, V), 0);
     for (int i = 0; i < min(num_dirlights, RCUBE_MAX_DIRLIGHTS); ++i)
     {
-        vec3 L = -normalize(dirlights[i].direction);  // Surface to light
-        // Useful values to precompute
-        vec3 H = normalize(L + V);  // Halfway vector
-        float LdotN = clamp(dot(L, N), 0, 1);
-        float NdotV = clamp(dot(N, V), 0, 1);
-        float HdotV = clamp(dot(H, V), 0, 1);
-        float HdotN = clamp(dot(H, N), 0, 1);
+        direct += dirLightDirectContribution(i, N, V, NdotV, roughness, metallic, albedo, specular_color);
+    }
 
-        // Cook-Torrance specular BRDF
-        float D = DGgx(HdotN, roughness);
-        float G = GSmith(NdotV, LdotN, roughness);
-        vec3 F = FSchlick(HdotV, specular_color);
-        vec3 numer = D * G * F;
-        float denom = 4 * NdotV * LdotN + 0.001;
-        vec3 specular = numer / denom;
-        vec3 kS = F;
-
-        // Lambertian BRDF
-        vec3 diffuse = diffuseLambertian(albedo);
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic; // Metallic materials have ~0 diffuse contribution
-
-        //float visibility = 1.0 - shadow(i, position, LdotN);
-        vec3 radiance = radianceDirLight(i, LdotN);
-        direct += /*visibility * */ (kD * diffuse + specular) * radiance;
+    for (int i = 0; i < min(num_pointlights, RCUBE_MAX_POINTLIGHTS); ++i)
+    {
+        direct += pointLightDirectContribution(i, N, V, NdotV, position, roughness, metallic, albedo, specular_color);
     }
 
     // Indirect image-based lighting for ambient term
@@ -431,7 +475,7 @@ void main()
         vec2 brdf  = texture(brdf_lut, vec2(NdotV, roughness)).rg;
         vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
 
-        indirect = (kD * diffuse + specular) * 1.0;
+        indirect += (kD * diffuse + specular) * 1.0;
     }
 
     vec3 result = direct + indirect;
@@ -465,7 +509,7 @@ std::shared_ptr<Framebuffer> createGBuffer(size_t width, size_t height)
     return fbo;
 }
 
-DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution, unsigned int msaa)
+DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution)
     : resolution_(resolution)
 {
     ComponentMask dirlight_filter;
@@ -482,6 +526,11 @@ DeferredRenderSystem::DeferredRenderSystem(glm::ivec2 resolution, unsigned int m
     renderable_filter.set(Drawable::family());
     renderable_filter.set(Material::family());
     addFilter(renderable_filter);
+
+    ComponentMask pointlight_filter;
+    pointlight_filter.set(PointLight::family());
+    pointlight_filter.set(Transform::family());
+    addFilter(pointlight_filter);
 }
 
 void DeferredRenderSystem::initialize()
@@ -523,8 +572,14 @@ void DeferredRenderSystem::initialize()
     // one 4x4 matrix intensity: 8 floats Finally there one int (treated as float) for number of
     // directional lights
     ubo_dirlights_ =
-        UniformBuffer::create(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float) + sizeof(float));
-    dirlight_data_.resize(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24);
+        UniformBuffer::create(RCUBE_MAX_DIRECTIONAL_LIGHTS * 8 * sizeof(float) + sizeof(float));
+    dirlight_data_.resize(RCUBE_MAX_DIRECTIONAL_LIGHTS * 8);
+    // Point lights: Each light has one 3D position, one bool flag for shadow casting, one 3D color,
+    // one float for radius, one float for intensity and 3 empty floats for padding. Finally there
+    // is one int (treated as float) for number of directional lights
+    ubo_pointlights_ =
+        UniformBuffer::create(RCUBE_MAX_POINT_LIGHTS * 12 * sizeof(float) + sizeof(float));
+    pointlight_data_.resize(RCUBE_MAX_POINT_LIGHTS * 12);
     // Initialize renderer
     renderer_.initialize();
     // Initialize bloom
@@ -560,14 +615,6 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
         DirectionalLight *dl = world_->getComponent<DirectionalLight>(l);
         const glm::vec3 dir = glm::normalize(dl->direction());
         const glm::vec3 &col = dl->color();
-        // Light's viewproj matrix
-        const glm::vec3 opp_dir = -dir;
-        const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-        const glm::vec3 up = glm::length(glm::cross(opp_dir, glm::vec3(0, 1, 0))) > 1e-6
-                                 ? glm::vec3(0, 1, 0)
-                                 : glm::vec3(1, 0, 0);
-        const glm::mat4 light_view = glm::lookAt(opp_dir, glm::vec3(0, 0, 0), up);
-        const glm::mat4 light_matrix = light_proj * light_view;
         dirlight_data_[k++] = dir.x;
         dirlight_data_[k++] = dir.y;
         dirlight_data_[k++] = dir.z;
@@ -576,18 +623,45 @@ void DeferredRenderSystem::setDirectionalLightsUBO()
         dirlight_data_[k++] = col.g;
         dirlight_data_[k++] = col.b;
         dirlight_data_[k++] = dl->intensity();
-        for (int i = 0; i < 4; ++i)
-        {
-            for (int j = 0; j < 4; ++j)
-            {
-                dirlight_data_[k++] = dl->castShadow() ? light_matrix[i][j] : 0.f;
-            }
-        }
     }
     const int num_lights = static_cast<int>(dirlights.size());
     ubo_dirlights_->setData(dirlight_data_.data(), dirlight_data_.size(), 0);
-    ubo_dirlights_->setData(&num_lights, 1, RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float));
+    ubo_dirlights_->setData(&num_lights, 1, RCUBE_MAX_DIRECTIONAL_LIGHTS * 8 * sizeof(float));
     ubo_dirlights_->bindBase(1);
+}
+
+void DeferredRenderSystem::setPointLightsUBO()
+{
+    std::vector<Entity> pointlights =
+        getFilteredEntities({PointLight::family(), Transform::family()});
+    // Copy lights
+    assert(pointlights.size() < RCUBE_MAX_POINT_LIGHTS);
+    size_t k = 0;
+    for (const Entity &l : pointlights)
+    {
+        PointLight *pl = world_->getComponent<PointLight>(l);
+        Transform *tr = world_->getComponent<Transform>(l);
+        const glm::vec3 &pos = tr->worldPosition();
+        float cast_shadow = static_cast<float>(pl->castShadow());
+        const glm::vec3 &col = pl->color();
+        float radius = pl->radius();
+        pointlight_data_[k++] = pos.x;
+        pointlight_data_[k++] = pos.y;
+        pointlight_data_[k++] = pos.z;
+        pointlight_data_[k++] = cast_shadow;
+        pointlight_data_[k++] = col.x;
+        pointlight_data_[k++] = col.y;
+        pointlight_data_[k++] = col.z;
+        pointlight_data_[k++] = radius;
+        pointlight_data_[k++] = pl->intensity();
+        pointlight_data_[k++] = 0.f; // padding
+        pointlight_data_[k++] = 0.f;
+        pointlight_data_[k++] = 0.f;
+    }
+    const int num_lights = static_cast<int>(pointlights.size());
+    ubo_pointlights_->setData(pointlight_data_.data(), pointlight_data_.size(), 0);
+    ubo_pointlights_->setData(&num_lights, 1, RCUBE_MAX_POINT_LIGHTS * 12 * sizeof(float));
+    ubo_pointlights_->bindBase(2);
 }
 
 void DeferredRenderSystem::initializePostprocess()
@@ -763,6 +837,7 @@ void DeferredRenderSystem::lightingPass(Camera *cam)
         dcs.push_back(dc_skybox);
     }
     setDirectionalLightsUBO();
+    setPointLightsUBO();
     renderer_.draw(rtl, dcs);
 }
 

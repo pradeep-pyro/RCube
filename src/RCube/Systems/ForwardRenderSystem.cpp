@@ -153,7 +153,7 @@ in float geom_wire;
 noperspective in vec3 dist;
 
 #define RCUBE_MAX_DIRLIGHTS 5
-#define RCUBE_MAX_POINTLIGHTS 100
+#define RCUBE_MAX_POINTLIGHTS 50
 out vec4 out_color;
 
 uniform vec3 albedo;
@@ -223,9 +223,9 @@ layout (std140, binding=2) uniform PointLights {
     int num_pointlights;
 };
 
-struct DotProducts
+struct PerLightDotProducts
 {
-    float LdotN, NdotV, HdotV, HdotN;
+    float LdotN, HdotV, HdotN;
 };
 
 // Returns the attenuation factor that is multiplied with the light's color
@@ -286,14 +286,14 @@ vec3 tonemapReinhard(const vec3 color)
     return color / (color + vec3(1.0));
 }
 
-vec3 lightDirectContribution(const DotProducts dots, float roughness, float metallic, const vec3 albedo, const vec3 specular_color)
+vec3 lightDirectContribution(const PerLightDotProducts dots, float NdotV, float roughness, float metallic, const vec3 albedo, const vec3 specular_color)
 {
     // Cook-Torrance specular BRDF
     float D = DGgx(dots.HdotN, roughness);
-    float G = GSmith(dots.NdotV, dots.LdotN, roughness);
+    float G = GSmith(NdotV, dots.LdotN, roughness);
     vec3 F = FSchlick(dots.HdotV, specular_color);
     vec3 numer = D * G * F;
-    float denom = 4 * dots.NdotV * dots.LdotN + 0.001;
+    float denom = 4 * NdotV * dots.LdotN + 0.001;
     vec3 specular = numer / denom;
     vec3 kS = F;
 
@@ -305,37 +305,36 @@ vec3 lightDirectContribution(const DotProducts dots, float roughness, float meta
     return kD * diffuse + specular;
 }
 
-void computeDotProducts(const vec3 L, const vec3 N, const vec3 V, inout DotProducts dots)
+void computePerLightDotProducts(const vec3 L, const vec3 N, const vec3 V, inout PerLightDotProducts dots)
 {
     const vec3 H = normalize(L + V);  // Halfway vector
     dots.LdotN = clamp(dot(L, N), 0, 1);
-    dots.NdotV = clamp(dot(N, V), 0, 1); // TODO(pradeep): Only need to compute once
     dots.HdotV = clamp(dot(H, V), 0, 1);
     dots.HdotN = clamp(dot(H, N), 0, 1);
 }
 
-vec3 dirLightDirectContribution(int index, const vec3 N, const vec3 V, float roughness, float metallic, vec3 albedo, vec3 specular_color)
+vec3 dirLightDirectContribution(int index, const vec3 N, const vec3 V, float NdotV, float roughness, float metallic, vec3 albedo, vec3 specular_color)
 {
     vec3 L = -normalize(dirlights[index].direction);
-    DotProducts dots;
-    computeDotProducts(L, N, V, dots); 
+    PerLightDotProducts dots;
+    computePerLightDotProducts(L, N, V, dots); 
 
     // Radiance
     vec3 radiance = dirlights[index].intensity * dots.LdotN * dirlights[index].color;
-    return radiance * lightDirectContribution(dots, roughness, metallic, albedo, specular_color);
+    return radiance * lightDirectContribution(dots, NdotV, roughness, metallic, albedo, specular_color);
 }
 
-vec3 pointLightDirectContribution(int index, const vec3 N, const vec3 V, vec3 surface_position, float roughness, float metallic, vec3 albedo, vec3 specular_color)
+vec3 pointLightDirectContribution(int index, const vec3 N, const vec3 V, float NdotV, vec3 surface_position, float roughness, float metallic, vec3 albedo, vec3 specular_color)
 {
     vec3 StoL = pointlights[index].position - surface_position; // Surface to light
     vec3 L = normalize(StoL);
     float dist = length(StoL);
-    DotProducts dots;
-    computeDotProducts(L, N, V, dots); 
+    PerLightDotProducts dots;
+    computePerLightDotProducts(L, N, V, dots); 
 
     // Radiance
-    vec3 radiance = pointlights[index].intensity * dots.LdotN * pointlights[index].color;// * falloff(dist, pointlights[index].radius);
-    return radiance * lightDirectContribution(dots, roughness, metallic, albedo, specular_color);
+    vec3 radiance = pointlights[index].intensity * dots.LdotN * pointlights[index].color * falloff(dist, pointlights[index].radius);
+    return radiance * lightDirectContribution(dots, NdotV, roughness, metallic, albedo, specular_color);
 }
 
 void main() {
@@ -380,21 +379,22 @@ void main() {
     
     // Surface to eye
     vec3 V = normalize(vec3(eye_pos - position));
-    float NdotV = max(dot(N, V), 0);
+    
     // Specular color
     vec3 specular_color = vec3(0.04);
     specular_color = mix(specular_color, alb, met);
 
     // Direct lighting
+    const float NdotV = clamp(dot(N, V), 0, 1);
     vec3 direct = vec3(0.0);
     for (int i = 0; i < min(num_dirlights, RCUBE_MAX_DIRLIGHTS); ++i)
     {
-        direct += dirLightDirectContribution(i, N, V, rou, met, alb, specular_color);
+        direct += dirLightDirectContribution(i, N, V, NdotV, rou, met, alb, specular_color);
     }
 
     for (int i = 0; i < min(num_pointlights, RCUBE_MAX_POINTLIGHTS); ++i)
     {
-        direct += pointLightDirectContribution(i, N, V, position, rou, met, alb, specular_color);
+        direct += pointLightDirectContribution(i, N, V, NdotV, position, rou, met, alb, specular_color);
     }
 
     // Indirect image-based lighting for ambient term

@@ -34,6 +34,12 @@ class ScalarField
     const std::vector<float> &data() const;
 
     /**
+     * Returns the scalar field data
+     * @return mutable-ref to scalar field
+     */
+    std::vector<float> &data();
+
+    /**
      * Sets the scalar field data
      * @param Scalar field as an array of floats
      */
@@ -88,6 +94,10 @@ class ScalarField
      */
     bool updateColors();
 
+    /**
+     * Update the histogram based on the current scalar field data
+     * Note: called by RCubeViewer internally
+     */
     void updateHistogram();
 };
 

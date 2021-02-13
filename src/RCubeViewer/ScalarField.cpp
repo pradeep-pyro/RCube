@@ -13,6 +13,11 @@ const std::vector<float> &ScalarField::data() const
 {
     return data_;
 }
+std::vector<float> &ScalarField::data()
+{
+    dirty_ = true;
+    return data_;
+}
 void ScalarField::setData(const std::vector<float> &data)
 {
     data_ = data;

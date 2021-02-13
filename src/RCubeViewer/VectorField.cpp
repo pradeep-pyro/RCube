@@ -14,6 +14,11 @@ const std::vector<glm::vec3> &VectorField::vectors() const
 {
     return vectors_;
 }
+std::vector<glm::vec3> &VectorField::vectors()
+{
+    dirty_ = true;
+    return vectors_;
+}
 void VectorField::setVectors(const std::vector<glm::vec3> &data)
 {
     vectors_ = data;

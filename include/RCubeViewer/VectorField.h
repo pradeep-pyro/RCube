@@ -33,6 +33,12 @@ class VectorField
     const std::vector<glm::vec3> &vectors() const;
 
     /**
+     * Returns the vector field
+     * @return mutable-ref to the vector field
+     */
+    std::vector<glm::vec3> &vectors();
+
+    /**
      * Sets the vectors of the vector field
      * @param Vector field as an array of glm::vec3
      */

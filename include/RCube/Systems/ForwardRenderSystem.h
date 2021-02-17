@@ -29,14 +29,13 @@ class ForwardRenderSystem : public System
     void setDirectionalLightsUBO();
     void setPointLightsUBO();
     void initializePostprocess();
-    void renderOpaqueGeometry(Camera *cam);
-    void renderTransparentGeometry(Camera *cam);
+    void opaqueGeometryPass(Camera *cam);
+    void transparentGeometryPass(Camera *cam);
     void postprocessPass(Camera *cam);
     void finalPass(Camera *cam);
 
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
     GLRenderer renderer_;
-    std::shared_ptr<Framebuffer> gbuffer_;
     std::shared_ptr<Framebuffer> framebuffer_hdr_;
     std::shared_ptr<Framebuffer> framebuffer_brightness_;
     std::shared_ptr<Framebuffer> framebuffer_blur_[2];

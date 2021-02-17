@@ -16,7 +16,8 @@ enum AttributeLocation
     NORMAL,
     UV,
     COLOR,
-    TANGENT
+    TANGENT,
+    WIREFRAME
 };
 
 class AttributeBuffer

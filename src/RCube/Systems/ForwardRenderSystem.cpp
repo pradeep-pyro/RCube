@@ -1,9 +1,9 @@
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
-#include "RCube/Components/PointLight.h"
 #include "RCube/Components/Drawable.h"
-#include "RCube/Components/Material.h"
+#include "RCube/Components/ForwardMaterial.h"
+#include "RCube/Components/PointLight.h"
 #include "RCube/Components/Transform.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
@@ -440,7 +440,7 @@ ForwardRenderSystem::ForwardRenderSystem(glm::ivec2 resolution, unsigned int msa
     ComponentMask renderable_filter;
     renderable_filter.set(Transform::family());
     renderable_filter.set(Drawable::family());
-    renderable_filter.set(Material::family());
+    renderable_filter.set(ForwardMaterial::family());
     addFilter(renderable_filter);
 
     ComponentMask pointlight_filter;
@@ -468,15 +468,15 @@ void ForwardRenderSystem::initialize()
     // UBOs
     // Three 4x4 matrices and one 3D vector
     ubo_camera_ = UniformBuffer::create(sizeof(glm::mat4) * 3 + sizeof(glm::vec3));
-    // Directional lights: Each light has one 3D direction, one bool flag for shadow casting, one 3D color, one scalar,
-    // one 4x4 matrix intensity. Finally there is one int (treated as float) for number of
-    // directional lights
+    // Directional lights: Each light has one 3D direction, one bool flag for shadow casting, one 3D
+    // color, one scalar, one 4x4 matrix intensity. Finally there is one int (treated as float) for
+    // number of directional lights
     ubo_dirlights_ =
         UniformBuffer::create(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24 * sizeof(float) + sizeof(float));
     dirlight_data_.resize(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24);
-    // Point lights: Each light has one 3D position, one bool flag for shadow casting, one 3D color, one float for radius,
-    // one float for intensity and 3 empty floats for padding. Finally there is one int (treated as float) for number of
-    // directional lights
+    // Point lights: Each light has one 3D position, one bool flag for shadow casting, one 3D color,
+    // one float for radius, one float for intensity and 3 empty floats for padding. Finally there
+    // is one int (treated as float) for number of directional lights
     ubo_pointlights_ =
         UniformBuffer::create(RCUBE_MAX_POINT_LIGHTS * 12 * sizeof(float) + sizeof(float));
     pointlight_data_.resize(RCUBE_MAX_POINT_LIGHTS * 12);
@@ -541,7 +541,8 @@ void ForwardRenderSystem::setDirectionalLightsUBO()
 
 void ForwardRenderSystem::setPointLightsUBO()
 {
-    std::vector<Entity> pointlights = getFilteredEntities({PointLight::family(), Transform::family()});
+    std::vector<Entity> pointlights =
+        getFilteredEntities({PointLight::family(), Transform::family()});
     // Copy lights
     assert(pointlights.size() < RCUBE_MAX_POINT_LIGHTS);
     size_t k = 0;
@@ -636,14 +637,14 @@ void ForwardRenderSystem::update(bool)
                      cam->projection_to_viewport);
 
         // Render passes
-        renderOpaqueGeometry(cam);
-        renderTransparentGeometry(cam);
+        opaqueGeometryPass(cam);
+        transparentGeometryPass(cam);
         postprocessPass(cam);
         finalPass(cam);
     }
 }
 
-void ForwardRenderSystem::renderOpaqueGeometry(Camera *cam)
+void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
 {
     RenderTarget rt;
     rt.clear_color_buffer = true;
@@ -667,9 +668,10 @@ void ForwardRenderSystem::renderOpaqueGeometry(Camera *cam)
     state.cull.enabled = false;
 
     std::vector<DrawCall> drawcalls;
-    const auto &drawable_entities = registered_entities_[filters_[2]];
+    const auto &drawable_entities =
+        getFilteredEntities({Transform::family(), Drawable::family(), ForwardMaterial::family()});
     drawcalls.reserve(drawable_entities.size());
-    for (const auto &drawable_entity : drawable_entities)
+    for (Entity drawable_entity : drawable_entities)
     {
         Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
         if (!dr->visible)
@@ -678,12 +680,18 @@ void ForwardRenderSystem::renderOpaqueGeometry(Camera *cam)
         }
         Mesh *mesh = dr->mesh.get();
         Transform *tr = world_->getComponent<Transform>(drawable_entity);
-        Material *mat = world_->getComponent<Material>(drawable_entity);
-
+        ForwardMaterial *mat = world_->getComponent<ForwardMaterial>(drawable_entity);
+        if (mat->shader == nullptr)
+        {
+            continue;
+        }
         DrawCall dc;
-        dc.settings = state;
+        // dc.settings = state;
+        dc.settings = mat->shader->state();
         dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
-        if (mat->albedo_texture != nullptr)
+        dc.textures = mat->shader->textureSlots();
+        dc.cubemaps = mat->shader->cubemapSlots();
+        /*if (mat->albedo_texture != nullptr)
         {
             dc.textures.push_back({mat->albedo_texture->id(), 0});
         }
@@ -698,17 +706,18 @@ void ForwardRenderSystem::renderOpaqueGeometry(Camera *cam)
         if (mat->normal_texture != nullptr)
         {
             dc.textures.push_back({mat->normal_texture->id(), 3});
-        }
-        const bool use_ibl =
+        }*/
+        /*const bool use_ibl =
             cam->irradiance != nullptr && cam->prefilter != nullptr && cam->brdfLUT != nullptr;
         if (use_ibl)
         {
             dc.textures.push_back({cam->brdfLUT->id(), 4});
             dc.cubemaps.push_back({cam->prefilter->id(), 5});
             dc.cubemaps.push_back({cam->irradiance->id(), 6});
-        }
-        dc.shader = shader_standard_;
-        dc.update_uniforms = [use_ibl, tr, mat, cam](std::shared_ptr<ShaderProgram> shader) {
+        }*/
+        // dc.shader = shader_standard_;
+        dc.shader = mat->shader->get();
+        /*dc.update_uniforms = [use_ibl, tr, mat, cam](std::shared_ptr<ShaderProgram> shader) {
             shader->uniform("albedo").set(glm::pow(mat->albedo, glm::vec3(2.2f)));
             shader->uniform("roughness").set(mat->roughness);
             shader->uniform("metallic").set(mat->metallic);
@@ -722,6 +731,15 @@ void ForwardRenderSystem::renderOpaqueGeometry(Camera *cam)
             shader->uniform("wireframe.color").set(glm::pow(mat->wireframe_color, glm::vec3(2.2f)));
             shader->uniform("wireframe.thickness").set(mat->wireframe_thickness);
             shader->uniform("use_image_based_lighting").set(use_ibl);
+        };*/
+        dc.update_uniforms = [mat, tr](std::shared_ptr<ShaderProgram>) {
+            mat->shader->get()->uniform("model_matrix").set(tr->worldTransform());
+            Uniform nor_mat;
+            if (mat->shader->get()->hasUniform("normal_matrix", nor_mat))
+            {
+                nor_mat.set(glm::mat3(tr->worldTransform()));
+            }
+            mat->shader->updateUniforms();
         };
         drawcalls.push_back(dc);
     }
@@ -748,7 +766,7 @@ void ForwardRenderSystem::renderOpaqueGeometry(Camera *cam)
     renderer_.draw(rt, drawcalls);
 }
 
-void ForwardRenderSystem::renderTransparentGeometry(Camera *cam)
+void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 {
 }
 

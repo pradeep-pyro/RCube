@@ -104,7 +104,7 @@ EntityHandle RCubeViewer::addMeshEntity(const std::string &name)
 {
     auto ent = world_.createEntity();
     ent.add<Drawable>(Drawable());
-    ent.add<Material>();
+    ent.add<ForwardMaterial>();
     ent.add<Transform>(Transform());
     ent.add<Name>(name);
     return ent;
@@ -297,6 +297,14 @@ void RCubeViewer::drawGUI()
                             ImGui::EndTabItem();
                         }
                     }
+                    if (ent.has<ForwardMaterial>())
+                    {
+                        if (ImGui::BeginTabItem("ForwardMaterial"))
+                        {
+                            ent.get<ForwardMaterial>()->drawGUI();
+                            ImGui::EndTabItem();
+                        }
+                    }
                     if (ent.has<Camera>())
                     {
                         if (ImGui::BeginTabItem("Camera"))
@@ -374,7 +382,14 @@ EntityHandle RCubeViewer::createSurface()
 {
     auto ent = world_.createEntity();
     ent.add<Drawable>(Drawable());
-    ent.add<Material>();
+    if (world_.getSystem("ForwardRenderSystem") != nullptr)
+    {
+        ent.add<ForwardMaterial>();
+    }
+    else if (world_.getSystem("DeferredRenderSystem") != nullptr)
+    {
+        ent.add<Material>();
+    }
     ent.add<Transform>(Transform());
     return ent;
 }
@@ -388,16 +403,30 @@ EntityHandle RCubeViewer::createCamera()
     return ent;
 }
 
+//EntityHandle RCubeViewer::createGroundPlane()
+//{
+//    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 100, 100, Orientation::PositiveY));
+//    mesh->uploadToGPU();
+//    ground_ = createSurface();
+//    Material *mat = ground_.get<Material>();
+//    mat->albedo = glm::vec3(1);
+//    mat->roughness = 0.5f;
+//    mat->albedo_texture = Texture2D::create(1024, 1024, 1, TextureInternalFormat::sRGBA8);
+//    mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
+//    ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
+//    ground_.get<Drawable>()->mesh = mesh;
+//    ground_.add(Name("Ground"));
+//    return ground_;
+//}
 EntityHandle RCubeViewer::createGroundPlane()
 {
-    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 100, 100, Orientation::PositiveY));
+    std::shared_ptr<Mesh> mesh = Mesh::create(grid(20, 20, 100, 100, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 0, 0)));
     mesh->uploadToGPU();
     ground_ = createSurface();
-    Material *mat = ground_.get<Material>();
-    mat->albedo = glm::vec3(1);
-    mat->roughness = 0.5f;
-    mat->albedo_texture = Texture2D::create(1024, 1024, 1, TextureInternalFormat::sRGBA8);
-    mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
+    ForwardMaterial *mat = ground_.get<ForwardMaterial>();
+    auto shader = std::make_shared<UnlitMaterial>();
+    shader->use_vertex_colors = true;
+    ground_.get<ForwardMaterial>()->shader = shader;
     ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
     ground_.add(Name("Ground"));

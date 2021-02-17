@@ -157,6 +157,8 @@ class Mesh
     void setDefaultValue(GLuint id, const glm::vec3 &val);
 
     void setDefaultValue(GLuint id, const glm::vec2 &val);
+
+    void setDefaultValue(GLuint id, float val);
 };
 
 } // namespace rcube

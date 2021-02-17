@@ -8,8 +8,7 @@
 namespace rcube
 {
 
-GLRenderer::GLRenderer()
-    : top_(0), left_(0), width_(1280), height_(720), init_(false)
+GLRenderer::GLRenderer() : top_(0), left_(0), width_(1280), height_(720), init_(false)
 {
 }
 
@@ -94,8 +93,11 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     {
         glDisable(GL_BLEND);
     }
-    glBlendFunc(static_cast<GLenum>(settings.blend.func_src),
-                static_cast<GLenum>(settings.blend.func_dst));
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+    glBlendFuncSeparate(static_cast<GLenum>(settings.blend.color_src),
+                        static_cast<GLenum>(settings.blend.color_dst),
+                        static_cast<GLenum>(settings.blend.alpha_src),
+                        static_cast<GLenum>(settings.blend.alpha_dst));
 
     // Dithering
     if (settings.dither)

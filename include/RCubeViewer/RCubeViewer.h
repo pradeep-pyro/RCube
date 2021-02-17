@@ -17,6 +17,10 @@
 #include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
+#include "RCube/Components/ForwardMaterial.h"
+#include "RCube/Materials/UnlitMaterial.h"
+#include "RCube/Materials/StandardMaterial.h"
+#include "RCube/Materials/DepthMaterial.h"
 #include "RCube/Window.h"
 #include <memory>
 

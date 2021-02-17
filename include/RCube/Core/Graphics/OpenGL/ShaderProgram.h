@@ -175,7 +175,8 @@ struct RenderSettings
     struct Blend
     {
         bool enabled = false;
-        BlendFunc func_src = BlendFunc::One, func_dst = BlendFunc::Zero;
+        BlendFunc color_src = BlendFunc::SrcAlpha, color_dst = BlendFunc::OneMinusSrcAlpha;
+        BlendFunc alpha_src = BlendFunc::One, alpha_dst = BlendFunc::Zero;
     };
 
     Culling cull;

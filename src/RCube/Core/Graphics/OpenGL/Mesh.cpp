@@ -232,7 +232,8 @@ std::shared_ptr<Mesh> Mesh::createTriangleMesh(bool indexed, bool strip)
          AttributeBuffer::create("normals", GLuint(AttributeLocation::NORMAL), 3),
          AttributeBuffer::create("uvs", GLuint(AttributeLocation::UV), 2),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
-         AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3)},
+         AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3),
+        AttributeBuffer::create("wireframe", GLuint(AttributeLocation::WIREFRAME), 1)},
         strip ? MeshPrimitive::TriangleStrip : MeshPrimitive::Triangles, indexed);
 }
 
@@ -281,6 +282,7 @@ void Mesh::disableAttribute(std::string name)
     GLuint id = attr->buffer()->id();
     GLuint location = attr->location();
     glDisableVertexAttribArray(location);
+    // TODO(pradeep): these default values should be provided in the attribute buffer as a parameter
     if (attr->dim() == 3)
     {
         setDefaultValue(location, glm::vec3(1, 1, 1));
@@ -288,6 +290,10 @@ void Mesh::disableAttribute(std::string name)
     else if (attr->dim() == 2)
     {
         setDefaultValue(location, glm::vec2(0, 0));
+    }
+    else if (attr->dim() == 1)
+    {
+        setDefaultValue(location, 1);
     }
     checkGLError();
     done();
@@ -347,7 +353,7 @@ void Mesh::done() const
 
 size_t Mesh::numVertexData() const
 {
-    return attributes_.at("positions")->size();
+    return attributes_.at("positions")->count();
 }
 
 size_t Mesh::numIndexData() const
@@ -421,6 +427,10 @@ void Mesh::setDefaultValue(GLuint id, const glm::vec3 &val)
 void Mesh::setDefaultValue(GLuint id, const glm::vec2 &val)
 {
     glVertexAttrib2f(id, val[0], val[1]);
+}
+void Mesh::setDefaultValue(GLuint id, float val)
+{
+    glVertexAttrib1f(id, val);
 }
 
 void Mesh::updateBVH()

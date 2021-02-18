@@ -25,11 +25,9 @@ int main()
 
     // Add the loaded obj to the viewer
     EntityHandle mesh_handle = viewer.addSurface("OBJMesh", mesh);
-
-    // Change its diffuse color by getting the Drawable component
-    auto material = mesh_handle.get<Material>();
-    material->albedo = glm::vec3(0.0, 0.3, 0.7);
-    material->roughness = 0.5f;
+    MatCapRGBMaterial mat;
+    mat.color = glm::vec3(0, 1, 0);
+    mesh_handle.get<ForwardMaterial>()->shader = std::make_shared<MatCapRGBMaterial>(mat);
 
     // Show viewer
     viewer.execute();

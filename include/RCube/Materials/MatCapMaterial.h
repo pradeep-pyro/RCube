@@ -5,6 +5,9 @@
 namespace rcube
 {
 
+/**
+ * The RGB blending equation and sphere images are attributed to Polyscope: https://polyscope.run/features/materials
+ */
 class MatCapRGBMaterial : public ShaderMaterial
 {
     std::vector<DrawCall::Texture2DInfo> textures_;
@@ -18,7 +21,7 @@ class MatCapRGBMaterial : public ShaderMaterial
     bool wireframe = false;
     float wireframe_thickness = 1.f;
     glm::vec3 wireframe_color = glm::vec3(0, 0, 0);
-    
+
     MatCapRGBMaterial();
     void updateUniforms() override;
     const std::vector<DrawCall::Texture2DInfo> textureSlots() override;

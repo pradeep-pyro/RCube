@@ -1,3 +1,5 @@
+#pragma once
+
 #include "RCube/Core/Accel/AABB.h"
 #include "RCube/Core/Accel/Ray.h"
 #include "glm/glm.hpp"

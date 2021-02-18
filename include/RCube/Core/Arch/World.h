@@ -217,7 +217,11 @@ struct EntityHandle
      */
     bool valid() const
     {
-        return world != nullptr && world->hasEntity(*this);
+        if (world == nullptr)
+        {
+            return false;
+        }
+        return world->hasEntity(*this);
     }
 };
 

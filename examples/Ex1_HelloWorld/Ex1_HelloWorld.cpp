@@ -15,9 +15,9 @@ int main()
     viewer::RCubeViewer viewer(props);
 
     // Add a subdivided icosahedron surface to viewer
-    // The returned entity has 2 components in it: (1) a Drawable component holding the mesh (2) a ForwardMaterial 
-    // component to define the appearance, (3) a Transform component holding the local position, and local orientation
-    // with respect to a parent transform
+    // The returned entity has 2 components in it: (1) a Drawable component holding the mesh (2) a ForwardMaterial or 
+    // DeferredMaterial component (based on the render system), (3) a Transform component holding the local position,
+    // and local orientation with respect to a parent transform
     EntityHandle icoSphere = viewer.addSurface("icoSphere", rcube::icoSphere(1.0, 4));
     icoSphere.get<ForwardMaterial>()->shader = std::make_shared<MatCapRGBMaterial>();
 

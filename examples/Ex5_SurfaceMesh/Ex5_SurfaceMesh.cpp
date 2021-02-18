@@ -13,9 +13,11 @@ int main()
 
     // Add a subdivided icosahedron surface to viewer
     TriangleMeshData icosphere = icoSphere(1.0, 4);
-
     EntityHandle entity = viewer.addMeshEntity("Sphere");
-    entity.get<ForwardMaterial>()->shader = std::make_shared<StandardMaterial>();
+    MatCapRGBMaterial mat;
+    mat.wireframe = true;
+    entity.get<ForwardMaterial>()->shader = std::make_shared<MatCapRGBMaterial>(mat);
+
     std::shared_ptr<SurfaceMesh> surf = SurfaceMesh::create(icosphere);
     entity.get<Drawable>()->mesh = std::static_pointer_cast<Mesh>(surf);
 

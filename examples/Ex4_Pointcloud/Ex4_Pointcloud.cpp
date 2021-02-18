@@ -1,8 +1,8 @@
-#include "RCubeViewer/Pointcloud.h"
 #include "RCube/Core/Graphics/MeshGen/Points.h"
 #include "RCubeViewer/Colormap.h"
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Components/Pickable.h"
+#include "RCubeViewer/Pointcloud.h"
 #include "RCubeViewer/RCubeViewer.h"
 #include "imgui.h"
 #include <random>
@@ -26,7 +26,7 @@ int main()
 
     // Convert points to mesh for visualization
     std::shared_ptr<Pointcloud> pc = Pointcloud::create(sphere.vertices, 0.03f);
-    
+
     // Add some scalar fields
     ScalarField xs, ys, zs;
     std::vector<float> xs_data, ys_data, zs_data;
@@ -51,6 +51,7 @@ int main()
     // Add an entity in the viewer to hold the pointcloud
     auto entity = viewer.addMeshEntity("Sphere vertices");
     entity.get<Drawable>()->mesh = pc;
+    entity.get<ForwardMaterial>()->shader = std::make_shared<StandardMaterial>();
 
     // Make pointcloud pickable with mouse
     entity.add<Pickable>();

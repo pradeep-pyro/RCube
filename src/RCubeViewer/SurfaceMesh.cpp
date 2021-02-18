@@ -371,6 +371,7 @@ void SurfaceMesh::addVertexVectorField(std::string name, const VectorField &vf)
 void SurfaceMesh::addVertexVectorField(std::string name)
 {
     VectorField vf;
+    vf.setPoints(vertices_);
     vf.setVectors(std::vector<glm::vec3>(numVertices(), glm::vec3(0, 0, 0)));
     addVertexVectorField(name, vf);
 }
@@ -388,6 +389,7 @@ void SurfaceMesh::addFaceVectorField(std::string name, const VectorField &vf)
 void SurfaceMesh::addFaceVectorField(std::string name)
 {
     VectorField vf;
+    vf.setPoints(face_centers_);
     vf.setVectors(std::vector<glm::vec3>(numFaces(), glm::vec3(0, 0, 0)));
     addFaceVectorField(name, vf);
 }
@@ -457,7 +459,7 @@ void SurfaceMesh::setVertexArrowMesh(const TriangleMeshData &mesh)
 void SurfaceMesh::showVertexVectorField(std::string name)
 {
     VectorField &vf = vertexVectorField(name);
-    if (vf.updateArrows(vertices_) || visible_vertex_vector_field_ != name)
+    if (vf.updateArrows() || visible_vertex_vector_field_ != name)
     {
         setVertexArrowMesh(vf.mesh_);
         visible_vertex_vector_field_ = name;
@@ -472,7 +474,7 @@ bool SurfaceMesh::hasVertexVectorField(std::string name) const
 void SurfaceMesh::showFaceVectorField(std::string name)
 {
     VectorField &vf = faceVectorField(name);
-    if (vf.updateArrows(face_centers_) || visible_face_vector_field_ != name)
+    if (vf.updateArrows() || visible_face_vector_field_ != name)
     {
         setFaceArrowMesh(vf.mesh_);
         visible_face_vector_field_ = name;

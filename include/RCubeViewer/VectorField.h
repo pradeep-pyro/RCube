@@ -19,13 +19,17 @@ class VectorField
     friend class Pointcloud;
     friend class SurfaceMesh;
     TriangleMeshData mesh_;
+    TriangleMeshData glyph_;
     std::vector<glm::vec3> vectors_;
-    float max_length_ = 0.01f;
+    std::vector<glm::vec3> points_;
+    float max_length_ = 1.f;
     bool scale_by_magnitude_ = true;
     Colormap cmap_ = Colormap::Viridis;
     bool dirty_ = true;
 
   public:
+    VectorField();
+
     /**
      * Returns the vector field
      * @return const-ref to the vector field
@@ -43,6 +47,24 @@ class VectorField
      * @param Vector field as an array of glm::vec3
      */
     void setVectors(const std::vector<glm::vec3> &data);
+
+    /**
+     * Returns the points where each vector starts
+     * @return const-ref to the points
+     */
+    const std::vector<glm::vec3> &points() const;
+
+    /**
+     * Returns the points where each vector starts
+     * @return mutable-ref to the points
+     */
+    std::vector<glm::vec3> &points();
+
+    /**
+     * Sets the points where each vector starts
+     * @param Points as an array of glm::vec3
+     */
+    void setPoints(const std::vector<glm::vec3> &data);
 
     /**
      * Returns the maximum length to which the longest vector in the vector field
@@ -74,12 +96,23 @@ class VectorField
 
     /**
      * Updates the arrows of the vector field if necessary
-     * Note: called by RCubeViewer internally
-     *
-     * @param points List of points denoting the tail of each vector
-     * @param indexed Whether the mesh generated for the arrows is indexed (default: false)
      */
-    bool updateArrows(const std::vector<glm::vec3> &points, bool indexed = false);
+    bool updateArrows();
+
+    /**
+     * Sets the glyph that will be used to represent the vector.
+     * Must be pointing along positive Y-axis.
+     *
+     * @param Glyph mesh to represent arrows
+     */
+    void setGlyph(const TriangleMeshData &glyph);
+
+    /**
+     * Get the mesh data associated to the vector field
+     *
+     * @return Vector field mesh data
+     */
+    const TriangleMeshData &mesh() const;
 };
 
 } // namespace viewer

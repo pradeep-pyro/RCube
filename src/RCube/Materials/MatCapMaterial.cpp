@@ -1,4 +1,8 @@
 #include "RCube/Materials/MatCapMaterial.h"
+#include "RCube/Materials/images/black.png.h"
+#include "RCube/Materials/images/blue.png.h"
+#include "RCube/Materials/images/green.png.h"
+#include "RCube/Materials/images/red.png.h"
 #include "imgui.h"
 
 namespace rcube
@@ -177,7 +181,6 @@ void main()
 }
 )";
 
-
 const std::string MatCapRGBFragmentShader =
     R"(
 #version 450
@@ -252,13 +255,13 @@ MatCapRGBMaterial::MatCapRGBMaterial()
                                     MatCapRGBFragmentShader, true);
     textures_.reserve(3);
     red_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);
-    red_->setData(Image::fromFile("C:\\Users\\jayarap\\repos\\RCube\\misc\\clay_r.jpg", 3));
+    red_->setData(Image::fromMemory(red_png_start, red_png_size, 3));
     green_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);
-    green_->setData(Image::fromFile("C:\\Users\\jayarap\\repos\\RCube\\misc\\clay_g.jpg", 3));
+    green_->setData(Image::fromMemory(green_png_start, green_png_size, 3));
     blue_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);
-    blue_->setData(Image::fromFile("C:\\Users\\jayarap\\repos\\RCube\\misc\\clay_b.jpg", 3));
+    blue_->setData(Image::fromMemory(blue_png_start, blue_png_size, 3));
     black_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);
-    black_->setData(Image::fromFile("C:\\Users\\jayarap\\repos\\RCube\\misc\\clay_k.jpg", 3));
+    black_->setData(Image::fromMemory(black_png_start, black_png_size, 3));
     textures_.push_back({red_->id(), 0});
     textures_.push_back({green_->id(), 1});
     textures_.push_back({blue_->id(), 2});
@@ -292,11 +295,10 @@ void MatCapRGBMaterial::drawGUI()
     ImGui::ColorEdit3("Color###wireframe.color", glm::value_ptr(wireframe_color));
 }
 
-
 MatCapMaterial::MatCapMaterial()
 {
-    shader_ = ShaderProgram::create(MatCapVertexShader, MatCapGeometryShader,
-                                    MatCapFragmentShader, true);
+    shader_ =
+        ShaderProgram::create(MatCapVertexShader, MatCapGeometryShader, MatCapFragmentShader, true);
     textures_.reserve(1);
 }
 

@@ -36,6 +36,25 @@ class Image
         return im;
     }
 
+    static Image fromMemory(const unsigned char *mem, size_t nbytes, int n_channels, bool flip_vertically = false)
+    {
+        int w, h, c;
+        int desired_c = n_channels;
+        stbi_set_flip_vertically_on_load(int(flip_vertically));
+        unsigned char *pix = stbi_load_from_memory(mem, nbytes, &w, &h, &c, desired_c);
+        if (pix == nullptr)
+        {
+            throw std::runtime_error("Unable to load image from memory.");
+        }
+        Image im;
+        im.width_ = w;
+        im.height_ = h;
+        im.channels_ = desired_c;
+        im.pixels_.assign(pix, pix + w * h * desired_c);
+        stbi_image_free(pix);
+        return im;
+    }
+
     void saveBMP(const std::string &filename, bool flip_vertically = false)
     {
         stbi_flip_vertically_on_write(flip_vertically);
@@ -75,7 +94,7 @@ class Image
         channels_ = channels;
     }
 
-    void setPixels(int width, int height, int channels, unsigned char *data)
+    void setPixels(int width, int height, int channels, const unsigned char *data)
     {
         pixels_.assign(data, data + width * height * channels);
         width_ = width;

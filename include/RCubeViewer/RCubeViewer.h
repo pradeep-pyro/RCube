@@ -16,6 +16,7 @@
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Materials/DepthMaterial.h"
 #include "RCube/Materials/StandardMaterial.h"
+#include "RCube/Materials/MatCapMaterial.h"
 #include "RCube/Materials/UnlitMaterial.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/DeferredRenderSystem.h"

@@ -36,24 +36,28 @@ int main()
     viewer.camera().get<Camera>()->skybox = env_map;
     viewer.camera().get<Camera>()->use_skybox = true;
 
-    // Add a supershape
-    // The returned entity has 2 components in it: (1) a Drawable component holding the mesh and
-    // material (a Blinn-Phong material is used by default), (2) a Transform component holding the
-    // local position, and local orientation with respect to a parent transform
-    EntityHandle s = viewer.addSurface(
-        "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 3.f, 6.f, 1.f, 1.f, 1.f));
-    Material *mat = s.get<Material>();
-    mat->albedo = glm::vec3(0.953, 0.788, 0.408);
-    mat->roughness = 0.1f;
-    mat->metallic = 1.f;
-    // Image based lighting
+    // Compute 3 texture maps for performing image-based lighting:
     // (1) diffuse irradiance cubemap using importance sampling, and
     // (2) prefiltered specular cubmap and
     // (3) BRDF 2D LUT using the split-sum approximation
-    // are automatically precomputed based on
-    // on the cubemap's skybox when the viewer is initialized.
-    // To manually update IBL, call:
-    // viewer.updateImageBasedLighting);
+    viewer.updateImageBasedLighting();
+
+    // Add a supershape
+    // The returned entity has 2 components in it: (1) a Drawable component holding the mesh,
+    // (2) a ForwardMaterial or DeferredMaterial component (based on the render system) to control
+    // the object appearance, (3) a Transform component holding the
+    // local position, and local orientation with respect to a parent transform
+    EntityHandle s = viewer.addSurface(
+        "superShape", superShape(1.f, 200, 200, 1.f, 1.f, 3.f, 6.f, 1.f, 1.f, 1.f));
+    s.get<ForwardMaterial>()->shader = std::make_shared<StandardMaterial>();
+    ShaderMaterial *generic_mat = s.get<ForwardMaterial>()->shader.get();
+    StandardMaterial *mat = dynamic_cast<StandardMaterial *>(generic_mat);
+    mat->albedo = glm::vec3(0.953, 0.788, 0.408);
+    mat->roughness = 0.1f;
+    mat->metallic = 1.f;
+
+    // Set IBL maps to the material from the camera textures
+    mat->setIBLFromCamera(viewer.camera().get<Camera>());
 
     // Show viewer
     viewer.execute();

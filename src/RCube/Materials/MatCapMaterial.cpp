@@ -324,15 +324,15 @@ const std::vector<DrawCall::Texture2DInfo> MatCapMaterial::textureSlots()
 void MatCapMaterial::drawGUI()
 {
     ImGui::Text("MatCapRGBMaterial");
-    ImGui::Text("This material renders the object with \nblended RGB material capture textures."
+    ImGui::Text("This material renders the object with \nblended RGB material capture textures.\n"
                 "Lighting is baked into the material.");
     ImGui::Separator();
-    ImGui::ColorEdit3("Color", glm::value_ptr(color));
+    ImGui::ColorEdit3("Color###MatCapMaterial.color", glm::value_ptr(color));
     ImGui::Separator();
-    ImGui::Text("Wireframe");
-    ImGui::Checkbox("Show", &wireframe);
-    ImGui::InputFloat("Thickness###wireframe.thickness", &wireframe_thickness);
-    ImGui::ColorEdit3("Color###wireframe.color", glm::value_ptr(wireframe_color));
+    ImGui::Text("Wireframe###MatCapMaterial.wireframe");
+    ImGui::Checkbox("Show###MatCapMaterial.show", &wireframe);
+    ImGui::InputFloat("Thickness###MatCapMaterial.wireframe.thickness", &wireframe_thickness);
+    ImGui::ColorEdit3("Color###MatCapMaterial.wireframe.color", glm::value_ptr(wireframe_color));
 }
 
 } // namespace rcube

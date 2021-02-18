@@ -263,7 +263,7 @@ void Pointcloud::drawGUI()
     {
         showScalarField(current_sf);
         ImGui::PlotHistogram("Histogram", scalarField(current_sf).histogram_.data(),
-                             scalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f, 1.0f,
+                             static_cast<int>(scalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f, 1.0f,
                              ImVec2(0, 80.0f));
         if (ImGui::InputFloat("Min. value", &scalarField(current_sf).vmin_))
         {
@@ -368,7 +368,7 @@ VectorField &Pointcloud::vectorField(std::string name)
 void Pointcloud::showVectorField(std::string name)
 {
     VectorField &vf = vectorField(name);
-    bool update = vf.updateArrows(points_, true);
+    bool update = vf.updateArrows();
     if (update || visible_vector_field_ != name)
     {
         setPointcloudArrowAttributes(vf.mesh_);

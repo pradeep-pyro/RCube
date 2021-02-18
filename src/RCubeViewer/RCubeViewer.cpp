@@ -44,8 +44,14 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
-    //world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution));
-    world_.addSystem(std::make_unique<ForwardRenderSystem>(props.resolution, props.MSAA));
+    if (props.render_system == RCubeViewerProps::RenderSystemType::Deferred)
+    {
+        world_.addSystem(std::make_unique<DeferredRenderSystem>(props.resolution));
+    }
+    else
+    {
+        world_.addSystem(std::make_unique<ForwardRenderSystem>(props.resolution, props.MSAA));
+    }
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
     world_.addSystem(std::make_unique<PickTooltipSystem>());
@@ -55,7 +61,8 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     camera_.get<Transform>()->lookAt(glm::vec3(0.f, 0.f, 1.5f), glm::vec3(0.f, 0.f, 0.f),
                                      YAXIS_POSITIVE);
     camera_.get<Camera>()->fov = props.camera_fov;
-    camera_.get<Camera>()->orthographic = props.camera_orthographic;
+    // Pradeep: Disabling orthographic camera since it doen't play well with skyboxes
+    // camera_.get<Camera>()->orthographic = props.camera_orthographic;
     // Make a default skybox
     camera_.get<Camera>()->createGradientSkyBox(props.background_color_top,
                                                 props.background_color_bottom);
@@ -73,7 +80,15 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     // Create a ground plane
     if (props.ground_plane)
     {
-        ground_ = createGroundPlane();
+        if (props.render_system == RCubeViewerProps::RenderSystemType::Deferred)
+        {
+            // Deferred renderer cannot handle different material/geometry types
+            ground_ = createGroundPlane();
+        }
+        else
+        {
+            ground_ = createGroundGrid();
+        }
     }
 
     world_.initialize();
@@ -104,7 +119,14 @@ EntityHandle RCubeViewer::addMeshEntity(const std::string &name)
 {
     auto ent = world_.createEntity();
     ent.add<Drawable>(Drawable());
-    ent.add<ForwardMaterial>();
+    if (world_.getSystem("ForwardRenderSystem") != nullptr)
+    {
+        ent.add<ForwardMaterial>();
+    }
+    else if (world_.getSystem("DeferredRenderSystem") != nullptr)
+    {
+        ent.add<Material>();
+    }
     ent.add<Transform>(Transform());
     ent.add<Name>(name);
     return ent;
@@ -403,22 +425,23 @@ EntityHandle RCubeViewer::createCamera()
     return ent;
 }
 
-//EntityHandle RCubeViewer::createGroundPlane()
-//{
-//    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 100, 100, Orientation::PositiveY));
-//    mesh->uploadToGPU();
-//    ground_ = createSurface();
-//    Material *mat = ground_.get<Material>();
-//    mat->albedo = glm::vec3(1);
-//    mat->roughness = 0.5f;
-//    mat->albedo_texture = Texture2D::create(1024, 1024, 1, TextureInternalFormat::sRGBA8);
-//    mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
-//    ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
-//    ground_.get<Drawable>()->mesh = mesh;
-//    ground_.add(Name("Ground"));
-//    return ground_;
-//}
 EntityHandle RCubeViewer::createGroundPlane()
+{
+    std::shared_ptr<Mesh> mesh = Mesh::create(plane(20, 20, 100, 100, Orientation::PositiveY));
+    mesh->uploadToGPU();
+    ground_ = createSurface();
+    Material *mat = ground_.get<Material>();
+    mat->albedo = glm::vec3(1);
+    mat->roughness = 0.5f;
+    mat->albedo_texture = Texture2D::create(1024, 1024, 1, TextureInternalFormat::sRGBA8);
+    mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
+    ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
+    ground_.get<Drawable>()->mesh = mesh;
+    ground_.add(Name("Ground"));
+    return ground_;
+}
+
+EntityHandle RCubeViewer::createGroundGrid()
 {
     std::shared_ptr<Mesh> mesh = Mesh::create(grid(20, 20, 100, 100, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 0, 0)));
     mesh->uploadToGPU();

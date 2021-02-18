@@ -54,6 +54,8 @@ struct TriangleMeshData
     bool valid() const;
 
     void scaleAndCenter();
+
+    void boundingBox(glm::vec3 &min, glm::vec3 &max) const;
 };
 
 // Represents a 3D triangle/line Mesh with vertex positions, normals,

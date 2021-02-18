@@ -120,6 +120,39 @@ bool TriangleMeshData::valid() const
     return true;
 }
 
+void TriangleMeshData::boundingBox(glm::vec3 &min, glm::vec3 &max) const
+{
+    min = vertices[0];
+    max = vertices[0];
+    for (const glm::vec3 &v : vertices)
+    {
+        if (v.x < min.x)
+        {
+            min.x = v.x;
+        }
+        if (v.y < min.y)
+        {
+            min.y = v.y;
+        }
+        if (v.z < min.z)
+        {
+            min.z = v.z;
+        }
+        if (v.x > max.x)
+        {
+            max.x = v.x;
+        }
+        if (v.y > max.y)
+        {
+            max.y = v.y;
+        }
+        if (v.z > max.z)
+        {
+            max.z = v.z;
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Mesh
 //-----------------------------------------------------------------------------

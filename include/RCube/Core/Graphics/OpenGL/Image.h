@@ -41,7 +41,7 @@ class Image
         int w, h, c;
         int desired_c = n_channels;
         stbi_set_flip_vertically_on_load(int(flip_vertically));
-        unsigned char *pix = stbi_load_from_memory(mem, nbytes, &w, &h, &c, desired_c);
+        unsigned char *pix = stbi_load_from_memory(mem, static_cast<int>(nbytes), &w, &h, &c, desired_c);
         if (pix == nullptr)
         {
             throw std::runtime_error("Unable to load image from memory.");

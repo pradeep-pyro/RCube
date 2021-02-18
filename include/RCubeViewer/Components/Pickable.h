@@ -2,6 +2,7 @@
 
 #include "RCube/Core/Arch/Component.h"
 #include "RCube/Window.h"
+#include "RCube/Core/Accel/Primitive.h"
 
 namespace rcube
 {

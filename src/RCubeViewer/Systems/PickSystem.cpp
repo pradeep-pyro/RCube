@@ -81,10 +81,14 @@ void PickSystem::update(bool)
                 if (dr->mesh->rayIntersect(ray_model, pt, prim))
                 {
                     hit = true;
-                    min_dist = std::min(glm::length(pt - ray_model.origin()), min_dist);
-                    closest_point = pt;
-                    closest_primitive = prim;
-                    closest = ent;
+                    float dist = glm::length(pt - ray_model.origin());
+                    if (dist < min_dist)
+                    {
+                        min_dist = dist;
+                        closest_point = pt;
+                        closest_primitive = prim;
+                        closest = ent;
+                    }
                 }
                 else
                 {

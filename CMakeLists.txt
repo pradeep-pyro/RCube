@@ -19,7 +19,7 @@ add_definitions(-DNOMINMAX)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 SET(GLM_TEST_ENABLE OFF CACHE BOOL "")
-SET(GLM_FORCE_SILENT_WARNINGS ON CACHE BOOL "")
+SET(GLM_SILENT_WARNINGS ON CACHE BOOL "")
 SET(BUILD_SHARED_LIBS OFF CACHE BOOL "")
 add_subdirectory(dependencies/glm)
 add_subdirectory(dependencies/glfw)

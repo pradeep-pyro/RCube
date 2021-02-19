@@ -24,7 +24,7 @@ class VectorField
     std::vector<glm::vec3> points_;
     float max_length_ = 1.f;
     bool scale_by_magnitude_ = true;
-    Colormap cmap_ = Colormap::Viridis;
+    Colormap cmap_ = Colormap::None;
     bool dirty_ = true;
 
   public:

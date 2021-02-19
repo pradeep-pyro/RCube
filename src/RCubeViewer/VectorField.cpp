@@ -14,6 +14,7 @@ namespace viewer
 VectorField::VectorField()
 {
     glyph_ = cone(0.1f * 1, 1, 8, 0, glm::pi<float>() * 2.f, false);
+    glyph_.colors.resize(glyph_.vertices.size(), glm::vec3(1, 1, 1));
 }
 const std::vector<glm::vec3> &VectorField::vectors() const
 {
@@ -82,8 +83,11 @@ bool VectorField::updateArrows()
         }
         // Compute colors for arrows
         std::vector<glm::vec3> colors;
-        auto minmax_length = std::minmax_element(lengths.begin(), lengths.end());
-        colormap(cmap_, lengths, *minmax_length.first, *minmax_length.second, colors);
+        if (cmap_ != Colormap::None)
+        {
+            auto minmax_length = std::minmax_element(lengths.begin(), lengths.end());
+            colormap(cmap_, lengths, *minmax_length.first, *minmax_length.second, colors);
+        }
 
         // If scale_by_magnitude_ is true...
         if (!scale_by_magnitude_)
@@ -115,7 +119,7 @@ bool VectorField::updateArrows()
         for (size_t i = 0; i < points_.size(); ++i)
         {
             TriangleMeshData curr_glyph = glyph_;
-            // Create an arrow as a cone
+            // Create an arrow with glyph
             float h = lengths[i];
             float scale = h / glyph_length;
             for (glm::vec3 &vertex : curr_glyph.vertices)
@@ -124,7 +128,7 @@ bool VectorField::updateArrows()
             }
             for (glm::vec3 &vertex : curr_glyph.vertices)
             {
-                vertex[1] += 0.5f * h;
+                vertex[1] -= mn.y * scale;
             }
             glm::quat q = glm::rotation(glm::vec3(0.f, 1.f, 0.f), glm::normalize(vectors_[i]));
             for (glm::vec3 &vertex : curr_glyph.vertices)
@@ -140,11 +144,15 @@ bool VectorField::updateArrows()
         }
         // Set colors for arrows based on colormap
         // The color must be set for each of the vertices in the arrow's mesh
-        for (size_t i = 0; i < colors.size(); ++i)
+        if (!colors.empty())
         {
-            for (size_t j = 0; j < vertices_per_arrow; ++j)
+            mesh_.colors.clear();
+            for (size_t i = 0; i < colors.size(); ++i)
             {
-                mesh_.colors.push_back(colors[i]);
+                for (size_t j = 0; j < vertices_per_arrow; ++j)
+                {
+                    mesh_.colors.push_back(colors[i]);
+                }
             }
         }
         dirty_ = false;

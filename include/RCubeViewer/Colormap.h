@@ -10,6 +10,7 @@ namespace viewer
 
 enum class Colormap
 {
+    None,
     Viridis,
     Magma,
 };

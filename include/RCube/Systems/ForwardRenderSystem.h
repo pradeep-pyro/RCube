@@ -40,7 +40,6 @@ class ForwardRenderSystem : public System
     std::shared_ptr<Framebuffer> framebuffer_brightness_;
     std::shared_ptr<Framebuffer> framebuffer_blur_[2];
     std::shared_ptr<Framebuffer> framebuffer_pp_;
-    std::shared_ptr<ShaderProgram> shader_standard_;
     std::shared_ptr<ShaderProgram> shader_brightness_;
     std::shared_ptr<ShaderProgram> shader_blur_;
     std::shared_ptr<ShaderProgram> shader_pp_;

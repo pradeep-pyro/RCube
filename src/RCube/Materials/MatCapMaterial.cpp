@@ -284,7 +284,7 @@ const std::vector<DrawCall::Texture2DInfo> MatCapRGBMaterial::textureSlots()
 void MatCapRGBMaterial::drawGUI()
 {
     ImGui::Text("MatCapRGBMaterial");
-    ImGui::Text("This material renders the object with \nblended RGB material capture textures."
+    ImGui::Text("This material renders the object with \nblended RGB material capture textures.\n"
                 "Lighting is baked into the material.");
     ImGui::Separator();
     ImGui::ColorEdit3("Color", glm::value_ptr(color));
@@ -324,7 +324,7 @@ const std::vector<DrawCall::Texture2DInfo> MatCapMaterial::textureSlots()
 void MatCapMaterial::drawGUI()
 {
     ImGui::Text("MatCapRGBMaterial");
-    ImGui::Text("This material renders the object with \nblended RGB material capture textures.\n"
+    ImGui::Text("This material renders the object with \na material capture texture.\n"
                 "Lighting is baked into the material.");
     ImGui::Separator();
     ImGui::ColorEdit3("Color###MatCapMaterial.color", glm::value_ptr(color));

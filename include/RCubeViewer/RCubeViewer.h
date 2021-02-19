@@ -43,7 +43,7 @@ struct RCubeViewerProps
 
     std::string title = "RCubeViewer";             // Title of the viewer window
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
-    int MSAA = 0;                                  // Number of samples for multisampling
+    int MSAA = 4;                                  // Number of samples for multisampling
     glm::vec3 background_color_top =
         glm::vec3(82.f / 255.f, 87.f / 255.f, 110.f / 255.f); // Background top color
     glm::vec3 background_color_bottom =

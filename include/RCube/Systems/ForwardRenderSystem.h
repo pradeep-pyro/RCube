@@ -37,6 +37,7 @@ class ForwardRenderSystem : public System
     glm::ivec2 resolution_ = glm::ivec2(1280, 720);
     GLRenderer renderer_;
     std::shared_ptr<Framebuffer> framebuffer_hdr_;
+    std::shared_ptr<Framebuffer> framebuffer_hdr_ms_;
     std::shared_ptr<Framebuffer> framebuffer_brightness_;
     std::shared_ptr<Framebuffer> framebuffer_blur_[2];
     std::shared_ptr<Framebuffer> framebuffer_pp_;

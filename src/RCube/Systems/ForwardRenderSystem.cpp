@@ -17,6 +17,7 @@ namespace rcube
 {
 
 ForwardRenderSystem::ForwardRenderSystem(glm::ivec2 resolution, unsigned int msaa)
+    : resolution_(resolution), msaa_(msaa)
 {
     ComponentMask dirlight_filter;
     dirlight_filter.set(DirectionalLight::family());
@@ -44,12 +45,26 @@ void ForwardRenderSystem::initialize()
     // HDR framebuffer
     framebuffer_hdr_ = Framebuffer::create();
     auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
-    framebuffer_hdr_->setColorAttachment(0, color);
     auto depth =
         Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32FStencil8);
+    framebuffer_hdr_->setColorAttachment(0, color);
     framebuffer_hdr_->setDepthStencilAttachment(depth);
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
+
+    // Create multisampled framebuffer if needed
+    if (msaa_ > 0)
+    {
+        framebuffer_hdr_ms_ = Framebuffer::create();
+        auto color_ms =
+            Texture2D::createMS(resolution_.x, resolution_.y, msaa_, TextureInternalFormat::RGB16F);
+        auto depth_ms = Texture2D::createMS(resolution_.x, resolution_.y, msaa_,
+                                            TextureInternalFormat::Depth32FStencil8);
+        framebuffer_hdr_ms_->setColorAttachment(0, color_ms);
+        framebuffer_hdr_ms_->setDepthStencilAttachment(depth_ms);
+        framebuffer_hdr_ms_->setDrawBuffers({0});
+        assert(framebuffer_hdr_ms_->isComplete());
+    }
 
     // UBOs
     // Three 4x4 matrices and one 3D vector
@@ -225,6 +240,11 @@ void ForwardRenderSystem::update(bool)
         // Render passes
         opaqueGeometryPass(cam);
         transparentGeometryPass(cam);
+        // Resolve MSAA framebuffer if needed
+        if (msaa_ > 0)
+        {
+            framebuffer_hdr_ms_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_);
+        }
         postprocessPass(cam);
         finalPass(cam);
     }
@@ -236,7 +256,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
     rt.clear_color_buffer = true;
     rt.clear_depth_buffer = true;
     rt.clear_stencil_buffer = true;
-    rt.framebuffer = framebuffer_hdr_->id();
+    rt.framebuffer = msaa_ > 0 ? framebuffer_hdr_ms_->id() : framebuffer_hdr_->id();
     rt.viewport_origin = glm::ivec2(0, 0);
     rt.viewport_size = resolution_;
 

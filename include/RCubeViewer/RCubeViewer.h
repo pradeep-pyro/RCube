@@ -15,8 +15,8 @@
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Materials/DepthMaterial.h"
-#include "RCube/Materials/StandardMaterial.h"
 #include "RCube/Materials/MatCapMaterial.h"
+#include "RCube/Materials/StandardMaterial.h"
 #include "RCube/Materials/UnlitMaterial.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/DeferredRenderSystem.h"
@@ -43,7 +43,7 @@ struct RCubeViewerProps
 
     std::string title = "RCubeViewer";             // Title of the viewer window
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
-    int MSAA = 4;                                  // Number of samples for multisampling
+    int MSAA = 4; // Number of samples for multisampling (for RenderSystemType::Forward)
     glm::vec3 background_color_top =
         glm::vec3(82.f / 255.f, 87.f / 255.f, 110.f / 255.f); // Background top color
     glm::vec3 background_color_bottom =
@@ -51,7 +51,7 @@ struct RCubeViewerProps
     float camera_fov = glm::radians(30.f); // Vertical FOV of the camera in radians
     [[deprecated]] bool camera_orthographic = false;
     bool ground_plane = true; // Whether to add a ground plane grid
-    bool sunlight = true;     // Whether to add a sunlight (directional light)
+    bool sunlight = false;     // Whether to add a sunlight (directional light)
     RenderSystemType render_system = RenderSystemType::Forward; // Render system to use
 };
 

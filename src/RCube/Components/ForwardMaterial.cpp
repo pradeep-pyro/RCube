@@ -1,6 +1,6 @@
 #include "RCube/Components/ForwardMaterial.h"
-#include "imgui.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
 
 namespace rcube
 {
@@ -29,13 +29,22 @@ void ShaderMaterial::drawGUI()
 
 void ForwardMaterial::drawGUI()
 {
-    if (shader != nullptr)
-    {
-        shader->drawGUI();
-    }
-    else
+    ShaderMaterial *sh = shader.get();
+    if (shader == nullptr)
     {
         ImGui::Text("No valid shader found.");
+        return;
+    }
+    size_t pass = 1;
+    while (sh != nullptr)
+    {
+        if (ImGui::CollapsingHeader(("Pass " + std::to_string(pass)).c_str(),
+                                    ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            sh->drawGUI();
+        }
+        sh = sh->next_pass.get();
+        ++pass;
     }
 }
 

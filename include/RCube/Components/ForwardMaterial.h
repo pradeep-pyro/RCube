@@ -22,6 +22,7 @@ class ShaderMaterial
     virtual const std::vector<DrawCall::TextureCubemapInfo> cubemapSlots();
     const RenderSettings &state() const;
     std::shared_ptr<ShaderProgram> get() const;
+    std::shared_ptr<ShaderMaterial> next_pass = nullptr;
 };
 
 /**

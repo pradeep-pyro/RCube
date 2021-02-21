@@ -1,0 +1,19 @@
+#pragma once
+
+#include "RCube/Components/ForwardMaterial.h"
+
+namespace rcube
+{
+
+class OutlineMaterial : public ShaderMaterial
+{
+  public:
+    glm::vec3 color = glm::vec3(0, 1, 1);
+    float thickness = 0.01f;
+
+    OutlineMaterial();
+    void updateUniforms() override;
+    void drawGUI() override;
+};
+
+} // namespace rcube

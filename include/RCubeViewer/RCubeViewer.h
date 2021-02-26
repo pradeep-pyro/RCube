@@ -91,6 +91,10 @@ class RCubeViewer : public rcube::Window
         return world_;
     }
 
+    AABB worldBoundingBox();
+
+    void fitCameraExtents();
+
     // Function to setup custom GUI windows
     std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer & /*viewer*/) {};
 

@@ -29,6 +29,8 @@ class AABB
 
     size_t longestAxis() const;
 
+    glm::vec3 size() const;
+
     bool rayIntersect(const Ray &ray, float &t);
 };
 

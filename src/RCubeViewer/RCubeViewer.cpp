@@ -464,5 +464,63 @@ EntityHandle RCubeViewer::createDirLight()
     return ent;
 }
 
+
+AABB RCubeViewer::worldBoundingBox()
+{
+    EntityHandleIterator iter = world_.entities();
+    AABB world_bbox;
+    while (iter.hasNext())
+    {
+        EntityHandle ent = iter.next();
+        if (ent.entity == ground_.entity)
+        {
+            continue;
+        }
+        if (ent.has<Drawable>() && ent.has<Transform>())
+        {
+            Drawable *dr = ent.get<Drawable>();
+            if (!dr->visible)
+            {
+                continue;
+            }
+            Transform *tr = ent.get<Transform>();
+            const glm::mat4 model2world = tr->worldTransform();
+            auto positions = dr->mesh->attribute("positions")->ptrVec3();
+            size_t num_vertices = dr->mesh->attribute("positions")->count();
+            for (size_t i = 0; i < num_vertices; ++i)
+            {
+                glm::vec3 world_pos = glm::vec3(model2world * glm::vec4(positions[i], 1.f));
+                world_bbox.expandBy(world_pos);
+            }
+        }
+    }
+    return world_bbox;
+}
+
+void RCubeViewer::fitCameraExtents()
+{
+    Camera *cam = camera().get<Camera>();
+    Transform *cam_tr = camera().get<Transform>();
+    AABB world_bbox = worldBoundingBox();
+    glm::vec3 center = (world_bbox.min() + world_bbox.max()) / 2.f;
+    float bounding_size = world_bbox.size()[glm::length_t(world_bbox.longestAxis())];
+
+    // Don't try to fit if the bounding box is empty
+    if (bounding_size < 1e-5)
+    {
+        return;
+    }
+    float tmp = 0.5f * cam->fov;
+    float aspect = float(cam->viewport_size[0]) / float(cam->viewport_size[1]);
+    if (aspect < 1.0)
+    {
+        tmp = std::atan(aspect * std::tan(tmp));
+    }
+    float distance = (bounding_size * 0.5f) / std::tan(tmp);
+    glm::vec3 forward = glm::normalize(cam->target - cam_tr->worldPosition());
+    cam->target = center;
+    cam_tr->setPosition(center - forward * distance);
+}
+
 } // namespace viewer
 } // namespace rcube

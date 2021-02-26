@@ -56,6 +56,11 @@ size_t AABB::longestAxis() const
     return 2;
 }
 
+glm::vec3 AABB::size() const
+{
+    return glm::abs(max_ - min_);
+}
+
 bool AABB::rayIntersect(const Ray &ray, float &t)
 {
     float t1 = (min_.x - ray.origin().x) * ray.inverseDirection().x;

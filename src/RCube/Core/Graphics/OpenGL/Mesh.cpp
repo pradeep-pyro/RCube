@@ -507,11 +507,20 @@ bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim)
     {
         return false;
     }
-    bool hit = bvh_->rayIntersect(ray, pt, prim);
+    /*bool hit = bvh_->rayIntersect(ray, pt, prim);
     if (!hit)
     {
         return false;
     }
+    return true;*/
+    BVHClosestIntersectionInfo info;
+    bvh_->rayClosestIntersect(ray, info);
+    if (!info.hit)
+    {
+        return false;
+    }
+    pt = ray.origin() + info.t * ray.direction();
+    prim = info.primitive;
     return true;
 }
 

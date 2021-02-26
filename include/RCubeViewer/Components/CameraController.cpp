@@ -1,7 +1,12 @@
 #include "CameraController.h"
 #include "imgui.h"
 
-void rcube::viewer::CameraController::drawGUI()
+namespace rcube
+{
+namespace viewer
+{
+
+void CameraController::drawGUI()
 {
     ImGui::SliderFloat("Rotation speed", &rotate_speed, 1, 10);
     ImGui::SliderFloat("Pan speed", &pan_speed, 1, 10);
@@ -14,3 +19,6 @@ void rcube::viewer::CameraController::drawGUI()
     ImGui::SliderAngle("Max. vertical angle", &max_vertical_angle, -glm::pi<float>(),
                        glm::pi<float>());
 }
+
+} // namespace viewer
+} // namespace rcube

@@ -11,5 +11,6 @@ void rcube::viewer::CameraController::drawGUI()
     ImGui::SliderAngle("Max. horizonal angle", &max_horizontal_angle);
     ImGui::SliderAngle("Min. vertical angle", &min_vertical_angle, -glm::pi<float>(),
                        glm::pi<float>());
-    ImGui::SliderAngle("Max. vertical angle", &max_vertical_angle);
+    ImGui::SliderAngle("Max. vertical angle", &max_vertical_angle, -glm::pi<float>(),
+                       glm::pi<float>());
 }

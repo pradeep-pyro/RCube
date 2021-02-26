@@ -1,4 +1,4 @@
-#include "CameraController.h"
+#include "RCubeViewer/Components/CameraController.h"
 #include "imgui.h"
 
 namespace rcube

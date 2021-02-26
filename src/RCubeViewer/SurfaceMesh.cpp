@@ -597,7 +597,7 @@ void SurfaceMesh::drawGUI()
         {
             showVertexScalarField(current_sf);
             ImGui::PlotHistogram("Histogram", vertexScalarField(current_sf).histogram_.data(),
-                                 vertexScalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f,
+                                 static_cast<int>(vertexScalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f,
                                  1.0f, ImVec2(0, 80.0f));
             if (ImGui::InputFloat("Min. value###sf1", &vertexScalarField(current_sf).vmin_))
             {
@@ -616,7 +616,7 @@ void SurfaceMesh::drawGUI()
         {
             showFaceScalarField(current_sf);
             ImGui::PlotHistogram("Histogram", faceScalarField(current_sf).histogram_.data(),
-                                 faceScalarField(current_sf).histogram_.size(), 0, nullptr, 0.0f,
+                                 static_cast<int>(faceScalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f,
                                  1.0f, ImVec2(0, 80.0f));
             if (ImGui::InputFloat("Min. value###sf4", &faceScalarField(current_sf).vmin_))
             {

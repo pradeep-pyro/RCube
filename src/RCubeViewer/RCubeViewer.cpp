@@ -211,6 +211,7 @@ void RCubeViewer::drawGUI()
     {
         Camera *cam = camera_.get<Camera>();
         Transform *cam_tr = camera_.get<Transform>();
+        CameraController *cam_ctrl = camera_.get<CameraController>();
 
         // Default camera viewpoints
         if (ImGui::Button("+X"))
@@ -248,8 +249,8 @@ void RCubeViewer::drawGUI()
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(0, 0, -1.5f), glm::vec3(0.f), YAXIS_POSITIVE);
         }
-
-        camera_.get<Camera>()->drawGUI();
+        cam_ctrl->drawGUI();
+        cam->drawGUI();
     }
 
     ///////////////////////////////////////////////////////////////////////////

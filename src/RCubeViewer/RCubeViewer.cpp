@@ -251,6 +251,10 @@ void RCubeViewer::drawGUI()
         }
         cam_ctrl->drawGUI();
         cam->drawGUI();
+        if (ImGui::Button("Fit extents"))
+        {
+            fitCameraExtents();
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

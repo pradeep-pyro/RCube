@@ -18,6 +18,7 @@
 #include "RCube/Materials/MatCapMaterial.h"
 #include "RCube/Materials/StandardMaterial.h"
 #include "RCube/Materials/UnlitMaterial.h"
+#include "RCube/Materials/OutlineMaterial.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCube/Systems/ForwardRenderSystem.h"
@@ -43,7 +44,7 @@ struct RCubeViewerProps
 
     std::string title = "RCubeViewer";             // Title of the viewer window
     glm::ivec2 resolution = glm::ivec2(1280, 720); // Resolution of internal framebuffer and window
-    int MSAA = 4; // Number of samples for multisampling (for RenderSystemType::Forward)
+    int MSAA = 2; // Number of samples for multisampling (for RenderSystemType::Forward)
     glm::vec3 background_color_top =
         glm::vec3(82.f / 255.f, 87.f / 255.f, 110.f / 255.f); // Background top color
     glm::vec3 background_color_bottom =

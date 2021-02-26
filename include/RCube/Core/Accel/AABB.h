@@ -29,7 +29,7 @@ class AABB
 
     size_t longestAxis() const;
 
-    bool rayIntersect(const Ray &ray);
+    bool rayIntersect(const Ray &ray, float &t);
 };
 
 } // namespace rcube

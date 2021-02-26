@@ -56,44 +56,34 @@ size_t AABB::longestAxis() const
     return 2;
 }
 
-bool AABB::rayIntersect(const Ray &ray)
+bool AABB::rayIntersect(const Ray &ray, float &t)
 {
-    float nearT = -std::numeric_limits<float>::infinity();
-    float farT = std::numeric_limits<float>::infinity();
+    float t1 = (min_.x - ray.origin().x) * ray.inverseDirection().x;
+    float t2 = (max_.x - ray.origin().x) * ray.inverseDirection().x;
+    float t3 = (min_.y - ray.origin().y) * ray.inverseDirection().y;
+    float t4 = (max_.y - ray.origin().y) * ray.inverseDirection().y;
+    float t5 = (min_.z - ray.origin().z) * ray.inverseDirection().z;
+    float t6 = (max_.z - ray.origin().z) * ray.inverseDirection().z;
 
-    for (int i = 0; i < 3; i++)
+    float tmin = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
+    float tmax = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
+
+    // AABB is behind rays's origin
+    if (tmax < 0)
     {
-        float origin = ray.origin()[i];
-        float minVal = min_[i], maxVal = max_[i];
-
-        if (ray.direction()[i] == 0)
-        {
-            if (origin < minVal || origin > maxVal)
-            {
-                return false;
-            }
-        }
-        else
-        {
-            float t1 = (minVal - origin) / ray.direction()[i];
-            float t2 = (maxVal - origin) / ray.direction()[i];
-
-            if (t1 > t2)
-            {
-                std::swap(t1, t2);
-            }
-
-            nearT = std::max(t1, nearT);
-            farT = std::min(t2, farT);
-
-            if (!(nearT <= farT))
-            {
-                return false;
-            }
-        }
+        t = tmax;
+        return false;
     }
 
-    return ray.tmin() <= farT && nearT <= ray.tmax();
+    // No intersection
+    if (tmin > tmax)
+    {
+        t = tmax;
+        return false;
+    }
+
+    t = tmin;
+    return true;
 }
 
 } // namespace rcube

@@ -5,7 +5,8 @@ namespace rcube
 
 bool BVHNode::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &primitive)
 {
-    if (aabb.rayIntersect(ray))
+    float aabb_t;
+    if (aabb.rayIntersect(ray, aabb_t))
     {
         if ((left != nullptr && left->primitives.size() > 0) || (right != nullptr && right->primitives.size() > 0))
         {
@@ -31,9 +32,52 @@ bool BVHNode::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &primitiv
     return false;
 }
 
+void BVHNode::rayClosestIntersect(const Ray &ray, BVHClosestIntersectionInfo &info)
+{
+    // Adapted from:
+    // http://15462.courses.cs.cmu.edu/fall2016content/lectures/12_accelstructures/12_accelstructures_slides.pdf
+    float aabb_t;
+    if (!aabb.rayIntersect(ray, aabb_t))
+    {
+        return;
+    }
+    bool is_leaf = (primitives.size() > 0);
+    if (is_leaf)
+    {
+        float min_t = std::numeric_limits<float>::infinity();
+        for (PrimitivePtr prim : primitives)
+        {
+            float t;
+            if (prim->rayIntersect(ray, t))
+            {
+                if (t < min_t)
+                {
+                    min_t = t;
+                    info.t = t;
+                    info.primitive = prim;
+                    info.hit = true;
+                }
+            }
+        }
+    }
+    else
+    {
+        float min_t1 = std::numeric_limits<float>::infinity();
+        float min_t2 = std::numeric_limits<float>::infinity();
+        bool hit_left = left->aabb.rayIntersect(ray, min_t1);
+        bool hit_right = right->aabb.rayIntersect(ray, min_t2);
+        BVHNodePtr first = (min_t1 <= min_t2) ? left : right;
+        BVHNodePtr second = (min_t1 <= min_t2) ? right : left;
+        first->rayClosestIntersect(ray, info);
+        if (min_t2 < info.t)
+        {
+            second->rayClosestIntersect(ray, info);
+        }
+    }
+}
+
 BVHNodePtr buildBVH(const std::vector<PrimitivePtr> &prims, size_t depth)
 {
-
     auto node = std::make_shared<BVHNode>();
     node->primitives = prims;
     node->aabb = AABB();

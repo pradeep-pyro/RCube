@@ -22,6 +22,12 @@ bool AABB::isNull() const
     return min_.x > max_.x || min_.y > max_.y || min_.z > max_.z;
 }
 
+void AABB::setNull()
+{
+    min_ = glm::vec3(1.f, 1.f, 1.f);
+    max_ = glm::vec3(-1.f, -1.f, -1.f);
+}
+
 void AABB::expandBy(const glm::vec3 &p)
 {
     if (!isNull())

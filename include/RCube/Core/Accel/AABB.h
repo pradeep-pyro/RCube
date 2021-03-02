@@ -9,8 +9,8 @@ namespace rcube
 
 class AABB
 {
-    glm::vec3 min_ = glm::vec3(0.f, 0.f, 0.f);
-    glm::vec3 max_ = glm::vec3(0.f, 0.f, 0.f);
+    glm::vec3 min_ = glm::vec3(1.f, 1.f, 1.f);
+    glm::vec3 max_ = glm::vec3(-1.f, -1.f, -1.f);
 
   public:
     AABB() = default;
@@ -22,6 +22,8 @@ class AABB
     const glm::vec3 &max() const;
 
     bool isNull() const;
+
+    void setNull();
 
     void expandBy(const glm::vec3 &p);
 

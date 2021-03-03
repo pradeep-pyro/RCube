@@ -205,6 +205,15 @@ void RCubeViewer::drawGUI()
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
                 ImGui::GetIO().Framerate);
 
+    // Screenshot
+    static ImVec4 coral_color = ImVec4(1.f, 127.f / 255.f, 80.f / 255.f, 1.f);
+    ImGui::PushStyleColor(ImGuiCol_Button, coral_color);
+    if (ImGui::Button("Screenshot", ImVec2(ImGui::GetContentRegionAvailWidth(), 0.f)))
+    {
+        needs_screenshot_ = true;
+    }
+    ImGui::PopStyleColor();
+
     ///////////////////////////////////////////////////////////////////////////
     // Default camera
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
@@ -213,48 +222,61 @@ void RCubeViewer::drawGUI()
         Transform *cam_tr = camera_.get<Transform>();
         CameraController *cam_ctrl = camera_.get<CameraController>();
 
+        // Fit camera to extents if requested in previous frame
+        if (needs_camera_extents_fit_)
+        {
+            fitCameraExtents();
+            needs_camera_extents_fit_ = false;
+        }
+
         // Default camera viewpoints
         if (ImGui::Button("+X"))
         {
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(+1.5f, 0, 0), glm::vec3(0.f), YAXIS_POSITIVE);
+            needs_camera_extents_fit_ = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("-X"))
         {
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(-1.5f, 0, 0), glm::vec3(0.f), YAXIS_POSITIVE);
+            needs_camera_extents_fit_ = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("+Y"))
         {
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(0, +1.5f, 0), glm::vec3(0.f), ZAXIS_POSITIVE);
+            needs_camera_extents_fit_ = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("-Y"))
         {
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(0, -1.5f, 0), glm::vec3(0.f), ZAXIS_POSITIVE);
+            needs_camera_extents_fit_ = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("+Z"))
         {
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(0, 0, +1.5f), glm::vec3(0.f), YAXIS_POSITIVE);
+            needs_camera_extents_fit_ = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("-Z"))
         {
             cam->target = glm::vec3(0.f);
             cam_tr->lookAt(glm::vec3(0, 0, -1.5f), glm::vec3(0.f), YAXIS_POSITIVE);
+            needs_camera_extents_fit_ = true;
         }
-        cam_ctrl->drawGUI();
-        cam->drawGUI();
         if (ImGui::Button("Fit extents"))
         {
-            fitCameraExtents();
+            needs_camera_extents_fit_ = true;
         }
+        cam->drawGUI();
+        cam_ctrl->drawGUI();
     }
 
     ///////////////////////////////////////////////////////////////////////////

@@ -62,7 +62,8 @@ class RCubeViewer : public rcube::Window
     rcube::World world_;
     rcube::EntityHandle ground_;
     rcube::EntityHandle camera_;
-
+    bool needs_camera_extents_fit_ = false;
+    bool needs_screenshot_ = false;
     glm::vec3 default_surface_color_ = glm::vec3(0.75, 0.75, 0.75);
     std::shared_ptr<ShaderMaterial> default_shader_;
 

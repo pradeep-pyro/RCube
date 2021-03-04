@@ -25,10 +25,6 @@ void vec3LabelText(const std::string &name, const glm::vec3 &vec)
 
 void PickTooltipSystem::update(bool)
 {
-    if (ImGui::GetIO().WantCaptureMouse)
-    {
-        return;
-    }
     for (Entity ent :
          getFilteredEntities({Drawable::family(), Transform::family(), Pickable::family()}))
     {
@@ -42,6 +38,12 @@ void PickTooltipSystem::update(bool)
         // Do special things if the Mesh is a Pointcloud or SurfaceMesh
         Pointcloud *pc = dynamic_cast<Pointcloud *>(dr->mesh.get());
         SurfaceMesh *sm = dynamic_cast<SurfaceMesh *>(dr->mesh.get());
+
+        if (ImGui::GetIO().WantCaptureMouse)
+        {
+            sm->unhighlight();
+            continue;
+        }
 
         if (pick->active)
         {

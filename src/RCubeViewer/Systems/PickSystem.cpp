@@ -85,9 +85,12 @@ void PickSystem::update(bool)
                     if (dist < min_dist)
                     {
                         min_dist = dist;
-                        closest_point = pt;
-                        closest_primitive = prim;
-                        closest = ent;
+                        if (pickable->active)
+                        {
+                            closest_point = pt;
+                            closest_primitive = prim;
+                            closest = ent;
+                        }
                     }
                 }
                 else

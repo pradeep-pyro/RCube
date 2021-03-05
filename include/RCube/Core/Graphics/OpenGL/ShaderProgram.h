@@ -144,6 +144,13 @@ enum class StencilOp
     Invert = GL_INVERT,
 };
 
+enum class PolygonMode : GLenum
+{
+    Fill = GL_FILL,
+    Point = GL_POINT,
+    Line = GL_LINE
+};
+
 struct RenderSettings
 {
     struct Culling
@@ -179,11 +186,20 @@ struct RenderSettings
         BlendFunc alpha_src = BlendFunc::One, alpha_dst = BlendFunc::Zero;
     };
 
+    struct PolygonOffset
+    {
+        bool enabled = false;
+        float offset = 1.f;
+    };
+
     Culling cull;
     Depth depth;
     Stencil stencil;
     Blend blend;
     bool dither = false;
+    PolygonMode polygon_mode = PolygonMode::Fill;
+    PolygonOffset polygon_offset;
+    float line_width = 1.f;
 };
 
 class ShaderProgram

@@ -22,11 +22,14 @@ uniform float thickness;
 
 void main()
 {
+#ifdef RCUBE_OUTLINE_MATERIAL_NORMAL_OFFSET
     vec3 normal = normalize(normal);
     vec3 offset = normal * thickness;
     vec3 offset_position = position + offset;
-
     vec4 world_pos = model_matrix * vec4(offset_position, 1.0);
+#else
+    vec4 world_pos = model_matrix * vec4(position, 1.0);
+#endif
     gl_Position = projection_matrix * view_matrix * world_pos;
 }
 )";
@@ -47,6 +50,7 @@ OutlineMaterial::OutlineMaterial()
     state_.blend.enabled = false;
     state_.blend.color_src = BlendFunc::One;
     state_.blend.color_dst = BlendFunc::One;
+
     // Frontface culling is important to render the outline
     // using the inverted-hull method that is used here
     state_.cull.enabled = true;
@@ -57,6 +61,14 @@ OutlineMaterial::OutlineMaterial()
     state_.dither = false;
     state_.stencil.test = true;
     state_.stencil.write = true;
+#ifdef RCUBE_OUTLINE_MATERIAL_POLYGON_OFFSET
+    state_.polygon_mode = PolygonMode::Fill;
+    state_.polygon_offset.enabled = true;
+    state_.polygon_offset.offset = thickness;
+#else
+    state_.polygon_mode = PolygonMode::Line;
+    state_.line_width = 2.f;
+#endif
 
     shader_ = ShaderProgram::create(OutlineVertexShader, OutlineFragmentShader, true);
 }
@@ -64,7 +76,12 @@ OutlineMaterial::OutlineMaterial()
 void OutlineMaterial::updateUniforms()
 {
     shader_->uniform("color").set(color);
-    shader_->uniform("thickness").set(thickness);
+    // shader_->uniform("thickness").set(thickness);
+#ifdef RCUBE_OUTLINE_MATERIAL_POLYGON_OFFSET
+    state_.polygon_offset.offset = thickness;
+#else
+    state_.line_width = thickness;
+#endif
 }
 
 void OutlineMaterial::drawGUI()
@@ -74,7 +91,7 @@ void OutlineMaterial::drawGUI()
     ImGui::Separator();
     ImGui::ColorEdit3("Outline Color", glm::value_ptr(color),
                       ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV);
-    ImGui::SliderFloat("Outline Thickness", &thickness, 0.f, 1.f);
+    ImGui::SliderFloat("Outline Thickness", &thickness, 2.f, 10.f);
 }
 
 } // namespace rcube

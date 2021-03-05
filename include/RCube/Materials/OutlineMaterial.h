@@ -9,7 +9,7 @@ class OutlineMaterial : public ShaderMaterial
 {
   public:
     glm::vec3 color = glm::vec3(0, 1, 1);
-    float thickness = 0.01f;
+    float thickness = 2.f;
 
     OutlineMaterial();
     void updateUniforms() override;

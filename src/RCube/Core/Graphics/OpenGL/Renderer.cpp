@@ -118,6 +118,20 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     {
         glDisable(GL_CULL_FACE);
     }
+    // Polygon face
+    glPolygonMode(GL_FRONT_AND_BACK, static_cast<GLenum>(settings.polygon_mode));
+    // Line width
+    glLineWidth(settings.line_width);
+    // Polygon offset
+    if (settings.polygon_offset.enabled)
+    {
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(-settings.polygon_offset.offset, 1.f);
+    }
+    else
+    {
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
 }
 
 void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls)

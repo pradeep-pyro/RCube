@@ -14,6 +14,8 @@ class Ray
     glm::vec3 inv_direction_;
 
   public:
+    Ray() = default;
+
     Ray(const glm::vec3 o, const glm::vec3 d, float tmin = 0.f,
         float tmax = std::numeric_limits<float>::infinity());
 

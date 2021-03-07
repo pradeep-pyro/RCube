@@ -204,6 +204,7 @@ layout (std140, binding=0) uniform Camera {
 };
 
 uniform vec3 color;
+uniform vec3 emissive_color;
 
 struct Wireframe {
     bool show;
@@ -218,7 +219,7 @@ const vec3 PURPLE = pow(vec3(138.0 / 255.0, 43.0 / 255.0, 226.0 / 255.0), vec3(2
 
 void main()
 {
-    vec3 frag_color = geom_color * color;
+    vec3 frag_color = geom_color * color + emissive_color;
 
     int edge_flag = int(round(geom_wire));
     // edge_flag == 0: wireframe is not rendered
@@ -251,6 +252,22 @@ void main()
 
 MatCapRGBMaterial::MatCapRGBMaterial()
 {
+    state_.blend.enabled = false;
+    state_.blend.color_src = BlendFunc::One;
+    state_.blend.color_dst = BlendFunc::One;
+    state_.depth.test = true;
+    state_.depth.write = true;
+    state_.depth.func = DepthFunc::Less;
+    state_.dither = false;
+    state_.stencil.test = true;
+    state_.stencil.write = 0xFF;
+    state_.stencil.func = StencilFunc::Always;
+    state_.stencil.func_ref = 1;
+    state_.stencil.func_mask = 0xFF;
+    state_.stencil.op_stencil_pass = StencilOp::Replace;
+    state_.stencil.op_stencil_fail = StencilOp::Keep;
+    state_.stencil.op_depth_fail = StencilOp::Keep;
+
     shader_ = ShaderProgram::create(MatCapVertexShader, MatCapGeometryShader,
                                     MatCapRGBFragmentShader, true);
     textures_.reserve(3);
@@ -271,6 +288,7 @@ MatCapRGBMaterial::MatCapRGBMaterial()
 void MatCapRGBMaterial::updateUniforms()
 {
     shader_->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
+    shader_->uniform("emissive_color").set(glm::pow(emissive_color, glm::vec3(2.2f)));
     shader_->uniform("wireframe.show").set(wireframe);
     shader_->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
     shader_->uniform("wireframe.thickness").set(wireframe_thickness);
@@ -288,6 +306,7 @@ void MatCapRGBMaterial::drawGUI()
                 "Lighting is baked into the material.");
     ImGui::Separator();
     ImGui::ColorEdit3("Color", glm::value_ptr(color));
+    ImGui::ColorEdit3("Emissive color", glm::value_ptr(emissive_color));
     ImGui::Separator();
     ImGui::Text("Wireframe");
     ImGui::Checkbox("Show", &wireframe);

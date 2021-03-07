@@ -34,12 +34,26 @@ const static std::string OutlineFragmentShader = R"(
 out vec4 out_color;
 
 uniform vec3 color;
+uniform float opacity;
+
+// Reference:
+// https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm
+const mat4 bayerMatrix = mat4(
+    vec4(1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0),
+    vec4(13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0),
+    vec4(4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0),
+    vec4(16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0)
+);
 
 void main() {
+    if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
+    {
+        discard;
+    }
     out_color = vec4(color, 1.0);
 }
 )";
- 
+
 OutlineMaterial::OutlineMaterial()
 {
     state_.blend.enabled = false;
@@ -66,7 +80,8 @@ OutlineMaterial::OutlineMaterial()
 void OutlineMaterial::updateUniforms()
 {
     shader_->uniform("color").set(color);
-     shader_->uniform("thickness").set(thickness);
+    shader_->uniform("thickness").set(thickness);
+    shader_->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
 }
 
 void OutlineMaterial::drawGUI()
@@ -77,6 +92,7 @@ void OutlineMaterial::drawGUI()
     ImGui::ColorEdit3("Outline Color", glm::value_ptr(color),
                       ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV);
     ImGui::SliderFloat("Outline Thickness", &thickness, 0.01f, 1.f);
+    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
 }
 
 } // namespace rcube

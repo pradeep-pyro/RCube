@@ -205,6 +205,7 @@ layout (std140, binding=0) uniform Camera {
 
 uniform vec3 color;
 uniform vec3 emissive_color;
+uniform float opacity;
 
 struct Wireframe {
     bool show;
@@ -217,8 +218,21 @@ uniform bool show_wireframe;
 const vec3 PINK = pow(vec3(255.0 / 255.0, 20.0 / 255.0, 147.0 / 255.0), vec3(2.2));
 const vec3 PURPLE = pow(vec3(138.0 / 255.0, 43.0 / 255.0, 226.0 / 255.0), vec3(2.2));
 
+// Reference:
+// https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm
+const mat4 bayerMatrix = mat4(
+    vec4(1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0),
+    vec4(13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0),
+    vec4(4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0),
+    vec4(16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0)
+);
+
 void main()
 {
+    if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
+    {
+        discard;
+    }
     vec3 frag_color = geom_color * color + emissive_color;
 
     int edge_flag = int(round(geom_wire));
@@ -289,6 +303,7 @@ void MatCapRGBMaterial::updateUniforms()
 {
     shader_->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
     shader_->uniform("emissive_color").set(glm::pow(emissive_color, glm::vec3(2.2f)));
+    shader_->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
     shader_->uniform("wireframe.show").set(wireframe);
     shader_->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
     shader_->uniform("wireframe.thickness").set(wireframe_thickness);
@@ -307,6 +322,7 @@ void MatCapRGBMaterial::drawGUI()
     ImGui::Separator();
     ImGui::ColorEdit3("Color", glm::value_ptr(color));
     ImGui::ColorEdit3("Emissive color", glm::value_ptr(emissive_color));
+    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
     ImGui::Separator();
     ImGui::Text("Wireframe");
     ImGui::Checkbox("Show", &wireframe);

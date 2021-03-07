@@ -174,9 +174,9 @@ struct RenderSettings
         GLuint write = 0xFF;
         StencilFunc func = StencilFunc::Always;
         StencilOp op_stencil_fail = StencilOp::Keep, op_depth_fail = StencilOp::Keep,
-                  op_pass = StencilOp::Keep;
+                  op_stencil_pass = StencilOp::Keep;
         GLint func_ref = 0;
-        GLint func_mask = 1;
+        GLint func_mask = 0xFF;
     };
 
     struct Blend

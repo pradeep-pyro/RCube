@@ -717,7 +717,7 @@ void DeferredRenderSystem::geometryPass()
     state.stencil.func_ref = 1;
     state.stencil.func_mask = 0xFF;
     state.stencil.write = 0xFF;
-    state.stencil.op_pass = StencilOp::Replace;
+    state.stencil.op_stencil_pass = StencilOp::Replace;
     state.stencil.op_depth_fail = StencilOp::Replace;
     state.stencil.op_stencil_fail = StencilOp::Replace;
     state.cull.enabled = false;
@@ -826,7 +826,7 @@ void DeferredRenderSystem::lightingPass(Camera *cam)
         s.stencil.test = true;
         s.stencil.op_stencil_fail = StencilOp::Keep;
         s.stencil.op_depth_fail = StencilOp::Keep;
-        s.stencil.op_pass = StencilOp::Keep;
+        s.stencil.op_stencil_pass = StencilOp::Keep;
         s.stencil.func = StencilFunc::NotEqual;
         s.stencil.func_ref = 1;
         s.stencil.func_mask = 0xFF;

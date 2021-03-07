@@ -82,7 +82,7 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
                   static_cast<GLenum>(settings.stencil.func_mask));
     glStencilOp(static_cast<GLenum>(settings.stencil.op_stencil_fail),
                 static_cast<GLenum>(settings.stencil.op_depth_fail),
-                static_cast<GLenum>(settings.stencil.op_pass));
+                static_cast<GLenum>(settings.stencil.op_stencil_pass));
 
     // Blending
     if (settings.blend.enabled)
@@ -126,7 +126,7 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     if (settings.polygon_offset.enabled)
     {
         glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(-settings.polygon_offset.offset, 1.f);
+        glPolygonOffset(settings.polygon_offset.offset, 1.f);
     }
     else
     {

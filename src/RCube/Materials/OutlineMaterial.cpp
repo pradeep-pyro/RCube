@@ -3,12 +3,10 @@
 
 namespace rcube
 {
-
 const static std::string OutlineVertexShader = R"(
 #version 450
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
-
 layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
@@ -22,15 +20,12 @@ uniform float thickness;
 
 void main()
 {
-#ifdef RCUBE_OUTLINE_MATERIAL_NORMAL_OFFSET
-    vec3 normal = normalize(normal);
-    vec3 offset = normal * thickness;
-    vec3 offset_position = position + offset;
-    vec4 world_pos = model_matrix * vec4(offset_position, 1.0);
-#else
-    vec4 world_pos = model_matrix * vec4(position, 1.0);
-#endif
-    gl_Position = projection_matrix * view_matrix * world_pos;
+    mat4 mvp = projection_matrix * view_matrix * model_matrix;
+    vec4 clip_position = mvp * vec4(position, 1.0);
+    vec4 vp_position = viewport_matrix * clip_position;
+    vec3 vp_normal = vec3(mvp * vec4(normal, 0.0));
+    vp_position.xy += normalize(vp_normal.xy) * thickness * vp_position.w;
+    gl_Position = inverse(viewport_matrix) * vp_position;
 }
 )";
 
@@ -44,7 +39,7 @@ void main() {
     out_color = vec4(color, 1.0);
 }
 )";
-
+ 
 OutlineMaterial::OutlineMaterial()
 {
     state_.blend.enabled = false;
@@ -60,15 +55,10 @@ OutlineMaterial::OutlineMaterial()
     state_.depth.func = DepthFunc::Less;
     state_.dither = false;
     state_.stencil.test = true;
-    state_.stencil.write = true;
-#ifdef RCUBE_OUTLINE_MATERIAL_POLYGON_OFFSET
-    state_.polygon_mode = PolygonMode::Fill;
-    state_.polygon_offset.enabled = true;
-    state_.polygon_offset.offset = thickness;
-#else
-    state_.polygon_mode = PolygonMode::Line;
-    state_.line_width = 2.f;
-#endif
+    state_.stencil.write = 0x00;
+    state_.stencil.func = StencilFunc::NotEqual;
+    state_.stencil.func_ref = 1;
+    state_.stencil.func_mask = 0xFF;
 
     shader_ = ShaderProgram::create(OutlineVertexShader, OutlineFragmentShader, true);
 }
@@ -76,12 +66,7 @@ OutlineMaterial::OutlineMaterial()
 void OutlineMaterial::updateUniforms()
 {
     shader_->uniform("color").set(color);
-    // shader_->uniform("thickness").set(thickness);
-#ifdef RCUBE_OUTLINE_MATERIAL_POLYGON_OFFSET
-    state_.polygon_offset.offset = thickness;
-#else
-    state_.line_width = thickness;
-#endif
+     shader_->uniform("thickness").set(thickness);
 }
 
 void OutlineMaterial::drawGUI()
@@ -91,7 +76,7 @@ void OutlineMaterial::drawGUI()
     ImGui::Separator();
     ImGui::ColorEdit3("Outline Color", glm::value_ptr(color),
                       ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV);
-    ImGui::SliderFloat("Outline Thickness", &thickness, 2.f, 10.f);
+    ImGui::SliderFloat("Outline Thickness", &thickness, 0.01f, 1.f);
 }
 
 } // namespace rcube

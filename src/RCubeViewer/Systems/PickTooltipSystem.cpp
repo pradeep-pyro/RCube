@@ -41,7 +41,10 @@ void PickTooltipSystem::update(bool)
 
         if (ImGui::GetIO().WantCaptureMouse)
         {
-            sm->unhighlight();
+            if (sm != nullptr)
+            {
+                sm->unhighlight();
+            }
             continue;
         }
 

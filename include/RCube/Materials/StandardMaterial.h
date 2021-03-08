@@ -17,6 +17,7 @@ class StandardMaterial : public ShaderMaterial
     glm::vec3 albedo = glm::vec3(1.f);
     float roughness = 0.5f;
     float metallic = 0.5f;
+    float opacity = 1.f;
     std::shared_ptr<Texture2D> albedo_texture = nullptr;
     std::shared_ptr<Texture2D> roughness_texture = nullptr;
     std::shared_ptr<Texture2D> metallic_texture = nullptr;

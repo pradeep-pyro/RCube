@@ -171,6 +171,7 @@ struct Wireframe {
 };
 uniform Wireframe wireframe;
 uniform bool show_wireframe;
+uniform float opacity;
 
 const vec3 PINK = pow(vec3(255.0 / 255.0, 20.0 / 255.0, 147.0 / 255.0), vec3(2.2));
 const vec3 PURPLE = pow(vec3(138.0 / 255.0, 43.0 / 255.0, 226.0 / 255.0), vec3(2.2));
@@ -217,6 +218,15 @@ struct PerLightDotProducts
 {
     float LdotN, HdotV, HdotN;
 };
+
+// Reference:
+// https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm
+const mat4 bayerMatrix = mat4(
+    vec4(1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0),
+    vec4(13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0),
+    vec4(4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0),
+    vec4(16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0)
+);
 
 // Returns the attenuation factor that is multiplied with the light's color
 float falloff(float dist, float radius) {
@@ -328,6 +338,10 @@ vec3 pointLightDirectContribution(int index, const vec3 N, const vec3 V, float N
 }
 
 void main() {
+    if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
+    {
+        discard;
+    }
     vec3 position = geom_position;
     
     // Albedo
@@ -427,7 +441,13 @@ StandardMaterial::StandardMaterial()
     state_.depth.func = DepthFunc::Less;
     state_.dither = false;
     state_.stencil.test = true;
-    state_.stencil.write = true;
+    state_.stencil.write = 0xFF;
+    state_.stencil.func = StencilFunc::Always;
+    state_.stencil.func_ref = 1;
+    state_.stencil.func_mask = 0xFF;
+    state_.stencil.op_stencil_pass = StencilOp::Replace;
+    state_.stencil.op_stencil_fail = StencilOp::Keep;
+    state_.stencil.op_depth_fail = StencilOp::Keep;
 }
 
 void StandardMaterial::updateUniforms()
@@ -435,6 +455,7 @@ void StandardMaterial::updateUniforms()
     shader_->uniform("albedo").set(glm::pow(albedo, glm::vec3(2.2f)));
     shader_->uniform("roughness").set(roughness);
     shader_->uniform("metallic").set(metallic);
+    shader_->uniform("opacity").set(opacity);
     shader_->uniform("use_albedo_texture").set(albedo_texture != nullptr);
     shader_->uniform("use_roughness_texture").set(roughness_texture != nullptr);
     shader_->uniform("use_normal_texture").set(normal_texture != nullptr);
@@ -506,6 +527,7 @@ void StandardMaterial::drawGUI()
     ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo));
     ImGui::SliderFloat("Roughness", &roughness, 0.04f, 1.f);
     ImGui::SliderFloat("Metallic", &metallic, 0.f, 1.f);
+    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
     ImGui::Text("Wireframe");
     ImGui::Checkbox("Show", &wireframe);
     ImGui::InputFloat("Thickness", &wireframe_thickness);

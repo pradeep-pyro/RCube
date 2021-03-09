@@ -304,24 +304,6 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         {
             continue;
         }
-        /*
-        DrawCall dc;
-        // dc.settings = state;
-        dc.settings = mat->shader->state();
-        dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
-        dc.textures = mat->shader->textureSlots();
-        dc.cubemaps = mat->shader->cubemapSlots();
-        dc.shader = mat->shader->get();
-        dc.update_uniforms = [mat, tr](std::shared_ptr<ShaderProgram>) {
-            mat->shader->get()->uniform("model_matrix").set(tr->worldTransform());
-            Uniform nor_mat;
-            if (mat->shader->get()->hasUniform("normal_matrix", nor_mat))
-            {
-                nor_mat.set(glm::mat3(tr->worldTransform()));
-            }
-            mat->shader->updateUniforms();
-        };
-        */
         // Add other shader passes to the drawcalls if they exist
         ShaderMaterial *sh = mat->shader.get();
         while (sh != nullptr)
@@ -351,7 +333,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         drawcalls.push_back(dc_skybox);
     }
     renderer_.draw(rt, drawcalls);
-} // namespace rcube
+}
 
 void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 {

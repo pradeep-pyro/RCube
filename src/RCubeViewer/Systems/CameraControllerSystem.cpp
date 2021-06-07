@@ -45,8 +45,8 @@ void CameraControllerSystem::update(bool /*force*/)
     const int x = static_cast<int>(InputState::instance().mousePos()[0]);
     const int y = static_cast<int>(InputState::instance().mousePos()[1]);
     const glm::dvec2 scroll = InputState::instance().scrollAmount();
-    for (const Entity &ent : getFilteredEntities(
-             {Camera::family(), Transform::family(), CameraController::family()}))
+    for (const Entity &ent :
+         getFilteredEntities({Camera::family(), Transform::family(), CameraController::family()}))
     {
         CameraController *opz = world_->getComponent<CameraController>(ent);
         if (!opz->active)
@@ -126,12 +126,17 @@ void CameraControllerSystem::update(bool /*force*/)
         if (std::abs(scroll.y) > 1e-6)
         {
             const glm::vec3 forward = glm::normalize(cam->target - tr->worldPosition());
-            // Dolly for perspective projection
-            tr->translate(forward * static_cast<float>(scroll.y) * opz->zoom_speed);
-            // Modify orthographic size for orthographic projection
-            if (cam->orthographic)
+            const glm::vec3 offset = forward * static_cast<float>(scroll.y) * opz->zoom_speed;
+            glm::vec3 updated_world_pos = tr->worldPosition() + offset;
+            if (glm::dot(glm::normalize(cam->target - updated_world_pos), forward) > 0)
             {
-                cam->orthographic_size += static_cast<float>(scroll.y) * opz->zoom_speed;
+                // Dolly for perspective projection
+                tr->translate(offset);
+                // Modify orthographic size for orthographic projection
+                if (cam->orthographic)
+                {
+                    cam->orthographic_size += static_cast<float>(scroll.y) * opz->zoom_speed;
+                }
             }
         }
     }

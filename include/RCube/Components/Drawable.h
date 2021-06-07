@@ -22,7 +22,7 @@ class Drawable : public Component<Drawable>
   public:
     std::shared_ptr<Mesh> mesh; /// OpenGL mesh
     bool visible = true;        /// Whether visible when rendered
-
+    bool cast_shadow = true;    /// Whether this object casts a shadow
     void drawGUI();
 };
 

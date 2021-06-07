@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RCube/Core/Arch/Component.h"
+#include "RCube/Core/Graphics/OpenGL/Texture.h"
 #include "glm/glm.hpp"
 
 #define RCUBE_MAX_DIRECTIONAL_LIGHTS 5
@@ -89,6 +90,8 @@ class DirectionalLight : public Component<DirectionalLight>
      * @return Intensity
      */
     void setIntensity(float val);
+
+    glm::mat4 viewProjectionMatrix(float left=-5.f, float right=5.f, float bottom=-5.f, float top=5.f, float znear=0.f, float zfar=50.f) const;
 
     void drawGUI();
 };

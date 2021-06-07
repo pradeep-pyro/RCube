@@ -320,6 +320,7 @@ void RCubeViewer::drawGUI()
             EntityHandle ent = getEntity(std::string(current_item));
             if (ent.valid())
             {
+                ImGui::PushID(current_item);
                 if (ImGui::BeginTabBar("Components"))
                 {
                     if (ent.has<Drawable>())
@@ -380,6 +381,7 @@ void RCubeViewer::drawGUI()
                     }
                     ImGui::EndTabBar();
                 }
+                ImGui::PopID();
             }
         }
     }
@@ -430,7 +432,7 @@ void RCubeViewer::updateImageBasedLighting()
 EntityHandle RCubeViewer::createSurface()
 {
     auto ent = world_.createEntity();
-    ent.add<Drawable>(Drawable());
+    ent.add<Drawable>();
     if (world_.getSystem("ForwardRenderSystem") != nullptr)
     {
         ent.add<ForwardMaterial>();
@@ -439,7 +441,7 @@ EntityHandle RCubeViewer::createSurface()
     {
         ent.add<Material>();
     }
-    ent.add<Transform>(Transform());
+    ent.add<Transform>();
     return ent;
 }
 
@@ -462,7 +464,7 @@ EntityHandle RCubeViewer::createGroundPlane()
     mat->roughness = 0.5f;
     mat->albedo_texture = Texture2D::create(1024, 1024, 1, TextureInternalFormat::sRGBA8);
     mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
-    ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
+    //ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
     ground_.add(Name("Ground"));
     return ground_;
@@ -477,7 +479,7 @@ EntityHandle RCubeViewer::createGroundGrid()
     auto shader = std::make_shared<UnlitMaterial>();
     shader->use_vertex_colors = true;
     ground_.get<ForwardMaterial>()->shader = shader;
-    ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
+    //ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
     ground_.add(Name("Ground"));
     return ground_;
@@ -486,7 +488,8 @@ EntityHandle RCubeViewer::createGroundGrid()
 EntityHandle RCubeViewer::createDirLight()
 {
     EntityHandle ent = world_.createEntity();
-    ent.add(DirectionalLight());
+    ent.add<DirectionalLight>();
+    ent.get<DirectionalLight>()->setDirection(glm::vec3(0, -1, 0));
     return ent;
 }
 

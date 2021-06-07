@@ -16,6 +16,9 @@ layout (location = 1) in vec3 normal;
 layout (location = 3) in vec3 color;
 layout (location = 5) in float wire;
 
+#define RCUBE_MAX_DIRLIGHTS 5
+#define RCUBE_MAX_POINTLIGHTS 50
+
 layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
@@ -27,6 +30,7 @@ out vec3 vert_position;
 out vec3 vert_color;
 out vec3 vert_normal;
 flat out float vert_wire;
+out vec3 world_position;
 
 uniform mat4 model_matrix;
 uniform mat3 normal_matrix;
@@ -34,6 +38,7 @@ uniform mat3 normal_matrix;
 void main()
 {
     vec4 world_pos = model_matrix * vec4(position, 1.0);
+    world_position = vec3(world_pos);
     vert_position = world_pos.xyz;
     vert_normal = normalize(vec3(model_matrix * vec4(normal, 0.0))); // Model space
     vert_color = pow(color, vec3(2.2));
@@ -63,6 +68,8 @@ in vec3 vert_color[];
 out vec3 geom_color;
 flat in float vert_wire[];
 out float geom_wire;
+in vec3 world_position[];
+out vec3 g2f_world_position;
 
 noperspective out vec3 dist;
 
@@ -91,6 +98,7 @@ void main() {
     geom_color = vert_color[0];
     geom_normal = vert_normal[0];
     geom_wire = vert_wire[0];
+    g2f_world_position = world_position[0];
     gl_Position = gl_in[0].gl_Position;
     EmitVertex();
 
@@ -100,6 +108,7 @@ void main() {
     geom_color = vert_color[1];
     geom_normal = vert_normal[1];
     geom_wire = vert_wire[1];
+    g2f_world_position = world_position[1];
     gl_Position = gl_in[1].gl_Position;
     EmitVertex();
 
@@ -109,6 +118,7 @@ void main() {
     geom_color = vert_color[2];
     geom_normal = vert_normal[2];
     geom_wire = vert_wire[2];
+    g2f_world_position = world_position[2];
     gl_Position = gl_in[2].gl_Position;
     EmitVertex();
     EndPrimitive();
@@ -118,10 +128,12 @@ void main() {
 const std::string MatCapFragmentShader =
     R"(
 #version 450
+
 in vec3 geom_position;
 in vec3 geom_color;
 in vec3 geom_normal;
 in float geom_wire;
+in vec3 g2f_world_position;
 noperspective in vec3 dist;
 out vec4 out_color;
 
@@ -184,9 +196,13 @@ void main()
 const std::string MatCapRGBFragmentShader =
     R"(
 #version 450
+#define RCUBE_MAX_DIRLIGHTS 5
+#define RCUBE_MAX_POINTLIGHTS 50
+
 in vec3 geom_position;
 in vec3 geom_color;
 in vec3 geom_normal;
+in vec3 g2f_world_position;
 in float geom_wire;
 noperspective in vec3 dist;
 out vec4 out_color;
@@ -202,6 +218,22 @@ layout (std140, binding=0) uniform Camera {
     mat4 viewport_matrix;
     vec3 eye_pos;
 };
+
+struct DirectionalLight
+{
+    vec3 direction;
+    float cast_shadow;
+    vec3 color;
+    float intensity;
+    mat4 view_proj;
+};
+
+layout (std140, binding=1) uniform DirectionalLights {
+    DirectionalLight dirlights[RCUBE_MAX_DIRLIGHTS];
+    int num_dirlights;
+};
+
+layout(binding=10) uniform sampler2D shadow_atlas;
 
 uniform vec3 color;
 uniform vec3 emissive_color;
@@ -226,6 +258,39 @@ const mat4 bayerMatrix = mat4(
     vec4(4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0),
     vec4(16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0)
 );
+
+float shadowAmount(int index, vec3 N)
+{
+    if (dirlights[index].cast_shadow < 0.1)
+    {
+        return 0.0;
+    }
+    // TODO(pradeep): expose this as a uniform
+    const float texel_size = 1.0 / float(textureSize(shadow_atlas, 0).x);
+    float normal_bias = 3;
+    vec4 ls_fragpos = dirlights[index].view_proj * vec4(g2f_world_position + N * normal_bias * texel_size, 1.0);
+    vec3 shadow_coords = ls_fragpos.xyz / ls_fragpos.w;
+    if(shadow_coords.z > 1.0)
+    {
+        return 0.0;
+    }
+    shadow_coords = shadow_coords * 0.5 + 0.5;
+    float shadow = 0.0;
+    float current_z = shadow_coords.z;
+    const float LdotN = clamp(dot(N, -dirlights[index].direction), 0.0, 1.0);
+    float depth_bias = 2;
+    const float bias = depth_bias * texel_size * (1.0 - LdotN);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcf_depth = texture(shadow_atlas, shadow_coords.xy + vec2(x, y) * texel_size).r;
+            shadow += current_z - bias > pcf_depth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+    return shadow;
+}
 
 void main()
 {
@@ -260,7 +325,9 @@ void main()
     vec3 green = texture2D(matcap_green, uv).rgb;
     vec3 blue = texture2D(matcap_blue, uv).rgb;
     vec3 black = texture2D(matcap_black, uv).rgb;
+    float visibility = max(1.0 - shadowAmount(0, geom_normal), 0.25);
     out_color = vec4(frag_color.r * red + frag_color.g * green + frag_color.b * blue + (1.0 - frag_color.r - frag_color.g - frag_color.b) * black, 1.0);
+    out_color = vec4(visibility, visibility, visibility, 1.0) * out_color;
 }
 )";
 

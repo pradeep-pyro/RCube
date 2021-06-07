@@ -9,6 +9,7 @@
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
+#include "RCubeViewer/Components/Name.h"
 #include "RCube/Systems/Shaders.h"
 #include "glm/gtx/string_cast.hpp"
 #include <string>
@@ -101,6 +102,20 @@ void ForwardRenderSystem::initialize()
     ubo_pointlights_ =
         UniformBuffer::create(RCUBE_MAX_POINT_LIGHTS * 12 * sizeof(float) + sizeof(float));
     pointlight_data_.resize(RCUBE_MAX_POINT_LIGHTS * 12);
+
+    // Shadows
+    framebuffer_shadow_ = Framebuffer::create();
+    shader_shadow_ = common::shadowMapShader();
+    shadow_atlas_ = Texture2D::create(8000, 8000, 1, TextureInternalFormat::Depth32F);
+    shadow_atlas_->setFilterMode(TextureFilterMode::Nearest);
+    shadow_atlas_->setWrapMode(TextureWrapMode::ClampToBorder);
+    shadow_atlas_->setBorderColor(glm::vec4(1.0));
+    framebuffer_shadow_->setDrawBuffers({});
+    framebuffer_shadow_->setReadBuffer(GL_NONE);
+    framebuffer_shadow_->setDepthAttachment(shadow_atlas_);
+    glNamedFramebufferReadBuffer(framebuffer_shadow_->id(), GL_NONE);
+    assert(framebuffer_shadow_->isComplete());
+
     // Initialize renderer
     renderer_.initialize();
     // Initialize postprocess
@@ -131,13 +146,14 @@ void ForwardRenderSystem::setDirectionalLightsUBO()
         const glm::vec3 dir = glm::normalize(dl->direction());
         const glm::vec3 &col = dl->color();
         // Light's viewproj matrix
-        const glm::vec3 opp_dir = -dir;
+        /*const glm::vec3 opp_dir = -dir;
         const glm::mat4 light_proj = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
         const glm::vec3 up = glm::length(glm::cross(opp_dir, glm::vec3(0, 1, 0))) > 1e-6
                                  ? glm::vec3(0, 1, 0)
                                  : glm::vec3(1, 0, 0);
         const glm::mat4 light_view = glm::lookAt(opp_dir, glm::vec3(0, 0, 0), up);
-        const glm::mat4 light_matrix = light_proj * light_view;
+        const glm::mat4 light_matrix = light_proj * light_view;*/
+        const glm::mat4 light_matrix = dl->viewProjectionMatrix(-1, 1, -1, 1, 0.1f, 3.f);
         dirlight_data_[k++] = dir.x;
         dirlight_data_[k++] = dir.y;
         dirlight_data_[k++] = dir.z;
@@ -150,7 +166,7 @@ void ForwardRenderSystem::setDirectionalLightsUBO()
         {
             for (int j = 0; j < 4; ++j)
             {
-                dirlight_data_[k++] = dl->castShadow() ? light_matrix[i][j] : 0.f;
+                dirlight_data_[k++] = light_matrix[i][j];
             }
         }
     }
@@ -227,6 +243,58 @@ void ForwardRenderSystem::initializePostprocess()
     shader_pp_ = common::fullScreenQuadShader(shaders::PostprocessFragmentShader);
 }
 
+void ForwardRenderSystem::shadowMapPass()
+{
+    RenderTarget rt;
+    rt.clear_color_buffer = false;
+    rt.clear_stencil_buffer = false;
+    rt.clear_depth_buffer = true;
+    rt.framebuffer = framebuffer_shadow_->id();
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = glm::ivec2(shadow_atlas_->width(), shadow_atlas_->height());
+
+    std::vector<Entity> dirlights = getFilteredEntities({DirectionalLight::family()});
+    const auto &drawable_entities =
+        getFilteredEntities({Transform::family(), Drawable::family(), ForwardMaterial::family()});
+
+    for (const Entity &l : dirlights)
+    {
+        DirectionalLight *dl = world_->getComponent<DirectionalLight>(l);
+        if (!dl->castShadow())
+        {
+            continue;
+        }
+        // Light's viewproj matrix
+        const glm::mat4 light_matrix = dl->viewProjectionMatrix(-1, 1, -1, 1, 0.1f, 3.f);
+        std::vector<DrawCall> dcs;
+        dcs.reserve(drawable_entities.size());
+        for (const Entity &drawable_entity : drawable_entities)
+        {
+            Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
+            if (!dr->visible && !dr->cast_shadow)
+            {
+                continue;
+            }
+            Transform *tr = world_->getComponent<Transform>(drawable_entity);
+            DrawCall dc;
+            dc.settings.stencil.test = false;
+            dc.settings.stencil.write = 0xFF;
+            dc.settings.depth.test = true;
+            dc.settings.depth.write = true;
+            dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
+            dc.shader = shader_shadow_;
+            dc.update_uniforms = [light_matrix, tr](std::shared_ptr<ShaderProgram> sh) {
+                const glm::mat4 &wt = tr->worldTransform();
+                sh->uniform("model_matrix").set(wt);
+                sh->uniform("light_matrix").set(light_matrix);
+            };
+
+            dcs.push_back(dc);
+        }
+        renderer_.draw(rt, dcs);
+    }
+}
+
 void ForwardRenderSystem::cleanup()
 {
     renderer_.cleanup();
@@ -244,6 +312,10 @@ void ForwardRenderSystem::update(bool)
     // Render all drawable entities
     setDirectionalLightsUBO();
     setPointLightsUBO();
+    
+    // Shadow pass
+    shadowMapPass();
+
     for (const auto &camera_entity : camera_entities)
     {
         Camera *cam = world_->getComponent<Camera>(camera_entity);
@@ -309,6 +381,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         while (sh != nullptr)
         {
             drawcalls.push_back(makeDrawCall(dr, sh, tr));
+            drawcalls.back().textures.push_back({shadow_atlas_->id(), 10});
             sh = sh->next_pass.get();
         }
     }

@@ -29,6 +29,7 @@ class ForwardRenderSystem : public System
     void setDirectionalLightsUBO();
     void setPointLightsUBO();
     void initializePostprocess();
+    void shadowMapPass();
     void opaqueGeometryPass(Camera *cam);
     void transparentGeometryPass(Camera *cam);
     void postprocessPass(Camera *cam);
@@ -41,8 +42,11 @@ class ForwardRenderSystem : public System
     std::shared_ptr<Framebuffer> framebuffer_brightness_;
     std::shared_ptr<Framebuffer> framebuffer_blur_[2];
     std::shared_ptr<Framebuffer> framebuffer_pp_;
+    std::shared_ptr<Framebuffer> framebuffer_shadow_;
+    std::shared_ptr<Texture2D> shadow_atlas_;
     std::shared_ptr<ShaderProgram> shader_brightness_;
     std::shared_ptr<ShaderProgram> shader_blur_;
+    std::shared_ptr<ShaderProgram> shader_shadow_;
     std::shared_ptr<ShaderProgram> shader_pp_;
     // Uniform buffer objects for camera and lights
     std::shared_ptr<Buffer<BufferType::Uniform>> ubo_camera_;

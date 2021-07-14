@@ -80,13 +80,13 @@ void PickSystem::update(bool)
                 PrimitivePtr prim;
                 if (dr->mesh->rayIntersect(ray_model, pt, prim))
                 {
-                    hit = true;
                     float dist = glm::length(pt - ray_model.origin());
                     if (dist < min_dist)
                     {
                         min_dist = dist;
                         if (pickable->active)
                         {
+                            hit = true;
                             closest_point = pt;
                             closest_primitive = prim;
                             closest = ent;

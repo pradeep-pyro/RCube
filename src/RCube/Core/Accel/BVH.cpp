@@ -41,7 +41,8 @@ void BVHNode::rayClosestIntersect(const Ray &ray, BVHClosestIntersectionInfo &in
     {
         return;
     }
-    bool is_leaf = (primitives.size() > 0);
+    bool is_leaf = (primitives.size() > 0) || (left == nullptr || right == nullptr);
+
     if (is_leaf)
     {
         float min_t = std::numeric_limits<float>::infinity();

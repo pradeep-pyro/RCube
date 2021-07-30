@@ -2,6 +2,7 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/Drawable.h"
 #include "RCube/Components/Transform.h"
+#include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Pickable.h"
 #include "RCubeViewer/Pointcloud.h"
@@ -35,75 +36,79 @@ void PickSystem::update(bool)
     {
         return;
     }
-    /*if (InputState::instance().isMouseJustDown(InputState::Mouse::Left))*/
+    // Get the render system if we don't already have it
+    if (render_system_ == nullptr)
     {
-        const glm::dvec2 xy = InputState::instance().mousePos();
-        // For each camera that is controlled by the user actively (hopefully only 1),
-        for (Entity cam_ent : getFilteredEntities({Camera::family(), CameraController::family()}))
+        render_system_ =
+            dynamic_cast<ForwardRenderSystem *>(world_->getSystem("ForwardRenderSystem"));
+    }
+    // Can't pick without a render system
+    if (render_system_ == nullptr)
+    {
+        return;
+    }
+    // Get the texture holding the picking information
+    std::shared_ptr<Texture2D> objPrimID = render_system_->objPrimIDTexture();
+    if (objPrimID != nullptr)
+    {
+        glm::dvec2 xy = InputState::instance().mousePos();
+        const glm::dvec2 window_size = InputState::instance().windowSize();
+
+        // Initialize double-buffered PBOs if not already available
+        if (pbos_.first() == nullptr)
         {
-            Camera *cam = world_->getComponent<Camera>(cam_ent);
-            Transform *cam_tr = world_->getComponent<Transform>(cam_ent);
-            double width = cam->viewport_size[0];
-            double height = cam->viewport_size[1];
+            pbos_.first() = PixelPackBuffer::create(size_t(window_size[0]) * size_t(window_size[1]),
+                                                    GL_STREAM_READ);
+        }
+        if (pbos_.second() == nullptr)
+        {
+            pbos_.second() = PixelPackBuffer::create(
+                size_t(window_size[0]) * size_t(window_size[1]), GL_STREAM_READ);
+        }
+        // Transform mouse coordinate to texture image space
+        xy /= window_size;
+        xy[1] = 1.0 - xy[1];
+        xy[0] *= objPrimID->width();
+        xy[1] *= objPrimID->height();
+        // Return if mouse is outside window
+        if (xy[0] < 0 || xy[1] < 0 || xy[0] >= objPrimID->width() || xy[1] >= objPrimID->height())
+        {
+            return;
+        }
+        // Copy a single pixel from the texture asynchronously
+        pbos_.first()->use();
+        objPrimID->getSubImage(int(xy.x), int(xy.y), 1, 1, (uint32_t *)NULL, 2);
+        pbos_.second()->use();
+        GLuint *ptr = (GLuint *)pbos_.second()->map();
+        int entity_id = -1;
+        int primitive_id = -1;
+        if (ptr != nullptr)
+        {
+            entity_id = ptr[0];    // Entity ID
+            primitive_id = ptr[1]; // Primitive ID
+            pbos_.second()->unmap();
+        }
+        pbos_.second()->done();
+        // Swap the buffers
+        pbos_.increment();
 
-            // ...generate a ray from camera for picking.
-            const glm::vec2 ndc = screenToNDC(xy[0], xy[1], width, height);
-            const glm::vec4 ray_clip(ndc.x, ndc.y, -1.0, 1.0);
-            glm::vec4 ray_eye = glm::inverse(cam->viewToProjection()) * ray_clip;
-            ray_eye.z = -1.f;
-            ray_eye.w = 0.f;
-            glm::vec3 ray_wor(glm::inverse(cam->worldToView()) * ray_eye);
-            ray_wor = glm::normalize(ray_wor);
-
-            // Closest hit info
-            float min_dist = std::numeric_limits<float>::infinity();
-            Entity closest;
-            PrimitivePtr closest_primitive;
-            glm::vec3 closest_point;
-            bool hit = false;
-
-            // Find the closest hit among all entities that have Drawable, Transform and Pickable
-            // components
-            for (Entity ent :
-                 getFilteredEntities({Drawable::family(), Transform::family(), Pickable::family()}))
+        // Assign to Pickable components
+        for (Entity ent :
+             getFilteredEntities({Drawable::family(), Transform::family(), Pickable::family()}))
+        {
+            Pickable *p = world_->getComponent<Pickable>(ent);
+            if (p != nullptr)
             {
-                Drawable *dr = world_->getComponent<Drawable>(ent);
-                Transform *tr = world_->getComponent<Transform>(ent);
-                Pickable *pickable = world_->getComponent<Pickable>(ent);
-
-                const glm::mat4 model_inv = glm::inverse(tr->worldTransform());
-                glm::vec3 ray_origin_model =
-                    glm::vec3(model_inv * glm::vec4(cam_tr->worldPosition(), 1.0));
-                glm::vec3 ray_dir_model = glm::normalize(model_inv * glm::vec4(ray_wor, 0.0));
-                Ray ray_model(ray_origin_model, ray_dir_model);
-                glm::vec3 pt;
-                PrimitivePtr prim;
-                if (dr->mesh->rayIntersect(ray_model, pt, prim))
+                p->picked = p->active && (ent.id() == entity_id);
+                if (p->picked)
                 {
-                    float dist = glm::length(pt - ray_model.origin());
-                    if (dist < min_dist)
-                    {
-                        min_dist = dist;
-                        if (pickable->active)
-                        {
-                            hit = true;
-                            closest_point = pt;
-                            closest_primitive = prim;
-                            closest = ent;
-                        }
-                    }
+                    EntityHandle ent_handle;
+                    ent_handle.entity = ent;
+                    ent_handle.world = world_;
+                    p->picked_entity = ent_handle;
+                    p->picked_primitive = primitive_id;
+                    p->picked_xy = xy;
                 }
-                else
-                {
-                    pickable->picked = false;
-                }
-            }
-            if (hit)
-            {
-                Pickable *closest_pick = world_->getComponent<Pickable>(closest);
-                closest_pick->picked = true;
-                closest_pick->point = closest_point;
-                closest_pick->primitive = closest_primitive;
             }
         }
     }
@@ -111,7 +116,7 @@ void PickSystem::update(bool)
 
 unsigned int PickSystem::priority() const
 {
-    return 1200;
+    return 9000;
 }
 
 const std::string PickSystem::name() const

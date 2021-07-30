@@ -48,6 +48,8 @@ enum class TextureInternalFormat : GLenum
     R32UI = GL_R32UI,
     RG8 = GL_RG8,
     RG16 = GL_RG16,
+    RG32I = GL_RG32I,
+    RG32UI = GL_RG32UI,
     RG16F = GL_RG16F,
     RG32F = GL_RG32F,
     RGB8 = GL_RGB8,
@@ -73,6 +75,7 @@ enum class TextureInternalFormat : GLenum
 
 class Texture2D
 {
+    GLenum internalFormatToFormat() const;
   public:
     Texture2D() = default;
     ~Texture2D();
@@ -106,6 +109,9 @@ class Texture2D
     void setFilterMode(TextureFilterMode mode);
     void generateMipMap();
     bool valid() const;
+    void getSubImage(int x, int y, int width, int height, int *pixels, size_t size) const;
+    void getSubImage(int x, int y, int width, int height, uint32_t *pixels, size_t size) const;
+    void getSubImage(int x, int y, int width, int height, float *pixels, size_t size) const;
 
   private:
     GLuint id_ = 0;

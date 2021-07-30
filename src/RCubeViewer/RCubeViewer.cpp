@@ -295,6 +295,10 @@ void RCubeViewer::drawGUI()
             {
                 continue;
             }
+            if (!ent.has<Name>())
+            {
+                continue;
+            }
             entity_names.push_back(ent.get<Name>()->name.c_str());
         }
 

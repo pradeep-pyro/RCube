@@ -15,6 +15,11 @@ std::shared_ptr<ShaderProgram> shadowMapShader()
     return ShaderProgram::create(SHADOWMAP_VERTEX_SHADER, SHADOWMAP_FRAGMENT_SHADER, true);
 }
 
+std::shared_ptr<ShaderProgram> uniqueColorShader()
+{
+    return ShaderProgram::create(UNIQUECOLOR_VERTEX_SHADER, UNIQUECOLOR_FRAGMENT_SHADER, true);
+}
+
 std::shared_ptr<ShaderProgram> fullScreenQuadShader(const std::string &fragment_shader)
 {
     return ShaderProgram::create(FULLSCREEN_QUAD_VERTEX_SHADER, fragment_shader, true);

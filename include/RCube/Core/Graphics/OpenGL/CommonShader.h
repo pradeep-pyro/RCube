@@ -112,6 +112,45 @@ void main() {
 }
 )";
 
+
+/**
+ * Unique color for entity: fragment shader
+ */
+const static std::string UNIQUECOLOR_FRAGMENT_SHADER = R"(
+#version 450
+
+uniform int id;
+layout (location = 0) out ivec3 frag_out;
+
+void main() {
+    frag_out = ivec3(id, gl_PrimitiveID, 0);
+}
+)";
+
+/**
+ * Unique color for entity: vertex shader
+ */
+const static std::string UNIQUECOLOR_VERTEX_SHADER = R"(
+#version 450
+
+layout (location = 0) in vec3 position;
+
+layout (std140, binding=0) uniform Camera {
+    mat4 view_matrix;
+    mat4 projection_matrix;
+    mat4 viewport_matrix;
+    vec3 eye_pos;
+};
+
+uniform mat4 model_matrix;
+
+void main()
+{
+    gl_Position = projection_matrix * view_matrix * model_matrix * vec4(position, 1.0);
+}
+)";
+
+
 /**
  * Create a shader for rendering fullscreen quad with a user-defined fragment shader
  * The shader works with a quad mesh generated using rcube::common::fullscreenQuadMesh() and
@@ -130,6 +169,11 @@ std::shared_ptr<ShaderProgram> skyboxShader();
  * Create a shader for rendering a shadow map into a depth buffer
  */
 std::shared_ptr<ShaderProgram> shadowMapShader();
+
+/**
+ * Create a shader for rendering each entity with a unique ID
+ */
+std::shared_ptr<ShaderProgram> uniqueColorShader();
 
 
 } // namespace common

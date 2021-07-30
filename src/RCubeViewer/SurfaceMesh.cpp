@@ -72,15 +72,15 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
             ++k;
         }
     }
-    std::vector<PrimitivePtr> prims;
+    /*std::vector<PrimitivePtr> prims;
     prims.reserve(data.indices.size());
     for (size_t i = 0; i < data.indices.size(); ++i)
     {
         const glm::uvec3 ind = data.indices[i];
         prims.push_back(std::make_shared<Triangle>(i, data.vertices[ind[0]], data.vertices[ind[1]],
                                                    data.vertices[ind[2]]));
-    }
-    updateBVH(prims);
+    }*/
+    //updateBVH(prims);
     uploadToGPU();
 }
 

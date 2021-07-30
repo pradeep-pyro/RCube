@@ -9,8 +9,8 @@
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
-#include "RCubeViewer/Components/Name.h"
 #include "RCube/Systems/Shaders.h"
+#include "RCubeViewer/Components/Name.h"
 #include "glm/gtx/string_cast.hpp"
 #include <string>
 
@@ -116,8 +116,20 @@ void ForwardRenderSystem::initialize()
     glNamedFramebufferReadBuffer(framebuffer_shadow_->id(), GL_NONE);
     assert(framebuffer_shadow_->isComplete());
 
+    // For picking
+    framebuffer_pick_ = Framebuffer::create();
+    auto obj_id_tex =
+        Texture2D::create(resolution_[0], resolution_[1], 1, TextureInternalFormat::RG32UI);
+    framebuffer_pick_->setColorAttachment(0, obj_id_tex);
+    framebuffer_pick_->setDepthAttachment(
+        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32F));
+    framebuffer_pick_->setDrawBuffers({0});
+    assert(framebuffer_pick_->isComplete());
+    shader_picking_ = common::uniqueColorShader();
+
     // Initialize renderer
     renderer_.initialize();
+
     // Initialize postprocess
     initializePostprocess();
 }
@@ -312,7 +324,7 @@ void ForwardRenderSystem::update(bool)
     // Render all drawable entities
     setDirectionalLightsUBO();
     setPointLightsUBO();
-    
+
     // Shadow pass
     shadowMapPass();
 
@@ -337,6 +349,7 @@ void ForwardRenderSystem::update(bool)
         {
             framebuffer_hdr_ms_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_);
         }
+        pickFBOPass(cam);
         postprocessPass(cam);
         finalPass(cam);
     }
@@ -412,6 +425,55 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 {
 }
 
+void ForwardRenderSystem::pickFBOPass(Camera *cam)
+{
+    if (!pick_pass_)
+    {
+        return;
+    }
+    RenderTarget rt;
+    rt.clear_color_buffer = false;
+    rt.clear_depth_buffer = true;
+    rt.clear_stencil_buffer = false;
+    rt.framebuffer = framebuffer_pick_->id();
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = resolution_;
+
+    RenderSettings state;
+    state.depth.test = true;
+    state.depth.write = true;
+    state.stencil.test = false;
+    state.cull.enabled = false;
+
+    const auto &drawable_entities =
+        getFilteredEntities({Transform::family(), Drawable::family(), ForwardMaterial::family()});
+
+    std::vector<DrawCall> drawcalls;
+    drawcalls.reserve(drawable_entities.size());
+    GLint clear_val[2] = {-1, -1};
+    glClearNamedFramebufferiv(framebuffer_pick_->id(), GL_COLOR, 0, &clear_val[0]);
+    for (Entity drawable_entity : drawable_entities)
+    {
+        Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
+        if (!dr->visible)
+        {
+            continue;
+        }
+        DrawCall dc;
+        DrawCall::MeshInfo mi = GLRenderer::getDrawCallMeshInfo(dr->mesh);
+        dc.mesh = mi;
+        Transform *tr = world_->getComponent<Transform>(drawable_entity);
+        dc.shader = shader_picking_;
+        const int id = static_cast<int>(drawable_entity.id());
+        dc.update_uniforms = [tr, id](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("model_matrix").set(tr->worldTransform());
+            shader->uniform("id").set(id);
+        };
+        drawcalls.push_back(dc);
+    }
+    renderer_.draw(rt, drawcalls);
+}
+
 void ForwardRenderSystem::postprocessPass(Camera *cam)
 {
     RenderSettings state;
@@ -428,7 +490,7 @@ void ForwardRenderSystem::postprocessPass(Camera *cam)
         dc.settings.depth.write = false;
         dc.mesh = mi;
         dc.shader = shader_brightness_;
-        dc.update_uniforms = [&](std::shared_ptr<ShaderProgram> shader) {
+        dc.update_uniforms = [cam](std::shared_ptr<ShaderProgram> shader) {
             shader->uniform("bloom_threshold").set(cam->bloom_threshold);
         };
         dc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});

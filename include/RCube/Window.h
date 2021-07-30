@@ -74,6 +74,9 @@ class InputState
     const glm::dvec2 &mousePos() const;
     const glm::dvec2 scrollAmount();
     void setScrollAmount(double xscroll, double yscroll);
+    const glm::ivec2 &windowSize() const;
+    bool isMouseInside() const;
+    void setMouseInside(bool flag);
     void update(GLFWwindow *window);
 
   private:
@@ -81,6 +84,8 @@ class InputState
     std::vector<ButtonState> mousestate_;
     glm::dvec2 mousepos_ = glm::dvec2(0.0, 0.0);
     glm::dvec2 scroll_ = glm::vec2(0.f, 0.f);
+    glm::ivec2 window_size_ = glm::ivec2(1280, 720);
+    bool mouse_inside_ = false;
 };
 
 class Window

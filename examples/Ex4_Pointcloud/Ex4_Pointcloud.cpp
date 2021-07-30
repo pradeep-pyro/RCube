@@ -51,7 +51,7 @@ int main()
     // Add an entity in the viewer to hold the pointcloud
     auto entity = viewer.addMeshEntity("Sphere vertices");
     entity.get<Drawable>()->mesh = pc;
-    entity.get<ForwardMaterial>()->shader = std::make_shared<StandardMaterial>();
+    entity.get<ForwardMaterial>()->shader = std::make_shared<MatCapRGBMaterial>();
 
     // Make pointcloud pickable with mouse
     entity.add<Pickable>();

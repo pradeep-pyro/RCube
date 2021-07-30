@@ -12,6 +12,9 @@ namespace viewer
 {
 
 /**
+ * WARNING: This class is too specific for general use and will be
+ * removed soon
+ * 
  * Pointcloud is a class that derives from Mesh and provides an API
  * to automatically create a mesh from a pointcloud (list of points).
  * It generates a mesh based on per-point glyphs (spheres or boxes)

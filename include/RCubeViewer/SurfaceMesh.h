@@ -12,6 +12,10 @@ namespace rcube
 namespace viewer
 {
 
+/**
+ * WARNING: This class is too specific for general use and will be
+ * removed soon
+ */
 class SurfaceMesh : public Mesh
 {
     friend class PickTooltipSystem;

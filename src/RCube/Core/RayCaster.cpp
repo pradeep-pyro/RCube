@@ -15,7 +15,7 @@ glm::vec2 screenToNDC(double xpos, double ypos, double width, double height)
     return glm::vec2(static_cast<float>(ndc_x), static_cast<float>(ndc_y));
 }
 
-void sortByDistance(std::vector<Intersection> &intersections)
+void RayCaster::sortByDistance(std::vector<Intersection> &intersections)
 {
     // Sort intersection results based on distance
     std::sort(intersections.begin(), intersections.end(),
@@ -46,7 +46,7 @@ void RayCaster::setRay(const Ray &ray_world_space)
     ray_ = ray_world_space;
 }
 
-bool RayCaster::intersect(Mesh *mesh, const glm::mat4 &model_to_world, Intersection &intersect_result)
+bool RayCaster::intersect(BVHNodePtr bvh, const glm::mat4 &model_to_world, Intersection &intersect_result)
 {
     const glm::mat4 model_inv = glm::inverse(model_to_world);
     glm::vec3 ray_origin_model = glm::vec3(model_inv * glm::vec4(ray_.origin(), 1.0));
@@ -54,62 +54,22 @@ bool RayCaster::intersect(Mesh *mesh, const glm::mat4 &model_to_world, Intersect
     Ray ray_model(ray_origin_model, ray_dir_model);
     glm::vec3 pt;
     PrimitivePtr prim;
-    if (mesh->rayIntersect(ray_model, pt, prim))
+    if (bvh == nullptr)
     {
-        intersect_result.distance = glm::length(pt - ray_model.origin());
-        intersect_result.point = pt;
-        intersect_result.primitive = prim;
-        return true;
+        return false;
     }
-    return false;
-}
-
-void RayCaster::intersect(const std::vector<EntityHandle> &entities,
-                          std::vector<Intersection> &intersections)
-{
-    // Find intersection among all entities that have Drawable and Transform components
-    for (EntityHandle ent : entities)
+    BVHClosestIntersectionInfo info;
+    bvh->rayClosestIntersect(ray_model, info);
+    if (!info.hit)
     {
-        if (!ent.valid())
-        {
-            continue;
-        }
-        Drawable *dr = ent.world->getComponent<Drawable>(ent.entity);
-        Transform *tr = ent.world->getComponent<Transform>(ent.entity);
-
-        Intersection intersect_result;
-        if (intersect(dr->mesh.get(), tr->worldTransform(), intersect_result))
-        {
-            intersect_result.entity = ent;
-            intersections.push_back(intersect_result);
-        }
+        return false;
     }
-
-    // Sort intersection results based on distance
-    sortByDistance(intersections);
-}
-
-
-void RayCaster::intersect(const std::vector<Entity> &entities, World *world,
-                          std::vector<Intersection> &intersections)
-{
-    assert(world != nullptr);
-    // Find intersection among all entities that have Drawable and Transform components
-    for (Entity ent : entities)
-    {
-        Drawable *dr = world->getComponent<Drawable>(ent);
-        Transform *tr = world->getComponent<Transform>(ent);
-
-        Intersection intersect_result;
-        if (intersect(dr->mesh.get(), tr->worldTransform(), intersect_result))
-        {
-            intersect_result.entity = EntityHandle{ent, world};
-            intersections.push_back(intersect_result);
-        }
-    }
-
-    // Sort intersection results based on distance
-    sortByDistance(intersections);
+    pt = ray_model.origin() + info.t * ray_model.direction();
+    prim = info.primitive;
+    intersect_result.distance = glm::length(pt - ray_model.origin());
+    intersect_result.point = pt;
+    intersect_result.primitive = prim;
+    return true;
 }
 
 } // namespace rcube

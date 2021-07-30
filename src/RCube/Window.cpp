@@ -70,6 +70,21 @@ void InputState::setScrollAmount(double xscroll, double yscroll)
     scroll_.y = yscroll;
 }
 
+const glm::ivec2 &InputState::windowSize() const
+{
+    return window_size_;
+}
+
+bool InputState::isMouseInside() const
+{
+    return mouse_inside_;
+}
+
+void InputState::setMouseInside(bool flag)
+{
+    mouse_inside_ = flag;
+}
+
 void InputState::update(GLFWwindow *window)
 {
     for (char i = char(Key::A); i <= char(Key::Z); ++i)
@@ -121,6 +136,10 @@ void InputState::update(GLFWwindow *window)
             mousestate_[i] = ButtonState::JustReleased;
         }
     }
+    int w, h;
+    glfwGetWindowSize(window, &w, &h);
+    window_size_[0] = w;
+    window_size_[1] = h;
     glfwGetCursorPos(window, &mousepos_[0], &mousepos_[1]);
 }
 
@@ -132,7 +151,7 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severi
     if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
         return;
     
-    if (id == 1281 || id == 131076)
+    if (id == 1282 || id == 1281 || id == 131076)
     {
         std::cerr << "---------------" << std::endl;
     }
@@ -259,6 +278,10 @@ static void callbackMouseMove(GLFWwindow *window, double xpos, double ypos)
     static_cast<Window *>(glfwGetWindowUserPointer(window))->onMouseMove(xpos, ypos);
 }
 
+static void callbackMouseEnter(GLFWwindow *window, int entered)
+{
+    InputState::instance().setMouseInside(bool(entered));
+}
 static void callbackScroll(GLFWwindow *window, double xoffset, double yoffset)
 {
     InputState::instance().setScrollAmount(xoffset, yoffset);
@@ -306,6 +329,7 @@ Window::Window(const std::string &title, glm::ivec2 size)
     glfwSetKeyCallback(window_, callbackKeyboard);
     glfwSetMouseButtonCallback(window_, callbackMouse);
     glfwSetCursorPosCallback(window_, callbackMouseMove);
+    glfwSetCursorEnterCallback(window_, callbackMouseEnter);
     glfwSetScrollCallback(window_, callbackScroll);
 }
 

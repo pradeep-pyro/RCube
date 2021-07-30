@@ -55,15 +55,15 @@ void Pointcloud::createMesh()
     }
     uploadToGPU();
 
-    // Make sphere primitives for BVH (this is more efficient than
-    // the triangle mesh)
-    std::vector<PrimitivePtr> prims;
-    prims.reserve(points_.size());
-    for (size_t i = 0; i < points_.size(); ++i)
-    {
-        prims.push_back(std::shared_ptr<Point>(new Point(i, points_[i], 0.5f * point_size_)));
-    }
-    updateBVH(prims);
+    //// Make sphere primitives for BVH (this is more efficient than
+    //// the triangle mesh)
+    //std::vector<PrimitivePtr> prims;
+    //prims.reserve(points_.size());
+    //for (size_t i = 0; i < points_.size(); ++i)
+    //{
+    //    prims.push_back(std::shared_ptr<Point>(new Point(i, points_[i], 0.5f * point_size_)));
+    //}
+    // updateBVH(prims);
 
     if (visible_scalar_field_ != "(None)")
     {

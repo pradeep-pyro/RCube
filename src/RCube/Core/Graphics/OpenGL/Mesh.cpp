@@ -465,64 +465,64 @@ void Mesh::setDefaultValue(GLuint id, float val)
 {
     glVertexAttrib1f(id, val);
 }
-
-void Mesh::updateBVH()
-{
-    // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
-    std::vector<PrimitivePtr> prims;
-    const glm::vec3 *pos = attributes_["positions"]->ptrVec3();
-    if (numIndexData() > 0)
-    {
-        const unsigned int *ind = indices_->ptr();
-        prims.reserve(indices_->size() / 3);
-        size_t face_id = 0;
-        for (size_t i = 0; i < indices_->size(); i += 3)
-        {
-            prims.push_back(std::make_shared<Triangle>(face_id++, pos[ind[i + 0]], pos[ind[i + 1]],
-                                                       pos[ind[i + 2]]));
-        }
-    }
-    else
-    {
-        size_t num_verts = numVertexData();
-        prims.reserve(num_verts / 3);
-        size_t face_id = 0;
-        for (size_t i = 0; i < num_verts; i += 3)
-        {
-            prims.push_back(
-                std::make_shared<Triangle>(face_id++, pos[i + 0], pos[i + 1], pos[i + 2]));
-        }
-    }
-    bvh_ = buildBVH(prims);
-}
-
-void Mesh::updateBVH(const std::vector<PrimitivePtr> &prims)
-{
-    bvh_ = buildBVH(prims);
-}
-
-bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim)
-{
-    if (bvh_ == nullptr)
-    {
-        return false;
-    }
-    /*bool hit = bvh_->rayIntersect(ray, pt, prim);
-    if (!hit)
-    {
-        return false;
-    }
-    return true;*/
-    BVHClosestIntersectionInfo info;
-    bvh_->rayClosestIntersect(ray, info);
-    if (!info.hit)
-    {
-        return false;
-    }
-    pt = ray.origin() + info.t * ray.direction();
-    prim = info.primitive;
-    return true;
-}
+//
+//void Mesh::updateBVH()
+//{
+//    // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
+//    std::vector<PrimitivePtr> prims;
+//    const glm::vec3 *pos = attributes_["positions"]->ptrVec3();
+//    if (numIndexData() > 0)
+//    {
+//        const unsigned int *ind = indices_->ptr();
+//        prims.reserve(indices_->size() / 3);
+//        size_t face_id = 0;
+//        for (size_t i = 0; i < indices_->size(); i += 3)
+//        {
+//            prims.push_back(std::make_shared<Triangle>(face_id++, pos[ind[i + 0]], pos[ind[i + 1]],
+//                                                       pos[ind[i + 2]]));
+//        }
+//    }
+//    else
+//    {
+//        size_t num_verts = numVertexData();
+//        prims.reserve(num_verts / 3);
+//        size_t face_id = 0;
+//        for (size_t i = 0; i < num_verts; i += 3)
+//        {
+//            prims.push_back(
+//                std::make_shared<Triangle>(face_id++, pos[i + 0], pos[i + 1], pos[i + 2]));
+//        }
+//    }
+//    bvh_ = buildBVH(prims);
+//}
+//
+//void Mesh::updateBVH(const std::vector<PrimitivePtr> &prims)
+//{
+//    bvh_ = buildBVH(prims);
+//}
+//
+//bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim)
+//{
+//    if (bvh_ == nullptr)
+//    {
+//        return false;
+//    }
+//    /*bool hit = bvh_->rayIntersect(ray, pt, prim);
+//    if (!hit)
+//    {
+//        return false;
+//    }
+//    return true;*/
+//    BVHClosestIntersectionInfo info;
+//    bvh_->rayClosestIntersect(ray, info);
+//    if (!info.hit)
+//    {
+//        return false;
+//    }
+//    pt = ray.origin() + info.t * ray.direction();
+//    prim = info.primitive;
+//    return true;
+//}
 
 void LineMeshData::clear()
 {

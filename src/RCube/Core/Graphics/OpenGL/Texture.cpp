@@ -61,6 +61,106 @@ bool Texture2D::valid() const
     return id_ > 0;
 }
 
+GLenum Texture2D::internalFormatToFormat() const
+{
+    GLenum format;
+    // GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_DEPTH_COMPONENT and GL_STENCIL_INDEX
+    switch (internal_format_)
+    {
+    case TextureInternalFormat::Depth16:
+    case TextureInternalFormat::Depth24:
+    case TextureInternalFormat::Depth32:
+    case TextureInternalFormat::Depth32F:
+    {
+        format = GL_DEPTH_COMPONENT;
+        break;
+    }
+    case TextureInternalFormat::Depth24Stencil8:
+    case TextureInternalFormat::Depth32FStencil8:
+    {
+        format = GL_DEPTH_STENCIL;
+        break;
+    }
+    case TextureInternalFormat::R8:
+    case TextureInternalFormat::R16F:
+    case TextureInternalFormat::R32F:
+    {
+        format = GL_RED;
+        break;
+    }
+    case TextureInternalFormat::R32UI:
+    case TextureInternalFormat::R16I:
+    case TextureInternalFormat::R32I:
+    {
+        format = GL_RED_INTEGER;
+        break;
+    }
+    case TextureInternalFormat::RG16F:
+    case TextureInternalFormat::RG16:
+    case TextureInternalFormat::RG32F:
+    case TextureInternalFormat::RG8:
+    {
+        format = GL_RG;
+        break;
+    }
+    case TextureInternalFormat::RG32UI:
+    case TextureInternalFormat::RG32I:
+    {
+        format = GL_RG_INTEGER;
+        break;
+    }
+    case TextureInternalFormat::RGB16:
+    case TextureInternalFormat::RGB16F:
+    case TextureInternalFormat::RGB32F:
+    case TextureInternalFormat::RGB8:
+    case TextureInternalFormat::sRGB8:
+    {
+        format = GL_RGB;
+        break;
+    }
+    case TextureInternalFormat::RGB16I:
+    case TextureInternalFormat::RGB32I:
+    case TextureInternalFormat::RGB32UI:
+    {
+        format = GL_RGB_INTEGER;
+        break;
+    }
+    case TextureInternalFormat::RGBA16:
+    case TextureInternalFormat::RGBA16F:
+    case TextureInternalFormat::RGBA32F:
+    case TextureInternalFormat::RGBA8:
+    case TextureInternalFormat::sRGBA8:
+    {
+        format = GL_RGBA;
+        break;
+    }
+    }
+    return format;
+}
+
+void Texture2D::getSubImage(int x, int y, int width, int height,
+                            int *pixels, size_t size) const
+{
+    GLenum format = internalFormatToFormat();
+    glGetTextureSubImage(id_, 0, (GLint)x, (GLint)y, 0, (GLint)width, (GLint)height, 1,
+                         format, GL_INT, GLsizei(size) * sizeof(int),
+                         pixels);
+}
+
+void Texture2D::getSubImage(int x, int y, int width, int height, uint32_t *pixels, size_t size) const
+{
+    GLenum format = internalFormatToFormat();
+    glGetTextureSubImage(id_, 0, (GLint)x, (GLint)y, 0, (GLint)width, (GLint)height, 1, format,
+                         GL_UNSIGNED_INT, GLsizei(size) * sizeof(uint32_t), pixels);
+}
+
+void Texture2D::getSubImage(int x, int y, int width, int height, float *pixels, size_t size) const
+{
+    GLenum format = internalFormatToFormat();
+    glGetTextureSubImage(id_, 0, (GLint)x, (GLint)y, 0, (GLint)width, (GLint)height, 1, format,
+                         GL_FLOAT, GLsizei(size) * sizeof(float), pixels);
+}
+
 void Texture2D::release()
 {
     if (valid())

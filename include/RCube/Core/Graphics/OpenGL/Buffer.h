@@ -14,7 +14,8 @@ enum class BufferType
 {
     Array = GL_ARRAY_BUFFER,
     ElementArray = GL_ELEMENT_ARRAY_BUFFER,
-    Uniform = GL_UNIFORM_BUFFER
+    Uniform = GL_UNIFORM_BUFFER,
+    PixelPack = GL_PIXEL_PACK_BUFFER,
 };
 
 template <BufferType Type> class Buffer
@@ -23,11 +24,11 @@ template <BufferType Type> class Buffer
     size_t size_ = 0;
 
   public:
-    static std::shared_ptr<Buffer> create(size_t num_elements)
+    static std::shared_ptr<Buffer> create(size_t num_elements, GLenum usage = GL_DYNAMIC_DRAW)
     {
         auto buf = std::make_shared<Buffer>();
         glCreateBuffers(1, &buf->id_);
-        buf->reserve(num_elements);
+        buf->reserve(num_elements, usage);
         return buf;
     }
     ~Buffer()
@@ -41,9 +42,9 @@ template <BufferType Type> class Buffer
     {
         return Type;
     }
-    void reserve(size_t bytes)
+    void reserve(size_t bytes, GLenum usage = GL_DYNAMIC_DRAW)
     {
-        glNamedBufferData(id_, bytes, NULL, GL_DYNAMIC_DRAW);
+        glNamedBufferData(id_, bytes, NULL, usage);
         size_ = bytes;
     }
 
@@ -103,7 +104,17 @@ template <BufferType Type> class Buffer
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 2);
     }
-
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::PixelPack>::type>
+    void *map()
+    {
+        void *mapped_buffer = glMapNamedBuffer(id_, GL_READ_ONLY);
+        return mapped_buffer;
+    }
+    template <BufferType T = Type, typename = std::enable_if<T == BufferType::PixelPack>::type>
+    void unmap()
+    {
+        glUnmapNamedBuffer(id_);
+    }
     size_t size() const
     {
         return size_;
@@ -130,5 +141,6 @@ template <BufferType Type> class Buffer
 using ArrayBuffer = Buffer<BufferType::Array>;
 using ElementArrayBuffer = Buffer<BufferType::ElementArray>;
 using UniformBuffer = Buffer<BufferType::Uniform>;
+using PixelPackBuffer = Buffer<BufferType::PixelPack>;
 
 } // namespace rcube

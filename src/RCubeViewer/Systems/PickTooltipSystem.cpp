@@ -57,7 +57,7 @@ void PickTooltipSystem::update(bool)
                 if (pc != nullptr)
                 {
                     ImGui::BeginTooltip();
-                    size_t index = pick->primitive->id();
+                    size_t index = pick->picked_primitive / pc->num_triangles_per_point_;
                     ImGui::LabelText("Point", std::to_string(index).c_str());
                     const glm::vec3 &coord = pc->points_[index];
                     vec3LabelText("Coord", coord);
@@ -84,35 +84,35 @@ void PickTooltipSystem::update(bool)
                 if (sm != nullptr)
                 {
                     ImGui::BeginTooltip();
-                    size_t index = pick->primitive->id();
-                    Triangle *tri = dynamic_cast<Triangle *>(pick->primitive.get());
+                    size_t index = pick->picked_primitive;
+                    //Triangle *tri = dynamic_cast<Triangle *>(pick->primitive.get());
 
-                    float dist = 1e6f;
-                    // TODO(pradeep): can avoid closest vertex check
-                    glm::length_t vijk =
-                        static_cast<glm::length_t>(tri->closestVertexIndex(pick->point, dist));
-                    if (tri->barycentricCoordinate(pick->point)[glm::length_t(vijk)] > 0.85f)
-                    {
-                        // Vertex was selected
-                        size_t vertex_ind = sm->faces_[index][vijk];
-                        ImGui::LabelText("Vertex", std::to_string(vertex_ind).c_str());
-                        vec3LabelText("Coord", sm->vertices_[vertex_ind]);
-                        if (sm->visible_vertex_scalar_field_ != "(None)")
-                        {
-                            ImGui::Separator();
-                            const std::string name = sm->visible_vertex_scalar_field_;
-                            float val = sm->vertexScalarField(name).data()[index];
-                            ImGui::LabelText(name.c_str(), std::to_string(val).c_str());
-                        }
-                        if (sm->visible_vertex_vector_field_ != "(None)")
-                        {
-                            ImGui::Separator();
-                            const std::string name = sm->visible_vertex_vector_field_;
-                            const glm::vec3 &vec = sm->vertexVectorField(name).vectors()[index];
-                            vec3LabelText(name, vec);
-                        }
-                    }
-                    else
+                    //float dist = 1e6f;
+                    //// TODO(pradeep): can avoid closest vertex check
+                    //glm::length_t vijk =
+                    //    static_cast<glm::length_t>(tri->closestVertexIndex(pick->point, dist));
+                    //if (tri->barycentricCoordinate(pick->point)[glm::length_t(vijk)] > 0.85f)
+                    //{
+                    //    // Vertex was selected
+                    //    size_t vertex_ind = sm->faces_[index][vijk];
+                    //    ImGui::LabelText("Vertex", std::to_string(vertex_ind).c_str());
+                    //    vec3LabelText("Coord", sm->vertices_[vertex_ind]);
+                    //    if (sm->visible_vertex_scalar_field_ != "(None)")
+                    //    {
+                    //        ImGui::Separator();
+                    //        const std::string name = sm->visible_vertex_scalar_field_;
+                    //        float val = sm->vertexScalarField(name).data()[index];
+                    //        ImGui::LabelText(name.c_str(), std::to_string(val).c_str());
+                    //    }
+                    //    if (sm->visible_vertex_vector_field_ != "(None)")
+                    //    {
+                    //        ImGui::Separator();
+                    //        const std::string name = sm->visible_vertex_vector_field_;
+                    //        const glm::vec3 &vec = sm->vertexVectorField(name).vectors()[index];
+                    //        vec3LabelText(name, vec);
+                    //    }
+                    //}
+                    //else
                     {
                         // Triangle was selected
                         ImGui::LabelText("Triangle", std::to_string(index).c_str());

@@ -37,7 +37,6 @@ struct LineMeshData
     void scaleAndCenter();
 };
 
-
 struct TriangleMeshData
 {
     std::vector<glm::vec3> vertices, normals, colors, tangents;
@@ -67,12 +66,13 @@ class Mesh
     MeshPrimitive primitive_ = MeshPrimitive::Triangles;
     std::map<std::string, std::shared_ptr<AttributeBuffer>> attributes_;
     std::shared_ptr<AttributeIndexBuffer> indices_;
-    std::map<std::string, bool> attributes_enabled_; 
+    std::map<std::string, bool> attributes_enabled_;
     bool init_ = false;
-    BVHNodePtr bvh_;  // Bounding Volume Hierarchy for intersection queries
-    
+    // BVHNodePtr bvh_; // Bounding Volume Hierarchy for intersection queries
+
     Mesh(std::vector<std::shared_ptr<AttributeBuffer>> attributes, MeshPrimitive prim,
          bool indexed = false);
+
   public:
     Mesh() = default;
 
@@ -97,7 +97,7 @@ class Mesh
     static std::shared_ptr<Mesh> create(const TriangleMeshData &trimesh);
 
     static std::shared_ptr<Mesh> create(std::vector<std::shared_ptr<AttributeBuffer>> attributes,
-                                        MeshPrimitive prim, bool indexed=false);
+                                        MeshPrimitive prim, bool indexed = false);
 
     void release();
 
@@ -126,10 +126,11 @@ class Mesh
 
     size_t primitiveDim() const
     {
-        return primitive_ == MeshPrimitive::Points ? 1 : (primitive_ == MeshPrimitive::Lines ? 2 : 3);
+        return primitive_ == MeshPrimitive::Points ? 1
+                                                   : (primitive_ == MeshPrimitive::Lines ? 2 : 3);
     }
 
-    const auto& attributes() const
+    const auto &attributes() const
     {
         return attributes_;
     }
@@ -143,11 +144,11 @@ class Mesh
 
     size_t numIndexData() const;
 
-    virtual void updateBVH();
+    // virtual void updateBVH();
 
-    void updateBVH(const std::vector<PrimitivePtr> &prims);
+    // void updateBVH(const std::vector<PrimitivePtr> &prims);
 
-    bool rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim);
+    // bool rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim);
 
     void enableAttribute(std::string name);
 

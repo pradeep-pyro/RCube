@@ -5,6 +5,8 @@
 #include "RCube/Materials/images/red.png.h"
 #include "imgui.h"
 
+//#define RCUBE_TRANSPARENCY_DITHERING
+
 namespace rcube
 {
 
@@ -198,6 +200,7 @@ const std::string MatCapRGBFragmentShader =
 #version 450
 #define RCUBE_MAX_DIRLIGHTS 5
 #define RCUBE_MAX_POINTLIGHTS 50
+//#define RCUBE_TRANSPARENCY_DITHERING
 
 in vec3 geom_position;
 in vec3 geom_color;
@@ -250,6 +253,7 @@ uniform bool show_wireframe;
 const vec3 PINK = pow(vec3(255.0 / 255.0, 20.0 / 255.0, 147.0 / 255.0), vec3(2.2));
 const vec3 PURPLE = pow(vec3(138.0 / 255.0, 43.0 / 255.0, 226.0 / 255.0), vec3(2.2));
 
+#ifdef RCUBE_TRANSPARENCY_DITHERING
 // Reference:
 // https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm
 const mat4 bayerMatrix = mat4(
@@ -258,6 +262,7 @@ const mat4 bayerMatrix = mat4(
     vec4(4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0),
     vec4(16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0)
 );
+#endif
 
 float shadowAmount(int index, vec3 N)
 {
@@ -294,10 +299,12 @@ float shadowAmount(int index, vec3 N)
 
 void main()
 {
+#ifdef RCUBE_TRANSPARENCY_DITHERING
     if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
     {
         discard;
     }
+#endif
     vec3 frag_color = geom_color * color + emissive_color;
 
     int edge_flag = int(round(geom_wire));
@@ -327,15 +334,25 @@ void main()
     vec3 black = texture2D(matcap_black, uv).rgb;
     float visibility = max(1.0 - shadowAmount(0, geom_normal), 0.25);
     out_color = vec4(frag_color.r * red + frag_color.g * green + frag_color.b * blue + (1.0 - frag_color.r - frag_color.g - frag_color.b) * black, 1.0);
-    out_color = vec4(visibility, visibility, visibility, 1.0) * out_color;
+#ifdef RCUBE_TRANSPARENCY_DITHERING
+    float alpha = 1.0;
+#else
+    float alpha = opacity;
+#endif
+    out_color = vec4(visibility, visibility, visibility, alpha) * out_color;
 }
 )";
 
 MatCapRGBMaterial::MatCapRGBMaterial()
 {
+#ifdef RCUBE_TRANSPARENCY_DITHERING
     state_.blend.enabled = false;
-    state_.blend.color_src = BlendFunc::One;
-    state_.blend.color_dst = BlendFunc::One;
+#else
+    state_.blend.enabled = true;
+    state_.blend.alpha_src = BlendFunc::OneMinusSrcAlpha;
+#endif
+    //state_.blend.color_src = BlendFunc::One;
+    //state_.blend.color_dst = BlendFunc::One;
     state_.depth.test = true;
     state_.depth.write = true;
     state_.depth.func = DepthFunc::Less;

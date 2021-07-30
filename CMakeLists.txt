@@ -5,7 +5,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include_directories("include")
 
-file(GLOB_RECURSE INC_FILES "include/*.h")							
+file(GLOB_RECURSE INC_FILES "include/*.h")
 file(GLOB_RECURSE SRC_FILES "src/*.cpp")
 
 set(RC_ROOT ${CMAKE_CURRENT_SOURCE_DIR})

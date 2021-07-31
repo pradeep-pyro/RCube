@@ -5,8 +5,6 @@
 #include "RCube/Materials/images/red.png.h"
 #include "imgui.h"
 
-//#define RCUBE_TRANSPARENCY_DITHERING
-
 namespace rcube
 {
 
@@ -200,7 +198,12 @@ const std::string MatCapRGBFragmentShader =
 #version 450
 #define RCUBE_MAX_DIRLIGHTS 5
 #define RCUBE_MAX_POINTLIGHTS 50
-//#define RCUBE_TRANSPARENCY_DITHERING
+
+#define RCUBE_TRANSPARENCY_DITHERING
+
+#define OPAQUE 0
+#define TRANSPARENT 1
+#define RCUBE_RENDERPASS OPAQUE
 
 in vec3 geom_position;
 in vec3 geom_color;
@@ -208,7 +211,13 @@ in vec3 geom_normal;
 in vec3 g2f_world_position;
 in float geom_wire;
 noperspective in vec3 dist;
+
+#if RCUBE_RENDERPASS == OPAQUE
 out vec4 out_color;
+#elif RCUBE_RENDERPASS == TRANSPARENT
+layout (location = 0) out vec4 accum;
+layout (location = 1) out float reveal;
+#endif
 
 layout(binding=0) uniform sampler2D matcap_red;
 layout(binding=1) uniform sampler2D matcap_green;
@@ -333,26 +342,23 @@ void main()
     vec3 blue = texture2D(matcap_blue, uv).rgb;
     vec3 black = texture2D(matcap_black, uv).rgb;
     float visibility = max(1.0 - shadowAmount(0, geom_normal), 0.25);
-    out_color = vec4(frag_color.r * red + frag_color.g * green + frag_color.b * blue + (1.0 - frag_color.r - frag_color.g - frag_color.b) * black, 1.0);
-#ifdef RCUBE_TRANSPARENCY_DITHERING
-    float alpha = 1.0;
+    out_color = vec4(frag_color.r * red + frag_color.g * green + frag_color.b * blue + (1.0 - frag_color.r - frag_color.g - frag_color.b) * black, opacity);
+
+#if RCUBE_RENDERPASS == OPAQUE
+    out_color = vec4(visibility, visibility, visibility, 1) * out_color;
+#elif RCUBE_RENDERPASS == TRANSPARENT
+    float weight = max(min(1.0, max(max(out_color.r, out_color.g), out_color.b) * out_color.a), out_color.a) *
+        clamp(0.03 / (1e-5 + pow(z / 200, 4.0)), 1e-2, 3e3);
+    accum = vec4(out_color.rgb * out_color.a, out_color.a) * weight;
+    reveal = out_color.a;
 #else
-    float alpha = opacity;
 #endif
-    out_color = vec4(visibility, visibility, visibility, alpha) * out_color;
 }
 )";
 
 MatCapRGBMaterial::MatCapRGBMaterial()
 {
-#ifdef RCUBE_TRANSPARENCY_DITHERING
     state_.blend.enabled = false;
-#else
-    state_.blend.enabled = true;
-    state_.blend.alpha_src = BlendFunc::OneMinusSrcAlpha;
-#endif
-    //state_.blend.color_src = BlendFunc::One;
-    //state_.blend.color_dst = BlendFunc::One;
     state_.depth.test = true;
     state_.depth.write = true;
     state_.depth.func = DepthFunc::Less;

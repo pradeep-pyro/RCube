@@ -57,8 +57,8 @@ void main() {
 OutlineMaterial::OutlineMaterial()
 {
     state_.blend.enabled = false;
-    state_.blend.color_src = BlendFunc::One;
-    state_.blend.color_dst = BlendFunc::One;
+    state_.blend.blend[0].color_src = BlendFunc::One;
+    state_.blend.blend[0].color_dst = BlendFunc::One;
 
     // Frontface culling is important to render the outline
     // using the inverted-hull method that is used here

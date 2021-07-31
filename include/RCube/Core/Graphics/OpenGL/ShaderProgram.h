@@ -93,6 +93,15 @@ enum class BlendFunc
     OneMinusDstColor = GL_ONE_MINUS_DST_COLOR
 };
 
+enum class BlendEq
+{
+    Add = GL_FUNC_ADD,
+    Subtract = GL_FUNC_SUBTRACT,
+    ReverseSubtract = GL_FUNC_REVERSE_SUBTRACT,
+    Max = GL_MAX,
+    Min = GL_MIN,
+};
+
 enum class Cull
 {
     Back = GL_BACK,
@@ -182,8 +191,13 @@ struct RenderSettings
     struct Blend
     {
         bool enabled = false;
-        BlendFunc color_src = BlendFunc::SrcAlpha, color_dst = BlendFunc::OneMinusSrcAlpha;
-        BlendFunc alpha_src = BlendFunc::One, alpha_dst = BlendFunc::Zero;
+        struct Blendi
+        {
+            BlendFunc color_src = BlendFunc::SrcAlpha, color_dst = BlendFunc::OneMinusSrcAlpha;
+            BlendFunc alpha_src = BlendFunc::One, alpha_dst = BlendFunc::Zero;
+        };
+        std::vector<Blendi> blend = {Blendi{}};
+        BlendEq equation = BlendEq::Add;
     };
 
     struct PolygonOffset

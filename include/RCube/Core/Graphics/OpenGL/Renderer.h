@@ -9,17 +9,23 @@
 #include "glm/glm.hpp"
 #include <functional>
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace rcube
 {
 
+using ClearColorType =
+    std::variant<std::monostate, int, float, glm::ivec2, glm::vec2, glm::ivec3, glm::vec3, glm::ivec4, glm::vec4>;
+
 struct RenderTarget
 {
     GLuint framebuffer;
-    glm::vec4 clear_color = glm::vec4(1);
-    bool clear_color_buffer = true;
+    std::vector<ClearColorType> clear_color = {glm::vec4(1.f, 1.f, 1.f, 1.f)};
+    [[deprecated]]bool clear_color_buffer = true;
+    float clear_depth = 1.f;
     bool clear_depth_buffer = true;
+    GLint clear_stencil = 0;
     bool clear_stencil_buffer = true;
     glm::ivec2 viewport_origin;
     glm::ivec2 viewport_size;

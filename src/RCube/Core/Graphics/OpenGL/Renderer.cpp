@@ -93,11 +93,15 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     {
         glDisable(GL_BLEND);
     }
-    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-    glBlendFuncSeparate(static_cast<GLenum>(settings.blend.color_src),
-                        static_cast<GLenum>(settings.blend.color_dst),
-                        static_cast<GLenum>(settings.blend.alpha_src),
-                        static_cast<GLenum>(settings.blend.alpha_dst));
+    glBlendEquationSeparate(static_cast<GLenum>(settings.blend.equation),
+                            static_cast<GLenum>(settings.blend.equation));
+    for (size_t i = 0; i < settings.blend.blend.size(); ++i)
+    {
+        const RenderSettings::Blend::Blendi &b = settings.blend.blend[i];
+        glBlendFuncSeparatei(GLuint(i), static_cast<GLenum>(b.color_src),
+                             static_cast<GLenum>(b.color_dst), static_cast<GLenum>(b.alpha_src),
+                             static_cast<GLenum>(b.alpha_dst));
+    }
 
     // Dithering
     if (settings.dither)
@@ -134,6 +138,60 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     }
 }
 
+class ClearColorVisitor
+{
+    GLint index_ = 0;
+
+  public:
+    ClearColorVisitor(GLint index) : index_(index)
+    {
+    }
+
+    void operator()(int val) const
+    {
+        glClearBufferiv(GL_COLOR, index_, &val);
+    }
+
+    void operator()(float val) const
+    {
+        glClearBufferfv(GL_COLOR, index_, &val);
+    }
+
+    void operator()(glm::ivec2 val) const
+    {
+        glClearBufferiv(GL_COLOR, index_, glm::value_ptr(val));
+    }
+
+    void operator()(glm::vec2 val) const
+    {
+        glClearBufferfv(GL_COLOR, index_, glm::value_ptr(val));
+    }
+
+    void operator()(glm::ivec3 val) const
+    {
+        glClearBufferiv(GL_COLOR, index_, glm::value_ptr(val));
+    }
+
+    void operator()(glm::vec3 val) const
+    {
+        glClearBufferfv(GL_COLOR, index_, glm::value_ptr(val));
+    }
+
+    void operator()(glm::ivec4 val) const
+    {
+        glClearBufferiv(GL_COLOR, index_, glm::value_ptr(val));
+    }
+
+    void operator()(glm::vec4 val) const
+    {
+        glClearBufferfv(GL_COLOR, index_, glm::value_ptr(val));
+    }
+
+    void operator()(std::monostate) const
+    {
+    }
+};
+
 void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls)
 {
     // TODO(pradeep): Optimize redundant state changes
@@ -144,10 +202,10 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
 
     // Enable writing in all buffers for clearing state
     // Clear buffers
-    if (render_target.clear_color_buffer)
+    for (size_t i = 0; i < render_target.clear_color.size(); ++i)
     {
-        glClearColor(render_target.clear_color[0], render_target.clear_color[1],
-                     render_target.clear_color[2], render_target.clear_color[3]);
+        //const ClearColorType &cc = render_target.clear_color[i];
+        std::visit(ClearColorVisitor{GLint(i)}, render_target.clear_color[i]);
     }
     GLbitfield clear_bits = 0;
     if (render_target.clear_color_buffer)
@@ -158,11 +216,13 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
     if (render_target.clear_depth_buffer)
     {
         clear_bits |= GL_DEPTH_BUFFER_BIT;
+        glClearDepth(render_target.clear_depth);
         glDepthMask(GL_TRUE);
     }
     if (render_target.clear_stencil_buffer)
     {
         clear_bits |= GL_STENCIL_BUFFER_BIT;
+        glClearStencil(render_target.clear_stencil);
         glStencilMask(0xFF);
     }
     glClear(clear_bits);

@@ -314,7 +314,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         float roughness = static_cast<float>(mip) / static_cast<float>(num_mipmaps - 1);
         RenderTarget rt;
         rt.framebuffer = fbos[mip]->id();
-        rt.clear_color = glm::vec4(0.);
+        rt.clear_color = {glm::vec4(0.)};
         rt.clear_color_buffer = true;
         rt.clear_depth_buffer = true;
         rt.clear_stencil_buffer = true;

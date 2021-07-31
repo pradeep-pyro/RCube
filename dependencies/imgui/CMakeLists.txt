@@ -6,6 +6,7 @@ set(imgui_SOURCES imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_widgets.cpp i
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 add_library(imgui STATIC ${imgui_SOURCES})
+target_compile_features(imgui PRIVATE cxx_std_17)
 target_link_libraries(imgui glad glfw)
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/imgui/")
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/cpp/")

@@ -13,8 +13,7 @@ source_group(TREE ${RC_ROOT} FILES ${INC_FILES})
 source_group(TREE ${RC_ROOT} FILES ${SRC_FILES})
 
 add_library(RCube STATIC ${INC_FILES} ${SRC_FILES})
-set_property(TARGET RCube PROPERTY CXX_STANDARD 17)
-set_property(TARGET RCube PROPERTY CXX_STANDARD_REQUIRED TRUE)
+target_compile_features(RCube PUBLIC cxx_std_17)
 add_definitions(-DNOMINMAX)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 

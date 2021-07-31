@@ -233,9 +233,16 @@ class ShaderProgram
     static std::shared_ptr<ShaderProgram> create(const std::string &vertex_shader,
                                                  const std::string &fragment_shader,
                                                  bool debug = false);
+    static std::shared_ptr<ShaderProgram> create(const std::vector<std::string> &vertex_shader,
+                                                 const std::vector<std::string> &fragment_shader,
+                                                 bool debug = false);
     static std::shared_ptr<ShaderProgram> create(const std::string &vertex_shader,
                                                  const std::string &geometry_shader,
                                                  const std::string &fragment_shader,
+                                                 bool debug = false);
+    static std::shared_ptr<ShaderProgram> create(const std::vector<std::string> &vertex_shader,
+                                                 const std::vector<std::string> &geometry_shader,
+                                                 const std::vector<std::string> &fragment_shader,
                                                  bool debug = false);
     const std::unordered_map<std::string, ShaderAttributeDesc> &attributes() const;
     const Uniform &uniform(std::string name) const;
@@ -251,6 +258,7 @@ class ShaderProgram
 
   private:
     void addShader(GLuint type, const std::string &source, bool debug = false);
+    void addShader(GLuint type, const std::vector<std::string> &source, bool debug);
     void addShaderFromFile(GLuint type, const std::string &filename, bool debug = false);
     void generateAttributes();
     void generateUniforms();

@@ -28,8 +28,14 @@ ShaderProgram::~ShaderProgram()
 }
 
 std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
-                                                     const std::string &fragment_shader,
-                                                     bool debug)
+                                                     const std::string &fragment_shader, bool debug)
+{
+    return ShaderProgram::create({vertex_shader}, {fragment_shader}, debug);
+}
+
+std::shared_ptr<ShaderProgram>
+ShaderProgram::create(const std::vector<std::string> &vertex_shader,
+                      const std::vector<std::string> &fragment_shader, bool debug)
 {
     auto prog = std::make_shared<ShaderProgram>();
     prog->addShader(GL_VERTEX_SHADER, vertex_shader, debug);
@@ -44,8 +50,15 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_s
 
 std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
                                                      const std::string &geometry_shader,
-                                                     const std::string &fragment_shader,
-                                                     bool debug)
+                                                     const std::string &fragment_shader, bool debug)
+{
+    return ShaderProgram::create({vertex_shader}, {geometry_shader}, {fragment_shader});
+}
+
+std::shared_ptr<ShaderProgram>
+ShaderProgram::create(const std::vector<std::string> &vertex_shader,
+                      const std::vector<std::string> &geometry_shader,
+                      const std::vector<std::string> &fragment_shader, bool debug)
 {
     auto prog = std::make_shared<ShaderProgram>();
     prog->addShader(GL_VERTEX_SHADER, vertex_shader, debug);
@@ -131,15 +144,24 @@ void ShaderProgram::showWarnings(bool flag)
 
 void ShaderProgram::addShader(GLuint type, const std::string &source, bool debug)
 {
+    addShader(type, {source}, debug);
+}
+
+void ShaderProgram::addShader(GLuint type, const std::vector<std::string> &source, bool debug)
+{
     // Create a new program if not already done
     if (location_ == 0)
     {
         location_ = glCreateProgram();
     }
     GLuint shader = glCreateShader(type);
-    const char *c_str = source.c_str();
-    GLint length = (GLint)source.size();
-    glShaderSource(shader, 1, &c_str, &length);
+    std::vector<const char *> c_strs;
+    c_strs.reserve(source.size());
+    for (const std::string &str : source)
+    {
+        c_strs.push_back(str.c_str());
+    }
+    glShaderSource(shader, c_strs.size(), c_strs.data(), NULL);
     // Try to compile the shader
     glCompileShader(shader);
     GLint success = 0;

@@ -1,4 +1,5 @@
 #include "RCube/Materials/DepthMaterial.h"
+#include "RCube/Core/Graphics/ShaderManager.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 
@@ -48,15 +49,15 @@ void main() {
 }
 )";
 
-DepthMaterial::DepthMaterial()
+DepthMaterial::DepthMaterial() : ShaderMaterial("DepthMaterial")
 {
-    shader_ = ShaderProgram::create(DepthVertexShader, DepthFragmentShader, true);
+    ShaderManager::instance().create("DepthMaterial", DepthVertexShader, DepthFragmentShader);
 }
 
-void DepthMaterial::updateUniforms()
+void DepthMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
-    shader_->uniform("znear").set(znear);
-    shader_->uniform("zfar").set(zfar);
+    shader->uniform("znear").set(znear);
+    shader->uniform("zfar").set(zfar);
 }
 
 void DepthMaterial::drawGUI()

@@ -1,13 +1,13 @@
 #include "RCube/Materials/StandardMaterial.h"
-#include <string>
+#include "RCube/Core/Graphics/ShaderManager.h"
 #include "imgui.h"
+#include <string>
 
 namespace rcube
 {
 
 const std::string StandardVertexShader =
     R"(
-#version 450
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 uv;
@@ -50,7 +50,6 @@ void main()
 
 const static std::string StandardGeometryShader =
     R"(
-#version 450
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
@@ -133,7 +132,6 @@ void main() {
 
 const std::string StandardFragmentShader =
     R"(
-#version 420
 in vec3 geom_position;
 in vec3 geom_normal;
 in vec2 geom_uv;
@@ -428,10 +426,10 @@ void main() {
 }
 )";
 
-StandardMaterial::StandardMaterial()
+StandardMaterial::StandardMaterial() : ShaderMaterial("StandardMaterial")
 {
-    shader_ = ShaderProgram::create(StandardVertexShader, StandardGeometryShader,
-                                    StandardFragmentShader, true);
+    ShaderManager::instance().create("StandardMaterial", StandardVertexShader,
+                                     StandardGeometryShader, StandardFragmentShader, true);
     textures_.reserve(5);
     cubemaps_.reserve(2);
     state_.blend.enabled = true;
@@ -450,20 +448,20 @@ StandardMaterial::StandardMaterial()
     state_.stencil.op_depth_fail = StencilOp::Keep;
 }
 
-void StandardMaterial::updateUniforms()
+void StandardMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
-    shader_->uniform("albedo").set(glm::pow(albedo, glm::vec3(2.2f)));
-    shader_->uniform("roughness").set(roughness);
-    shader_->uniform("metallic").set(metallic);
-    shader_->uniform("opacity").set(opacity);
-    shader_->uniform("use_albedo_texture").set(albedo_texture != nullptr);
-    shader_->uniform("use_roughness_texture").set(roughness_texture != nullptr);
-    shader_->uniform("use_normal_texture").set(normal_texture != nullptr);
-    shader_->uniform("use_metallic_texture").set(metallic_texture != nullptr);
-    shader_->uniform("wireframe.show").set(wireframe);
-    shader_->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
-    shader_->uniform("wireframe.thickness").set(wireframe_thickness);
-    shader_->uniform("use_image_based_lighting")
+    shader->uniform("albedo").set(glm::pow(albedo, glm::vec3(2.2f)));
+    shader->uniform("roughness").set(roughness);
+    shader->uniform("metallic").set(metallic);
+    shader->uniform("opacity").set(opacity);
+    shader->uniform("use_albedo_texture").set(albedo_texture != nullptr);
+    shader->uniform("use_roughness_texture").set(roughness_texture != nullptr);
+    shader->uniform("use_normal_texture").set(normal_texture != nullptr);
+    shader->uniform("use_metallic_texture").set(metallic_texture != nullptr);
+    shader->uniform("wireframe.show").set(wireframe);
+    shader->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
+    shader->uniform("wireframe.thickness").set(wireframe_thickness);
+    shader->uniform("use_image_based_lighting")
         .set(image_based_lighting && ibl_irradiance != nullptr && ibl_prefilter != nullptr &&
              ibl_brdfLUT != nullptr);
 }
@@ -499,8 +497,8 @@ const std::vector<DrawCall::Texture2DInfo> StandardMaterial::textureSlots()
 const std::vector<DrawCall::TextureCubemapInfo> StandardMaterial::cubemapSlots()
 {
     cubemaps_.clear();
-    const bool use_ibl = image_based_lighting && 
-        ibl_irradiance != nullptr && ibl_prefilter != nullptr && ibl_brdfLUT != nullptr;
+    const bool use_ibl = image_based_lighting && ibl_irradiance != nullptr &&
+                         ibl_prefilter != nullptr && ibl_brdfLUT != nullptr;
     if (use_ibl)
     {
         cubemaps_.push_back({ibl_prefilter->id(), 5});
@@ -522,7 +520,8 @@ void StandardMaterial::setIBLFromCamera(Camera *cam)
 void StandardMaterial::drawGUI()
 {
     ImGui::Text("StandardMaterial");
-    ImGui::Text("This material renders the object with a\nphysically-based material based on the\nmetallic-roughness model.");
+    ImGui::Text("This material renders the object with a\nphysically-based material based on "
+                "the\nmetallic-roughness model.");
     ImGui::Separator();
     ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo));
     ImGui::SliderFloat("Roughness", &roughness, 0.04f, 1.f);

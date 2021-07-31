@@ -53,6 +53,8 @@ class ShaderManager
                 const std::map<uint8_t, std::string> &defines, bool debug = true);
     std::shared_ptr<ShaderProgram> get(const std::string &name);
     std::shared_ptr<ShaderProgram> get(const std::string &name, const ShaderFeatures &features);
+    bool has(const std::string &name);
+    bool has(const std::string &name, const ShaderFeatures &features);
     void clear();
 };
 

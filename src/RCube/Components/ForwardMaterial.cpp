@@ -8,9 +8,9 @@ const RenderSettings &ShaderMaterial::state() const
 {
     return state_;
 }
-std::shared_ptr<ShaderProgram> ShaderMaterial::get() const
+const std::string &ShaderMaterial::name() const
 {
-    return shader_;
+    return name_;
 }
 const std::vector<DrawCall::Texture2DInfo> ShaderMaterial::textureSlots()
 {
@@ -20,7 +20,10 @@ const std::vector<DrawCall::TextureCubemapInfo> ShaderMaterial::cubemapSlots()
 {
     return {};
 }
-void ShaderMaterial::updateUniforms()
+ShaderMaterial::ShaderMaterial(const std::string &name) : name_(name)
+{
+}
+void ShaderMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
 }
 void ShaderMaterial::drawGUI()

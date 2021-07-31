@@ -32,7 +32,7 @@ class StandardMaterial : public ShaderMaterial
     glm::vec3 wireframe_color = glm::vec3(0.f, 0.f, 0.f);
 
     StandardMaterial();
-    void updateUniforms() override;
+    void updateUniforms(std::shared_ptr<ShaderProgram> shader) override;
     const std::vector<DrawCall::Texture2DInfo> textureSlots() override;
     const std::vector<DrawCall::TextureCubemapInfo> cubemapSlots() override;
     void setIBLFromCamera(Camera *cam);

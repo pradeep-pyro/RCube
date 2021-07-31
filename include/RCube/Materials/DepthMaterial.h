@@ -12,7 +12,7 @@ class DepthMaterial : public ShaderMaterial
     float zfar = 100.f;
 
     DepthMaterial();
-    void updateUniforms() override;
+    void updateUniforms(std::shared_ptr<ShaderProgram> shader) override;
     void drawGUI() override;
 };
 

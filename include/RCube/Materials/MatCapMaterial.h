@@ -25,7 +25,7 @@ class MatCapRGBMaterial : public ShaderMaterial
     glm::vec3 wireframe_color = glm::vec3(0, 0, 0);
 
     MatCapRGBMaterial();
-    void updateUniforms() override;
+    void updateUniforms(std::shared_ptr<ShaderProgram> shader) override;
     const std::vector<DrawCall::Texture2DInfo> textureSlots() override;
     void drawGUI() override;
 };
@@ -42,7 +42,7 @@ class MatCapMaterial : public ShaderMaterial
     std::shared_ptr<Texture2D> matcap;
 
     MatCapMaterial();
-    void updateUniforms() override;
+    void updateUniforms(std::shared_ptr<ShaderProgram> shader) override;
     const std::vector<DrawCall::Texture2DInfo> textureSlots() override;
     void drawGUI() override;
 };

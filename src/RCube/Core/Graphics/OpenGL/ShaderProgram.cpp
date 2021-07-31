@@ -30,7 +30,8 @@ ShaderProgram::~ShaderProgram()
 std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_shader,
                                                      const std::string &fragment_shader, bool debug)
 {
-    return ShaderProgram::create({vertex_shader}, {fragment_shader}, debug);
+    return ShaderProgram::create(std::vector<std::string>{vertex_shader},
+                                 std::vector<std::string>{fragment_shader}, debug);
 }
 
 std::shared_ptr<ShaderProgram>
@@ -52,7 +53,9 @@ std::shared_ptr<ShaderProgram> ShaderProgram::create(const std::string &vertex_s
                                                      const std::string &geometry_shader,
                                                      const std::string &fragment_shader, bool debug)
 {
-    return ShaderProgram::create({vertex_shader}, {geometry_shader}, {fragment_shader});
+    return ShaderProgram::create(std::vector<std::string>{vertex_shader},
+                                 std::vector<std::string>{geometry_shader},
+                                 std::vector<std::string>{fragment_shader});
 }
 
 std::shared_ptr<ShaderProgram>
@@ -144,7 +147,7 @@ void ShaderProgram::showWarnings(bool flag)
 
 void ShaderProgram::addShader(GLuint type, const std::string &source, bool debug)
 {
-    addShader(type, {source}, debug);
+    addShader(type, std::vector<std::string>{source}, debug);
 }
 
 void ShaderProgram::addShader(GLuint type, const std::vector<std::string> &source, bool debug)
@@ -161,7 +164,7 @@ void ShaderProgram::addShader(GLuint type, const std::vector<std::string> &sourc
     {
         c_strs.push_back(str.c_str());
     }
-    glShaderSource(shader, c_strs.size(), c_strs.data(), NULL);
+    glShaderSource(shader, static_cast<GLsizei>(c_strs.size()), c_strs.data(), NULL);
     // Try to compile the shader
     glCompileShader(shader);
     GLint success = 0;

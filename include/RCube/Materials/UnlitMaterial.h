@@ -13,7 +13,7 @@ class UnlitMaterial : public ShaderMaterial
     float opacity = 1.f;
 
     UnlitMaterial();
-    void updateUniforms() override;
+    void updateUniforms(std::shared_ptr<ShaderProgram> shader) override;
     void drawGUI() override;
 };
 

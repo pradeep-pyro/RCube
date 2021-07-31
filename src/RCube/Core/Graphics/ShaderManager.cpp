@@ -19,6 +19,10 @@ void ShaderManager::create(const std::string &name, const std::string &vertex_sh
                            const std::string &fragment_shader,
                            const std::map<uint8_t, std::string> &defines, bool debug)
 {
+    if (has(name))
+    {
+        return;
+    }
     int powerset_size = 2 << static_cast<int>(defines.size());
     // This loops over all shader permutations
     for (uint8_t i = 0; i < powerset_size; ++i)
@@ -57,6 +61,10 @@ void ShaderManager::create(const std::string &name, const std::string &vertex_sh
                            const std::string &geometry_shader, const std::string &fragment_shader,
                            const std::map<uint8_t, std::string> &defines, bool debug)
 {
+    if (has(name))
+    {
+        return;
+    }
     int powerset_size = 2 << static_cast<int>(defines.size());
     // This loops over all shader permutations
     for (uint8_t i = 0; i < powerset_size; ++i)
@@ -99,6 +107,18 @@ std::shared_ptr<ShaderProgram> ShaderManager::get(const std::string &name,
                                                   const ShaderFeatures &features)
 {
     return res_.at({name, features});
+}
+
+bool ShaderManager::has(const std::string &name)
+{
+    auto it = std::find_if(res_.begin(), res_.end(),
+                           [&](const auto &kv) { return kv.first.first == name; });
+    return it != res_.end();
+}
+
+bool ShaderManager::has(const std::string &name, const ShaderFeatures &features)
+{
+    return res_.find({name, features}) != res_.end();
 }
 
 void ShaderManager::clear()

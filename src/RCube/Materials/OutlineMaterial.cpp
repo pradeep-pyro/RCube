@@ -1,10 +1,10 @@
 #include "RCube/Materials/OutlineMaterial.h"
+#include "RCube/Core/Graphics/ShaderManager.h"
 #include "imgui.h"
 
 namespace rcube
 {
 const static std::string OutlineVertexShader = R"(
-#version 450
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (std140, binding=0) uniform Camera {
@@ -30,7 +30,6 @@ void main()
 )";
 
 const static std::string OutlineFragmentShader = R"(
-#version 450
 out vec4 out_color;
 
 uniform vec3 color;
@@ -54,7 +53,7 @@ void main() {
 }
 )";
 
-OutlineMaterial::OutlineMaterial()
+OutlineMaterial::OutlineMaterial() : ShaderMaterial("OutlineMaterial")
 {
     state_.blend.enabled = false;
     state_.blend.blend[0].color_src = BlendFunc::One;
@@ -74,14 +73,14 @@ OutlineMaterial::OutlineMaterial()
     state_.stencil.func_ref = 1;
     state_.stencil.func_mask = 0xFF;
 
-    shader_ = ShaderProgram::create(OutlineVertexShader, OutlineFragmentShader, true);
+    ShaderManager::instance().create("OutlineMaterial", OutlineVertexShader, OutlineFragmentShader, true);
 }
 
-void OutlineMaterial::updateUniforms()
+void OutlineMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
-    shader_->uniform("color").set(color);
-    shader_->uniform("thickness").set(thickness);
-    shader_->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
+    shader->uniform("color").set(color);
+    shader->uniform("thickness").set(thickness);
+    shader->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
 }
 
 void OutlineMaterial::drawGUI()

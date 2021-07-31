@@ -1,4 +1,5 @@
 #include "RCube/Materials/UnlitMaterial.h"
+#include "RCube/Core/Graphics/ShaderManager.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 
@@ -6,7 +7,6 @@ namespace rcube
 {
 
 const static std::string UnlitVertexShader = R"(
-#version 450
 layout (location = 0) in vec3 position;
 layout (location = 3) in vec3 color;
 
@@ -32,7 +32,6 @@ void main()
 )";
 
 const static std::string UnlitFragmentShader = R"(
-#version 450
 in vec3 vert_position;
 in vec3 vert_color;
 out vec4 out_color;
@@ -47,7 +46,7 @@ void main() {
 }
 )";
 
-UnlitMaterial::UnlitMaterial()
+UnlitMaterial::UnlitMaterial() : ShaderMaterial("UnlitMaterial")
 {
     state_.blend.enabled = true;
     state_.cull.enabled = false;
@@ -58,14 +57,14 @@ UnlitMaterial::UnlitMaterial()
     state_.stencil.test = true;
     state_.stencil.write = true;
 
-    shader_ = ShaderProgram::create(UnlitVertexShader, UnlitFragmentShader, true);
+    ShaderManager::instance().create("UnlitMaterial", UnlitVertexShader, UnlitFragmentShader, true);
 }
 
-void UnlitMaterial::updateUniforms()
+void UnlitMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
-    shader_->uniform("color").set(color);
-    shader_->uniform("opacity").set(opacity);
-    shader_->uniform("use_vertex_colors").set(use_vertex_colors);
+    shader->uniform("color").set(color);
+    shader->uniform("opacity").set(opacity);
+    shader->uniform("use_vertex_colors").set(use_vertex_colors);
 }
 
 void UnlitMaterial::drawGUI()

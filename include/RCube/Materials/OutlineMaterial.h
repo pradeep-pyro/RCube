@@ -13,7 +13,7 @@ class OutlineMaterial : public ShaderMaterial
     float opacity = 1.f;
 
     OutlineMaterial();
-    void updateUniforms() override;
+    void updateUniforms(std::shared_ptr<ShaderProgram> shader) override;
     void drawGUI() override;
 };
 

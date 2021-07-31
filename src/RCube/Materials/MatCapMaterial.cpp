@@ -1,4 +1,5 @@
 #include "RCube/Materials/MatCapMaterial.h"
+#include "RCube/Core/Graphics/ShaderManager.h"
 #include "RCube/Materials/images/black.png.h"
 #include "RCube/Materials/images/blue.png.h"
 #include "RCube/Materials/images/green.png.h"
@@ -10,7 +11,6 @@ namespace rcube
 
 const std::string MatCapVertexShader =
     R"(
-#version 450
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 3) in vec3 color;
@@ -49,7 +49,6 @@ void main()
 
 const static std::string MatCapGeometryShader =
     R"(
-#version 450
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
@@ -127,8 +126,6 @@ void main() {
 
 const std::string MatCapFragmentShader =
     R"(
-#version 450
-
 in vec3 geom_position;
 in vec3 geom_color;
 in vec3 geom_normal;
@@ -195,7 +192,6 @@ void main()
 
 const std::string MatCapRGBFragmentShader =
     R"(
-#version 450
 #define RCUBE_MAX_DIRLIGHTS 5
 #define RCUBE_MAX_POINTLIGHTS 50
 
@@ -356,7 +352,7 @@ void main()
 }
 )";
 
-MatCapRGBMaterial::MatCapRGBMaterial()
+MatCapRGBMaterial::MatCapRGBMaterial() : ShaderMaterial("MatCapRGBMaterial")
 {
     state_.blend.enabled = false;
     state_.depth.test = true;
@@ -372,8 +368,8 @@ MatCapRGBMaterial::MatCapRGBMaterial()
     state_.stencil.op_stencil_fail = StencilOp::Keep;
     state_.stencil.op_depth_fail = StencilOp::Keep;
 
-    shader_ = ShaderProgram::create(MatCapVertexShader, MatCapGeometryShader,
-                                    MatCapRGBFragmentShader, true);
+    ShaderManager::instance().create("MatCapRGBMaterial", MatCapVertexShader, MatCapGeometryShader,
+                                     MatCapRGBFragmentShader, true);
     textures_.reserve(3);
     red_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);
     red_->setData(Image::fromMemory(red_png_start, red_png_size, 3));
@@ -389,14 +385,14 @@ MatCapRGBMaterial::MatCapRGBMaterial()
     textures_.push_back({black_->id(), 3});
 }
 
-void MatCapRGBMaterial::updateUniforms()
+void MatCapRGBMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
-    shader_->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
-    shader_->uniform("emissive_color").set(glm::pow(emissive_color, glm::vec3(2.2f)));
-    shader_->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
-    shader_->uniform("wireframe.show").set(wireframe);
-    shader_->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
-    shader_->uniform("wireframe.thickness").set(wireframe_thickness);
+    shader->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
+    shader->uniform("emissive_color").set(glm::pow(emissive_color, glm::vec3(2.2f)));
+    shader->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
+    shader->uniform("wireframe.show").set(wireframe);
+    shader->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
+    shader->uniform("wireframe.thickness").set(wireframe_thickness);
 }
 
 const std::vector<DrawCall::Texture2DInfo> MatCapRGBMaterial::textureSlots()
@@ -420,20 +416,20 @@ void MatCapRGBMaterial::drawGUI()
     ImGui::ColorEdit3("Color###wireframe.color", glm::value_ptr(wireframe_color));
 }
 
-MatCapMaterial::MatCapMaterial()
+MatCapMaterial::MatCapMaterial() : ShaderMaterial("MatCapMaterial")
 {
-    shader_ =
-        ShaderProgram::create(MatCapVertexShader, MatCapGeometryShader, MatCapFragmentShader, true);
+    ShaderManager::instance().create("MatCapMaterial", MatCapVertexShader, MatCapGeometryShader,
+                                     MatCapFragmentShader, true);
     textures_.reserve(1);
 }
 
-void MatCapMaterial::updateUniforms()
+void MatCapMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
-    shader_->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
-    shader_->uniform("wireframe.show").set(wireframe);
-    shader_->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
-    shader_->uniform("wireframe.thickness").set(wireframe_thickness);
-    shader_->uniform("valid_texture").set(matcap != nullptr);
+    shader->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
+    shader->uniform("wireframe.show").set(wireframe);
+    shader->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
+    shader->uniform("wireframe.thickness").set(wireframe_thickness);
+    shader->uniform("valid_texture").set(matcap != nullptr);
 }
 
 const std::vector<DrawCall::Texture2DInfo> MatCapMaterial::textureSlots()

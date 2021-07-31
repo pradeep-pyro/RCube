@@ -31,6 +31,7 @@ class ShaderMaterial
 class ForwardMaterial : public Component<ForwardMaterial>
 {
   public:
+    float opacity = 1.f;
     std::shared_ptr<ShaderMaterial> shader = nullptr;
     void drawGUI();
 };

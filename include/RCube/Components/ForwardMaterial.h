@@ -11,7 +11,7 @@ namespace rcube
 class ShaderMaterial
 {
   protected:
-    RenderSettings state_;
+    [[deprecated]] RenderSettings state_;
     const std::string name_;
 
   public:
@@ -21,8 +21,8 @@ class ShaderMaterial
     virtual void drawGUI();
     virtual const std::vector<DrawCall::Texture2DInfo> textureSlots();
     virtual const std::vector<DrawCall::TextureCubemapInfo> cubemapSlots();
-    const RenderSettings &state() const;
-    const std::string & name() const;
+    [[deprecated]] const RenderSettings &state() const;
+    const std::string &name() const;
     std::shared_ptr<ShaderMaterial> next_pass = nullptr;
 };
 

@@ -151,11 +151,12 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
     glm::vec3 eye_pos(0., 0., 0.);
     RenderTarget rt;
     rt.framebuffer = fbo_->id();
-    rt.clear_color_buffer = true;
+    rt.clear_color = {glm::vec4(0.f)};
     rt.clear_depth_buffer = true;
     rt.clear_stencil_buffer = false;
     rt.viewport_origin = glm::ivec2(0);
     rt.viewport_size = glm::ivec2(resolution_);
+    RenderSettings s;
     DrawCall dc;
     dc.cubemaps.push_back({env_map->id(), 0});
     dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
@@ -168,7 +169,7 @@ std::shared_ptr<TextureCubemap> IBLDiffuse::irradiance(std::shared_ptr<TextureCu
             shader->uniform("projection_matrix").set(projection_);
         };
 
-        rdr_.draw(rt, {dc});
+        rdr_.draw(rt, s, {dc});
         fbo_->copySubImage(0, irradiance_map, TextureCubemap::Side(i), 0, glm::ivec2(0),
                            glm::ivec2(resolution_));
     }

@@ -21,7 +21,7 @@ namespace rcube
 DrawCall makeDrawCall(Drawable *dr, ShaderMaterial *material, Transform *tr, ForwardRenderPass pass)
 {
     DrawCall dc;
-    dc.settings = material->state();
+    // dc.settings = material->state();
     dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
     dc.textures = material->textureSlots();
     dc.cubemaps = material->cubemapSlots();
@@ -262,12 +262,15 @@ void ForwardRenderSystem::initializePostprocess()
 void ForwardRenderSystem::shadowMapPass()
 {
     RenderTarget rt;
-    rt.clear_color_buffer = false;
     rt.clear_stencil_buffer = false;
     rt.clear_depth_buffer = true;
     rt.framebuffer = framebuffer_shadow_->id();
     rt.viewport_origin = glm::ivec2(0, 0);
     rt.viewport_size = glm::ivec2(shadow_atlas_->width(), shadow_atlas_->height());
+
+    RenderSettings state;
+    state.depth.test = true;
+    state.depth.write = true;
 
     std::vector<Entity> dirlights = getFilteredEntities({DirectionalLight::family()});
     const auto &drawable_entities =
@@ -293,10 +296,6 @@ void ForwardRenderSystem::shadowMapPass()
             }
             Transform *tr = world_->getComponent<Transform>(drawable_entity);
             DrawCall dc;
-            dc.settings.stencil.test = false;
-            dc.settings.stencil.write = 0xFF;
-            dc.settings.depth.test = true;
-            dc.settings.depth.write = true;
             dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
             dc.shader = shader_shadow_;
             dc.update_uniforms = [light_matrix, tr](std::shared_ptr<ShaderProgram> sh) {
@@ -307,7 +306,7 @@ void ForwardRenderSystem::shadowMapPass()
 
             dcs.push_back(dc);
         }
-        renderer_.draw(rt, dcs);
+        renderer_.draw(rt, state, dcs);
     }
 }
 
@@ -362,7 +361,7 @@ void ForwardRenderSystem::update(bool)
 void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
 {
     RenderTarget rt;
-    rt.clear_color_buffer = true;
+    rt.clear_color = {glm::vec4(0.f)};
     rt.clear_depth_buffer = true;
     rt.clear_stencil_buffer = true;
     rt.framebuffer = msaa_ > 0 ? framebuffer_hdr_ms_->id() : framebuffer_hdr_->id();
@@ -594,9 +593,6 @@ void ForwardRenderSystem::postprocessPass(Camera *cam)
     {
         // Pass 1: extract bright colors from the HDR framebuffer
         DrawCall dc;
-        dc.settings = state;
-        dc.settings.depth.test = false;
-        dc.settings.depth.write = false;
         dc.mesh = mi;
         dc.shader = shader_brightness_;
         dc.update_uniforms = [cam](std::shared_ptr<ShaderProgram> shader) {
@@ -604,13 +600,13 @@ void ForwardRenderSystem::postprocessPass(Camera *cam)
         };
         dc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
         RenderTarget rt;
-        rt.clear_color_buffer = true;
+        rt.clear_color = {glm::vec4(1.f)};
         rt.clear_depth_buffer = false;
         rt.clear_stencil_buffer = false;
         rt.viewport_origin = glm::ivec2(0, 0);
         rt.viewport_size = resolution_ / 2;
         rt.framebuffer = framebuffer_brightness_->id();
-        renderer_.draw(rt, {dc});
+        renderer_.draw(rt, state, {dc});
     }
     {
         // Pass 2: Gaussian Blur
@@ -619,9 +615,6 @@ void ForwardRenderSystem::postprocessPass(Camera *cam)
         for (size_t i = 0; i < blur_amount; ++i)
         {
             DrawCall dc;
-            dc.settings = state;
-            dc.settings.depth.test = false;
-            dc.settings.depth.write = false;
             dc.mesh = mi;
             dc.shader = shader_blur_;
             dc.textures.push_back(
@@ -632,34 +625,31 @@ void ForwardRenderSystem::postprocessPass(Camera *cam)
                 shader->uniform("horizontal").set(horizontal);
             };
             RenderTarget rt;
-            rt.clear_color_buffer = true;
+            rt.clear_color = {glm::vec4(1.f)};
             rt.clear_depth_buffer = false;
             rt.clear_stencil_buffer = false;
             rt.viewport_origin = glm::ivec2(0, 0);
             rt.viewport_size = resolution_ / 2;
             rt.framebuffer = framebuffer_blur_[int(horizontal)]->id();
-            renderer_.draw(rt, {dc});
+            renderer_.draw(rt, state, {dc});
             horizontal = !horizontal;
         }
     }
     {
         // Pass 3: Apply postprocess effects: bloom and tonemap
         DrawCall dc;
-        dc.settings = state;
-        dc.settings.depth.test = false;
-        dc.settings.depth.write = false;
         dc.mesh = mi;
         dc.shader = shader_pp_;
         dc.textures.push_back({framebuffer_hdr_->colorAttachment(0)->id(), 0});
         dc.textures.push_back({framebuffer_blur_[0]->colorAttachment(0)->id(), 1});
         RenderTarget rt;
-        rt.clear_color_buffer = true;
+        rt.clear_color = {glm::vec4(0.f)};
         rt.clear_depth_buffer = false;
         rt.clear_stencil_buffer = false;
         rt.viewport_origin = glm::ivec2(0, 0);
         rt.viewport_size = resolution_;
         rt.framebuffer = framebuffer_pp_->id();
-        renderer_.draw(rt, {dc});
+        renderer_.draw(rt, state, {dc});
     }
 }
 
@@ -667,8 +657,8 @@ void ForwardRenderSystem::finalPass(Camera *cam)
 {
     RenderTarget rt_screen;
     rt_screen.framebuffer = 0;
-    rt_screen.clear_color_buffer = false;
     rt_screen.clear_depth_buffer = false;
+    rt_screen.clear_stencil_buffer = false;
     rt_screen.viewport_origin = cam->viewport_origin;
     rt_screen.viewport_size = cam->viewport_size;
     renderer_.drawTexture(rt_screen, framebuffer_pp_->colorAttachment(0));

@@ -339,26 +339,24 @@ void GLRenderer::draw(const RenderTarget &render_target, const RenderSettings &s
 void GLRenderer::drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture)
 {
     DrawCall dc;
-    dc.settings.depth.test = false;
-    dc.settings.depth.write = true;
+    RenderSettings s;
+    s.depth.test = false;
     dc.shader = quad_shader_;
     dc.textures.push_back({texture->id(), 0});
     dc.mesh = getDrawCallMeshInfo(quad_mesh_);
-    dc.settings.depth.test = false;
-    dc.settings.depth.write = true;
-    draw(render_target, {dc});
+    draw(render_target, s, {dc});
 }
 
 void GLRenderer::drawSkybox(const RenderTarget &render_target,
                             std::shared_ptr<TextureCubemap> texture, DrawCall dc)
 {
-    dc.settings.depth.write = false;
-    dc.settings.depth.test = true;
+    RenderSettings s;
+    s.depth.test = false;
     dc.settings.depth.func = DepthFunc::LessOrEqual;
     dc.cubemaps.push_back({texture->id(), 0});
     dc.shader = skybox_shader_;
     dc.mesh = getDrawCallMeshInfo(skybox_mesh_);
-    draw(render_target, {dc});
+    draw(render_target, s, {dc});
 }
 
 DrawCall::MeshInfo GLRenderer::getDrawCallMeshInfo(std::shared_ptr<Mesh> mesh)

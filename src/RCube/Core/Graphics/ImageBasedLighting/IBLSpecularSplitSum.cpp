@@ -315,11 +315,11 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         RenderTarget rt;
         rt.framebuffer = fbos[mip]->id();
         rt.clear_color = {glm::vec4(0.)};
-        rt.clear_color_buffer = true;
         rt.clear_depth_buffer = true;
         rt.clear_stencil_buffer = true;
         rt.viewport_origin = glm::ivec2(0, 0);
         rt.viewport_size = glm::ivec2(mip_width, mip_height);
+        RenderSettings s;
         DrawCall dc;
         dc.cubemaps.push_back({env_map->id(), 0});
         dc.mesh = GLRenderer::getDrawCallMeshInfo(cube_);
@@ -333,7 +333,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
                 shader->uniform("projection_matrix").set(projection_);
             };
 
-            rdr_.draw(rt, {dc});
+            rdr_.draw(rt, s, {dc});
             fbos[mip]->copySubImage(0, prefiltered_map, TextureCubemap::Side(i), mip,
                                     glm::ivec2(0, 0), glm::ivec2(mip_width, mip_height));
         }
@@ -357,16 +357,17 @@ std::shared_ptr<Texture2D> IBLSpecularSplitSum::integrateBRDF(unsigned int resol
 
     RenderTarget rt;
     rt.framebuffer = fbo->id();
-    rt.clear_color_buffer = true;
+    rt.clear_color = {glm::vec4(0.f)};
     rt.clear_depth_buffer = true;
     rt.clear_stencil_buffer = false;
     rt.viewport_origin = glm::ivec2(0, 0);
     rt.viewport_size = glm::ivec2(resolution, resolution);
     DrawCall dc;
-    dc.settings.depth.test = false;
+    RenderSettings s;
+    s.depth.test = false;
     dc.mesh = GLRenderer::getDrawCallMeshInfo(rdr_.fullscreenQuadMesh());
     dc.shader = shader_brdf_;
-    rdr_.draw(rt, {dc});
+    rdr_.draw(rt, s, {dc});
     return brdf_lut;
 }
 

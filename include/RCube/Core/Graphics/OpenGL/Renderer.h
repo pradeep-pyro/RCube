@@ -61,7 +61,7 @@ struct DrawCall
     std::vector<Texture2DInfo> textures;
     std::vector<TextureCubemapInfo> cubemaps;
     MeshInfo mesh;
-    RenderSettings settings;
+    [[deprecated]] RenderSettings settings;
     bool ignore_settings = false;
 };
 
@@ -89,8 +89,9 @@ class GLRenderer
      */
     void resize(int top, int left, size_t width, size_t height);
 
-    void draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls);
-    
+    [[deprecated]] void draw(const RenderTarget &render_target,
+                             const std::vector<DrawCall> &drawcalls);
+
     void draw(const RenderTarget &render_target, const RenderSettings &state,
               const std::vector<DrawCall> &drawcalls);
     void drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture);

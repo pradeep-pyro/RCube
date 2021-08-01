@@ -428,7 +428,7 @@ void main() {
 
 StandardMaterial::StandardMaterial() : ShaderMaterial("StandardMaterial")
 {
-    ShaderManager::instance().create("StandardMaterial", StandardVertexShader,
+    ForwardRenderSystemShaderManager::instance().create("StandardMaterial", StandardVertexShader,
                                      StandardGeometryShader, StandardFragmentShader, true);
     textures_.reserve(5);
     cubemaps_.reserve(2);

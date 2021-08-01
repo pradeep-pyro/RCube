@@ -57,7 +57,8 @@ UnlitMaterial::UnlitMaterial() : ShaderMaterial("UnlitMaterial")
     state_.stencil.test = true;
     state_.stencil.write = true;
 
-    ShaderManager::instance().create("UnlitMaterial", UnlitVertexShader, UnlitFragmentShader, true);
+    ForwardRenderSystemShaderManager::instance().create("UnlitMaterial", UnlitVertexShader,
+                                                        UnlitFragmentShader, true);
 }
 
 void UnlitMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)

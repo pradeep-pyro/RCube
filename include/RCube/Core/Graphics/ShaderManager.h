@@ -1,8 +1,7 @@
 #pragma once
 
 #include "RCube/Core/Graphics/OpenGL/ShaderProgram.h"
-#include <bitset>
-#include <map>
+#include <array>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -12,49 +11,51 @@
 namespace rcube
 {
 
-using ShaderFeatures = std::bitset<8>;
-
-class ShaderManager
+enum class ForwardRenderPass
 {
-    using ShaderNameAndFeatures = std::pair<std::string, ShaderFeatures>;
+    Opaque,
+    Transparent,
+};
 
-    struct ShaderNameAndFeaturesHash
+/**
+ * ShaderManager is a class to create and manage shaders for the ForwardRenderSystem
+ */
+class ForwardRenderSystemShaderManager
+{
+    using ShaderNameAndPass = std::pair<std::string, ForwardRenderPass>;
+
+    struct ShaderNameAndPassHash
     {
-        std::size_t operator()(const ShaderNameAndFeatures &pair) const
+        std::size_t operator()(const ShaderNameAndPass &pair) const
         {
-            return std::hash<std::string>()(pair.first) ^ std::hash<ShaderFeatures>()(pair.second);
+            return std::hash<std::string>()(pair.first) ^
+                   std::hash<size_t>()(static_cast<size_t>(pair.second));
         }
     };
-
-    std::unordered_map<ShaderNameAndFeatures, std::shared_ptr<ShaderProgram>,
-                       ShaderNameAndFeaturesHash>
+    std::unordered_map<ShaderNameAndPass, std::shared_ptr<ShaderProgram>, ShaderNameAndPassHash>
         res_;
+    std::array<std::string, 2> defines_ = {"#define RCUBE_RENDERPASS 0\n",
+                                           "#define RCUBE_RENDERPASS 1\n"};
 
-    ShaderManager() = default;
-    ~ShaderManager() = default;
+    ForwardRenderSystemShaderManager() = default;
+    ~ForwardRenderSystemShaderManager() = default;
+
+    std::vector<std::string> prepareShaderSource(const std::string &src, ForwardRenderPass pass);
 
   public:
-    ShaderManager(const ShaderManager &) = delete;
+    ForwardRenderSystemShaderManager(const ForwardRenderSystemShaderManager &) = delete;
 
-    ShaderManager &operator=(const ShaderManager &) = delete;
+    ForwardRenderSystemShaderManager &operator=(const ForwardRenderSystemShaderManager &) = delete;
 
-    static ShaderManager &instance();
+    static ForwardRenderSystemShaderManager &instance();
 
     void create(const std::string &name, const std::string &vertex_shader,
                 const std::string &fragment_shader, bool debug = true);
     void create(const std::string &name, const std::string &vertex_shader,
-                const std::string &fragment_shader, const std::map<uint8_t, std::string> &defines,
-                bool debug = true);
-    void create(const std::string &name, const std::string &vertex_shader,
                 const std::string &geometry_shader, const std::string &fragment_shader,
                 bool debug = true);
-    void create(const std::string &name, const std::string &vertex_shader,
-                const std::string &geometry_shader, const std::string &fragment_shader,
-                const std::map<uint8_t, std::string> &defines, bool debug = true);
-    std::shared_ptr<ShaderProgram> get(const std::string &name);
-    std::shared_ptr<ShaderProgram> get(const std::string &name, const ShaderFeatures &features);
+    std::shared_ptr<ShaderProgram> get(const std::string &name, ForwardRenderPass pass);
     bool has(const std::string &name);
-    bool has(const std::string &name, const ShaderFeatures &features);
     void clear();
 };
 

@@ -51,7 +51,7 @@ void main() {
 
 DepthMaterial::DepthMaterial() : ShaderMaterial("DepthMaterial")
 {
-    ShaderManager::instance().create("DepthMaterial", DepthVertexShader, DepthFragmentShader);
+    ForwardRenderSystemShaderManager::instance().create("DepthMaterial", DepthVertexShader, DepthFragmentShader);
 }
 
 void DepthMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)

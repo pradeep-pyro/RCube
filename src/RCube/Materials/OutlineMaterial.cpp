@@ -73,7 +73,7 @@ OutlineMaterial::OutlineMaterial() : ShaderMaterial("OutlineMaterial")
     state_.stencil.func_ref = 1;
     state_.stencil.func_mask = 0xFF;
 
-    ShaderManager::instance().create("OutlineMaterial", OutlineVertexShader, OutlineFragmentShader, true);
+    ForwardRenderSystemShaderManager::instance().create("OutlineMaterial", OutlineVertexShader, OutlineFragmentShader, true);
 }
 
 void OutlineMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)

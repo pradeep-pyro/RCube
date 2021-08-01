@@ -15,14 +15,14 @@
 namespace rcube
 {
 
-using ClearColorType =
-    std::variant<std::monostate, int, float, glm::ivec2, glm::vec2, glm::ivec3, glm::vec3, glm::ivec4, glm::vec4>;
+using ClearColorType = std::variant<std::monostate, int, float, glm::ivec2, glm::vec2, glm::ivec3,
+                                    glm::vec3, glm::ivec4, glm::vec4>;
 
 struct RenderTarget
 {
     GLuint framebuffer;
     std::vector<ClearColorType> clear_color = {glm::vec4(1.f, 1.f, 1.f, 1.f)};
-    [[deprecated]]bool clear_color_buffer = true;
+    [[deprecated]] bool clear_color_buffer = true;
     float clear_depth = 1.f;
     bool clear_depth_buffer = true;
     GLint clear_stencil = 0;
@@ -33,6 +33,8 @@ struct RenderTarget
 
 struct DrawCall
 {
+    // TODO(pradeep): This info structs could take in higher level
+    // RCube types like Texture2D instead of OpenGL IDs...
     struct Texture2DInfo
     {
         GLuint texture = 0;
@@ -60,6 +62,7 @@ struct DrawCall
     std::vector<TextureCubemapInfo> cubemaps;
     MeshInfo mesh;
     RenderSettings settings;
+    bool ignore_settings = false;
 };
 
 class GLRenderer

@@ -38,6 +38,7 @@ void ForwardMaterial::drawGUI()
         ImGui::Text("No valid shader found.");
         return;
     }
+    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
     size_t pass = 1;
     while (sh != nullptr)
     {

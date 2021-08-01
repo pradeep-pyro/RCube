@@ -204,15 +204,14 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
     // Clear buffers
     for (size_t i = 0; i < render_target.clear_color.size(); ++i)
     {
-        //const ClearColorType &cc = render_target.clear_color[i];
         std::visit(ClearColorVisitor{GLint(i)}, render_target.clear_color[i]);
     }
     GLbitfield clear_bits = 0;
-    if (render_target.clear_color_buffer)
+    /* if (render_target.clear_color_buffer)
     {
         clear_bits |= GL_COLOR_BUFFER_BIT;
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    }
+    }*/
     if (render_target.clear_depth_buffer)
     {
         clear_bits |= GL_DEPTH_BUFFER_BIT;
@@ -231,7 +230,10 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
     for (const DrawCall &dc : drawcalls)
     {
         // Change state
-        updateSettings(dc.settings);
+        if (!dc.ignore_settings)
+        {
+            updateSettings(dc.settings);
+        }
         // Bind shader
         dc.shader->use();
         // Set uniforms

@@ -365,7 +365,7 @@ MatCapRGBMaterial::MatCapRGBMaterial() : ShaderMaterial("MatCapRGBMaterial")
     ForwardRenderSystemShaderManager::instance().create("MatCapRGBMaterial", MatCapVertexShader,
                                                         MatCapGeometryShader,
                                                         MatCapRGBFragmentShader, true);
-    textures_.reserve(3);
+    textures_.reserve(4);
     red_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);
     red_->setData(Image::fromMemory(red_png_start, red_png_size, 3));
     green_ = Texture2D::create(256, 256, 1, TextureInternalFormat::sRGB8);

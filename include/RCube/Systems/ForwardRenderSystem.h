@@ -23,10 +23,10 @@ class WeightedBlendedOITManager
     std::shared_ptr<Framebuffer> getFramebuffer();
     std::shared_ptr<Texture2D> getAccumTexture();
     std::shared_ptr<Texture2D> getRevealageTexture();
+    std::shared_ptr<ShaderProgram> getCompositeShader();
     void prepareTransparentPass(RenderTarget &rt, RenderSettings &state);
-    void prepateCompositePass()
-    {
-    }
+    void prepareCompositePass(std::shared_ptr<Framebuffer> opaque_fbo, RenderTarget &rt,
+                              RenderSettings &state);
     void cleanup();
 };
 

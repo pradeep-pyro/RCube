@@ -25,7 +25,6 @@ DrawCall makeDrawCall(Drawable *dr, ShaderMaterial *material, Transform *tr, For
     dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
     dc.textures = material->textureSlots();
     dc.cubemaps = material->cubemapSlots();
-    // dc.shader = shader->get();
     dc.shader = ForwardRenderSystemShaderManager::instance().get(material->name(), pass);
     dc.update_uniforms = [dc, material, tr](std::shared_ptr<ShaderProgram>) {
         dc.shader->uniform("model_matrix").set(tr->worldTransform());
@@ -373,8 +372,11 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
     RenderSettings state;
     state.depth.test = true;
     state.depth.write = true;
+    state.depth.func = DepthFunc::Less;
     state.stencil.test = false;
-    state.cull.enabled = false;
+    state.cull.enabled = true;
+    state.cull.mode = Cull::Back;
+    state.dither = false;
 
     std::vector<DrawCall> drawcalls;
     const auto &drawable_entities =
@@ -394,6 +396,10 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         {
             continue;
         }
+        if (mat->opacity < 0.9999f)
+        {
+            continue;
+        }
         // Add other shader passes to the drawcalls if they exist
         ShaderMaterial *sh = mat->shader.get();
         while (sh != nullptr)
@@ -403,6 +409,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
             sh = sh->next_pass.get();
         }
     }
+    
     // Draw skybox
     if (cam->use_skybox && !cam->orthographic)
     {
@@ -430,7 +437,28 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 {
     RenderTarget rt;
     RenderSettings state;
-    wboit_.prepareTransparentPass(rt, state);
+    rt.clear_color = {glm::vec4(0.f), glm::vec4(1.f)};
+    rt.clear_depth_buffer = false;
+    rt.clear_stencil_buffer = false;
+    rt.framebuffer = wboit_.getFramebuffer()->id();
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = resolution_;
+
+    state.depth.test = true;
+    state.depth.write = false;
+    state.stencil.test = true;
+    state.cull.enabled = false;
+    state.blend.enabled = true;
+    state.blend.blend.resize(2);
+    state.blend.blend[0].color_src = BlendFunc::One;
+    state.blend.blend[0].alpha_src = BlendFunc::One;
+    state.blend.blend[0].color_dst = BlendFunc::One;
+    state.blend.blend[0].alpha_dst = BlendFunc::One;
+    state.blend.blend[1].color_src = BlendFunc::Zero;
+    state.blend.blend[1].alpha_src = BlendFunc::Zero;
+    state.blend.blend[1].color_dst = BlendFunc::OneMinusSrcColor;
+    state.blend.blend[1].alpha_dst = BlendFunc::OneMinusSrcColor;
+    state.blend.equation = BlendEq::Add;
 
     std::vector<DrawCall> drawcalls;
     const auto &drawable_entities =
@@ -448,16 +476,54 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
         {
             continue;
         }
-        if (mat->opacity >= 0.99f)
+        if (mat->opacity >= 0.9999f)
         {
             continue;
         }
         Mesh *mesh = dr->mesh.get();
         Transform *tr = world_->getComponent<Transform>(drawable_entity);
         ShaderMaterial *sh = mat->shader.get();
-        drawcalls.push_back(makeDrawCall(dr, sh, tr, ForwardRenderPass::Transparent));
+        DrawCall dc = makeDrawCall(dr, sh, tr, ForwardRenderPass::Transparent);
+        dc.ignore_settings = true;
+        drawcalls.push_back(dc);
+        renderer_.draw(rt, {dc});
     }
-    renderer_.draw(rt, drawcalls);
+    if (drawcalls.empty())
+    {
+        return;
+    }
+    //renderer_.draw(rt, drawcalls);
+
+    // Composite pass
+    rt = RenderTarget();
+    state = RenderSettings();
+    wboit_.prepareCompositePass(framebuffer_hdr_, rt, state);
+    std::shared_ptr<ShaderProgram> composite_shader = wboit_.getCompositeShader();
+    drawcalls.clear();
+    for (Entity drawable_entity : drawable_entities)
+    {
+        Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
+        if (!dr->visible)
+        {
+            continue;
+        }
+        ForwardMaterial *mat = world_->getComponent<ForwardMaterial>(drawable_entity);
+        if (mat->shader == nullptr)
+        {
+            continue;
+        }
+        if (mat->opacity >= 0.9999f)
+        {
+            continue;
+        }
+        DrawCall dc;
+        dc.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.fullscreenQuadMesh());
+        dc.shader = composite_shader;
+        dc.textures.push_back(DrawCall::Texture2DInfo{wboit_.getAccumTexture()->id(), 0});
+        dc.textures.push_back(DrawCall::Texture2DInfo{wboit_.getRevealageTexture()->id(), 1});
+        drawcalls.push_back(dc);
+        renderer_.draw(rt, {dc});
+    }
 }
 
 void ForwardRenderSystem::pickFBOPass(Camera *cam)
@@ -598,11 +664,58 @@ void ForwardRenderSystem::finalPass(Camera *cam)
     renderer_.drawTexture(rt_screen, framebuffer_pp_->colorAttachment(0));
 }
 
+const std::string WBOITCompositeFragmentShader = R"(
+#version 450
+
+in vec2 v_texcoord;
+out vec4 out_color;
+
+layout (binding=0) uniform sampler2D accum;
+layout (binding=1) uniform sampler2D reveal;
+
+const float EPS = 0.0001f;
+
+bool isApproximatelyEqual(float a, float b)
+{
+	return abs(a - b) <= (abs(a) < abs(b) ? abs(b) : abs(a)) * EPS;
+}
+
+float max3(vec3 v) 
+{
+	return max(max(v.x, v.y), v.z);
+}
+
+void main()
+{
+	// fragment revealage
+	float revealage = texture(reveal, v_texcoord).r;
+	
+	// save the blending and color texture fetch cost if there is not a transparent fragment
+	if (isApproximatelyEqual(revealage, 1.0f)) 
+		discard;
+ 
+	// fragment color
+	vec4 accumulation = texture(accum, v_texcoord);
+	
+	// suppress overflow
+	if (isinf(max3(abs(accumulation.rgb)))) 
+    {
+		accumulation.rgb = vec3(accumulation.a);
+    }
+
+	// prevent floating point precision bug
+	vec3 average_color = accumulation.rgb / max(accumulation.a, EPS);
+
+	// blend pixels
+	out_color = vec4(average_color, 1.0f - revealage);
+}
+)";
+
 void WeightedBlendedOITManager::initialize(glm::ivec2 resolution,
-                                          std::shared_ptr<Texture2D> opaque_depth)
+                                           std::shared_ptr<Texture2D> opaque_depth)
 {
     fbo_ = Framebuffer::create();
-    accum_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::RGBA32F);
+    accum_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::RGBA16F);
     accum_tex_->setFilterMode(TextureFilterMode::Linear);
     revealage_tex_ =
         Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::R16F);
@@ -613,6 +726,8 @@ void WeightedBlendedOITManager::initialize(glm::ivec2 resolution,
     fbo_->setDrawBuffers({0, 1});
     resolution_ = resolution;
     assert(fbo_->isComplete());
+
+    composite_shader_ = common::fullScreenQuadShader(WBOITCompositeFragmentShader);
 }
 
 std::shared_ptr<Framebuffer> WeightedBlendedOITManager::getFramebuffer()
@@ -630,9 +745,13 @@ std::shared_ptr<Texture2D> WeightedBlendedOITManager::getRevealageTexture()
     return revealage_tex_;
 }
 
+std::shared_ptr<ShaderProgram> WeightedBlendedOITManager::getCompositeShader()
+{
+    return composite_shader_;
+}
+
 void WeightedBlendedOITManager::prepareTransparentPass(RenderTarget &rt, RenderSettings &state)
 {
-    rt.clear_color_buffer = true;
     rt.clear_color = {glm::vec4(0.f), glm::vec4(1.f)};
     rt.clear_depth_buffer = false;
     rt.clear_stencil_buffer = false;
@@ -642,7 +761,7 @@ void WeightedBlendedOITManager::prepareTransparentPass(RenderTarget &rt, RenderS
 
     state.depth.test = true;
     state.depth.write = false;
-    state.stencil.test = false;
+    state.stencil.test = true;
     state.cull.enabled = false;
     state.blend.enabled = true;
     state.blend.blend.resize(2);
@@ -655,6 +774,26 @@ void WeightedBlendedOITManager::prepareTransparentPass(RenderTarget &rt, RenderS
     state.blend.blend[1].color_dst = BlendFunc::OneMinusSrcColor;
     state.blend.blend[1].alpha_dst = BlendFunc::OneMinusSrcColor;
     state.blend.equation = BlendEq::Add;
+}
+
+void WeightedBlendedOITManager::prepareCompositePass(std::shared_ptr<Framebuffer> opaque_fbo,
+                                                     RenderTarget &rt, RenderSettings &state)
+{
+    rt.framebuffer = opaque_fbo->id();
+    rt.clear_color = {};
+    rt.clear_depth = false;
+    rt.clear_stencil = false;
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = resolution_;
+
+    state.depth.test = true;
+    state.depth.func = DepthFunc::Always;
+    state.blend.enabled = true;
+    state.blend.blend.resize(1);
+    state.blend.blend[0].alpha_src = BlendFunc::SrcAlpha;
+    state.blend.blend[0].alpha_dst = BlendFunc::OneMinusSrcAlpha;
+    state.blend.blend[0].color_src = BlendFunc::SrcAlpha;
+    state.blend.blend[0].color_dst = BlendFunc::OneMinusSrcAlpha;
 }
 
 void WeightedBlendedOITManager::cleanup()

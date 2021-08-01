@@ -9,6 +9,27 @@
 namespace rcube
 {
 
+class WeightedBlendedOITManager
+{
+    std::shared_ptr<Framebuffer> fbo_;
+    std::shared_ptr<Texture2D> accum_tex_;
+    std::shared_ptr<Texture2D> revealage_tex_;
+    std::shared_ptr<ShaderProgram> composite_shader_;
+    glm::ivec2 resolution_ = glm::ivec2(1280, 720);
+
+  public:
+    WeightedBlendedOITManager() = default;
+    void initialize(glm::ivec2 resolution, std::shared_ptr<Texture2D> opaque_depth);
+    std::shared_ptr<Framebuffer> getFramebuffer();
+    std::shared_ptr<Texture2D> getAccumTexture();
+    std::shared_ptr<Texture2D> getRevealageTexture();
+    void prepareTransparentPass(RenderTarget &rt, RenderSettings &state);
+    void prepateCompositePass()
+    {
+    }
+    void cleanup();
+};
+
 class ForwardRenderSystem : public System
 {
   public:
@@ -69,6 +90,8 @@ class ForwardRenderSystem : public System
     std::vector<float> pointlight_data_;
     // Pick pass
     bool pick_pass_ = true;
+    // Transparency
+    WeightedBlendedOITManager wboit_;
 };
 
 } // namespace rcube

@@ -9,6 +9,7 @@
 #include "RCube/Core/Graphics/OpenGL/CommonMesh.h"
 #include "RCube/Core/Graphics/OpenGL/CommonShader.h"
 #include "RCube/Core/Graphics/OpenGL/Light.h"
+#include "RCube/Core/Graphics/ShaderManager.h"
 #include "RCube/Systems/Shaders.h"
 #include "RCubeViewer/Components/Name.h"
 #include "glm/gtx/string_cast.hpp"
@@ -17,22 +18,23 @@
 namespace rcube
 {
 
-DrawCall makeDrawCall(Drawable *dr, ShaderMaterial *shader, Transform *tr)
+DrawCall makeDrawCall(Drawable *dr, ShaderMaterial *material, Transform *tr, ForwardRenderPass pass)
 {
     DrawCall dc;
-    dc.settings = shader->state();
+    dc.settings = material->state();
     dc.mesh = GLRenderer::getDrawCallMeshInfo(dr->mesh);
-    dc.textures = shader->textureSlots();
-    dc.cubemaps = shader->cubemapSlots();
-    dc.shader = shader->get();
-    dc.update_uniforms = [shader, tr](std::shared_ptr<ShaderProgram>) {
-        shader->get()->uniform("model_matrix").set(tr->worldTransform());
+    dc.textures = material->textureSlots();
+    dc.cubemaps = material->cubemapSlots();
+    // dc.shader = shader->get();
+    dc.shader = ForwardRenderSystemShaderManager::instance().get(material->name(), pass);
+    dc.update_uniforms = [dc, material, tr](std::shared_ptr<ShaderProgram>) {
+        dc.shader->uniform("model_matrix").set(tr->worldTransform());
         Uniform nor_mat;
-        if (shader->get()->hasUniform("normal_matrix", nor_mat))
+        if (dc.shader->hasUniform("normal_matrix", nor_mat))
         {
             nor_mat.set(glm::mat3(tr->worldTransform()));
         }
-        shader->updateUniforms();
+        material->updateUniforms(dc.shader);
     };
     return dc;
 }
@@ -126,6 +128,9 @@ void ForwardRenderSystem::initialize()
     framebuffer_pick_->setDrawBuffers({0});
     assert(framebuffer_pick_->isComplete());
     shader_picking_ = common::uniqueColorShader();
+
+    // Transparency
+    wboit_.initialize(resolution_, depth);
 
     // Initialize renderer
     renderer_.initialize();
@@ -343,12 +348,12 @@ void ForwardRenderSystem::update(bool)
 
         // Render passes
         opaqueGeometryPass(cam);
-        transparentGeometryPass(cam);
         // Resolve MSAA framebuffer if needed
         if (msaa_ > 0)
         {
             framebuffer_hdr_ms_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_);
         }
+        transparentGeometryPass(cam);
         pickFBOPass(cam);
         postprocessPass(cam);
         finalPass(cam);
@@ -393,7 +398,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         ShaderMaterial *sh = mat->shader.get();
         while (sh != nullptr)
         {
-            drawcalls.push_back(makeDrawCall(dr, sh, tr));
+            drawcalls.push_back(makeDrawCall(dr, sh, tr, ForwardRenderPass::Opaque));
             drawcalls.back().textures.push_back({shadow_atlas_->id(), 10});
             sh = sh->next_pass.get();
         }
@@ -423,6 +428,36 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
 
 void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 {
+    RenderTarget rt;
+    RenderSettings state;
+    wboit_.prepareTransparentPass(rt, state);
+
+    std::vector<DrawCall> drawcalls;
+    const auto &drawable_entities =
+        getFilteredEntities({Transform::family(), Drawable::family(), ForwardMaterial::family()});
+    drawcalls.reserve(drawable_entities.size());
+    for (Entity drawable_entity : drawable_entities)
+    {
+        Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
+        if (!dr->visible)
+        {
+            continue;
+        }
+        ForwardMaterial *mat = world_->getComponent<ForwardMaterial>(drawable_entity);
+        if (mat->shader == nullptr)
+        {
+            continue;
+        }
+        if (mat->opacity >= 0.99f)
+        {
+            continue;
+        }
+        Mesh *mesh = dr->mesh.get();
+        Transform *tr = world_->getComponent<Transform>(drawable_entity);
+        ShaderMaterial *sh = mat->shader.get();
+        drawcalls.push_back(makeDrawCall(dr, sh, tr, ForwardRenderPass::Transparent));
+    }
+    renderer_.draw(rt, drawcalls);
 }
 
 void ForwardRenderSystem::pickFBOPass(Camera *cam)
@@ -432,7 +467,7 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
         return;
     }
     RenderTarget rt;
-    rt.clear_color_buffer = false;
+    rt.clear_color = {glm::ivec2(-1, -1)}; // Clear texture channels to -1
     rt.clear_depth_buffer = true;
     rt.clear_stencil_buffer = false;
     rt.framebuffer = framebuffer_pick_->id();
@@ -450,8 +485,6 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
 
     std::vector<DrawCall> drawcalls;
     drawcalls.reserve(drawable_entities.size());
-    GLint clear_val[2] = {-1, -1};
-    glClearNamedFramebufferiv(framebuffer_pick_->id(), GL_COLOR, 0, &clear_val[0]);
     for (Entity drawable_entity : drawable_entities)
     {
         Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
@@ -564,4 +597,71 @@ void ForwardRenderSystem::finalPass(Camera *cam)
     rt_screen.viewport_size = cam->viewport_size;
     renderer_.drawTexture(rt_screen, framebuffer_pp_->colorAttachment(0));
 }
+
+void WeightedBlendedOITManager::initialize(glm::ivec2 resolution,
+                                          std::shared_ptr<Texture2D> opaque_depth)
+{
+    fbo_ = Framebuffer::create();
+    accum_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::RGBA32F);
+    accum_tex_->setFilterMode(TextureFilterMode::Linear);
+    revealage_tex_ =
+        Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::R16F);
+    revealage_tex_->setFilterMode(TextureFilterMode::Linear);
+    fbo_->setColorAttachment(0, accum_tex_);
+    fbo_->setColorAttachment(1, revealage_tex_);
+    fbo_->setDepthAttachment(opaque_depth);
+    fbo_->setDrawBuffers({0, 1});
+    resolution_ = resolution;
+    assert(fbo_->isComplete());
+}
+
+std::shared_ptr<Framebuffer> WeightedBlendedOITManager::getFramebuffer()
+{
+    return fbo_;
+}
+
+std::shared_ptr<Texture2D> WeightedBlendedOITManager::getAccumTexture()
+{
+    return accum_tex_;
+}
+
+std::shared_ptr<Texture2D> WeightedBlendedOITManager::getRevealageTexture()
+{
+    return revealage_tex_;
+}
+
+void WeightedBlendedOITManager::prepareTransparentPass(RenderTarget &rt, RenderSettings &state)
+{
+    rt.clear_color_buffer = true;
+    rt.clear_color = {glm::vec4(0.f), glm::vec4(1.f)};
+    rt.clear_depth_buffer = false;
+    rt.clear_stencil_buffer = false;
+    rt.framebuffer = getFramebuffer()->id();
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = resolution_;
+
+    state.depth.test = true;
+    state.depth.write = false;
+    state.stencil.test = false;
+    state.cull.enabled = false;
+    state.blend.enabled = true;
+    state.blend.blend.resize(2);
+    state.blend.blend[0].color_src = BlendFunc::One;
+    state.blend.blend[0].alpha_src = BlendFunc::One;
+    state.blend.blend[0].color_dst = BlendFunc::One;
+    state.blend.blend[0].alpha_dst = BlendFunc::One;
+    state.blend.blend[1].color_src = BlendFunc::Zero;
+    state.blend.blend[1].alpha_src = BlendFunc::Zero;
+    state.blend.blend[1].color_dst = BlendFunc::OneMinusSrcColor;
+    state.blend.blend[1].alpha_dst = BlendFunc::OneMinusSrcColor;
+    state.blend.equation = BlendEq::Add;
+}
+
+void WeightedBlendedOITManager::cleanup()
+{
+    fbo_->release();
+    accum_tex_->release();
+    revealage_tex_->release();
+}
+
 } // namespace rcube

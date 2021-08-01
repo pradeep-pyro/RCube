@@ -59,48 +59,48 @@ void GLRenderer::updateSettings(const RenderSettings &settings)
     if (settings.depth.test)
     {
         glEnable(GL_DEPTH_TEST);
+        glDepthMask(static_cast<GLboolean>(settings.depth.write));
+        glDepthFunc(static_cast<GLenum>(settings.depth.func));
     }
     else
     {
         glDisable(GL_DEPTH_TEST);
     }
-    glDepthMask(static_cast<GLboolean>(settings.depth.write));
-    glDepthFunc(static_cast<GLenum>(settings.depth.func));
 
     // Stencil test
     if (settings.stencil.test)
     {
         glEnable(GL_STENCIL_TEST);
+        glStencilMask(settings.stencil.write);
+        glStencilFunc(static_cast<GLenum>(settings.stencil.func),
+                      static_cast<GLenum>(settings.stencil.func_ref),
+                      static_cast<GLenum>(settings.stencil.func_mask));
+        glStencilOp(static_cast<GLenum>(settings.stencil.op_stencil_fail),
+                    static_cast<GLenum>(settings.stencil.op_depth_fail),
+                    static_cast<GLenum>(settings.stencil.op_stencil_pass));
     }
     else
     {
         glDisable(GL_STENCIL_TEST);
     }
-    glStencilMask(settings.stencil.write);
-    glStencilFunc(static_cast<GLenum>(settings.stencil.func),
-                  static_cast<GLenum>(settings.stencil.func_ref),
-                  static_cast<GLenum>(settings.stencil.func_mask));
-    glStencilOp(static_cast<GLenum>(settings.stencil.op_stencil_fail),
-                static_cast<GLenum>(settings.stencil.op_depth_fail),
-                static_cast<GLenum>(settings.stencil.op_stencil_pass));
 
     // Blending
     if (settings.blend.enabled)
     {
         glEnable(GL_BLEND);
+        glBlendEquationSeparate(static_cast<GLenum>(settings.blend.equation),
+                                static_cast<GLenum>(settings.blend.equation));
+        for (size_t i = 0; i < settings.blend.blend.size(); ++i)
+        {
+            const RenderSettings::Blend::Blendi &b = settings.blend.blend[i];
+            glBlendFuncSeparatei(GLuint(i), static_cast<GLenum>(b.color_src),
+                                 static_cast<GLenum>(b.color_dst), static_cast<GLenum>(b.alpha_src),
+                                 static_cast<GLenum>(b.alpha_dst));
+        }
     }
     else
     {
         glDisable(GL_BLEND);
-    }
-    glBlendEquationSeparate(static_cast<GLenum>(settings.blend.equation),
-                            static_cast<GLenum>(settings.blend.equation));
-    for (size_t i = 0; i < settings.blend.blend.size(); ++i)
-    {
-        const RenderSettings::Blend::Blendi &b = settings.blend.blend[i];
-        glBlendFuncSeparatei(GLuint(i), static_cast<GLenum>(b.color_src),
-                             static_cast<GLenum>(b.color_dst), static_cast<GLenum>(b.alpha_src),
-                             static_cast<GLenum>(b.alpha_dst));
     }
 
     // Dithering
@@ -234,6 +234,79 @@ void GLRenderer::draw(const RenderTarget &render_target, const std::vector<DrawC
         {
             updateSettings(dc.settings);
         }
+        // Bind shader
+        dc.shader->use();
+        // Set uniforms
+        dc.update_uniforms(dc.shader);
+        // Bind textures
+        for (const DrawCall::Texture2DInfo &dctex : dc.textures)
+        {
+            glBindTextureUnit(dctex.unit, dctex.texture);
+        }
+        for (const DrawCall::TextureCubemapInfo &dccub : dc.cubemaps)
+        {
+            glBindTextureUnit(dccub.unit, dccub.texture);
+        }
+        // Draw
+        glBindVertexArray(dc.mesh.vao);
+        if (!dc.mesh.indexed)
+        {
+            glDrawArrays(dc.mesh.primitive, 0, dc.mesh.num_data);
+        }
+        else
+        {
+            glDrawElements(dc.mesh.primitive, dc.mesh.num_data, GL_UNSIGNED_INT,
+                           (void *)(0 * sizeof(uint32_t)));
+        }
+    }
+    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
+void GLRenderer::draw(const RenderTarget &render_target, const RenderSettings &state,
+                      const std::vector<DrawCall> &drawcalls)
+{
+    // TODO(pradeep): Optimize redundant state changes
+    // Bind framebuffer
+    glDisable(GL_BLEND);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer);
+    resize(render_target.viewport_origin[0], render_target.viewport_origin[1],
+           render_target.viewport_size[0], render_target.viewport_size[1]);
+
+    // Enable writing in all buffers for clearing state
+    // Clear buffers
+    for (size_t i = 0; i < render_target.clear_color.size(); ++i)
+    {
+        std::visit(ClearColorVisitor{GLint(i)}, render_target.clear_color[i]);
+    }
+    GLbitfield clear_bits = 0;
+    /* if (render_target.clear_color_buffer)
+    {
+        clear_bits |= GL_COLOR_BUFFER_BIT;
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    }*/
+    if (render_target.clear_depth_buffer)
+    {
+        clear_bits |= GL_DEPTH_BUFFER_BIT;
+        glClearDepth(render_target.clear_depth);
+        glDepthMask(GL_TRUE);
+    }
+    if (render_target.clear_stencil_buffer)
+    {
+        clear_bits |= GL_STENCIL_BUFFER_BIT;
+        glClearStencil(render_target.clear_stencil);
+        glStencilMask(0xFF);
+    }
+    if (clear_bits != 0)
+    {
+        glClear(clear_bits);
+    }
+
+    // Change state
+    updateSettings(state);
+    // Draw
+    for (const DrawCall &dc : drawcalls)
+    {
         // Bind shader
         dc.shader->use();
         // Set uniforms

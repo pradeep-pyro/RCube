@@ -370,13 +370,19 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
     rt.viewport_size = resolution_;
 
     RenderSettings state;
+    state.blend.enabled = false;
     state.depth.test = true;
     state.depth.write = true;
     state.depth.func = DepthFunc::Less;
-    state.stencil.test = false;
-    state.cull.enabled = true;
-    state.cull.mode = Cull::Back;
     state.dither = false;
+    state.stencil.test = false;
+    state.stencil.write = 0xFF;
+    state.stencil.func = StencilFunc::Always;
+    state.stencil.func_ref = 1;
+    state.stencil.func_mask = 0xFF;
+    state.stencil.op_stencil_pass = StencilOp::Replace;
+    state.stencil.op_stencil_fail = StencilOp::Keep;
+    state.stencil.op_depth_fail = StencilOp::Keep;
 
     std::vector<DrawCall> drawcalls;
     const auto &drawable_entities =
@@ -409,15 +415,18 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
             sh = sh->next_pass.get();
         }
     }
-    
+    renderer_.draw(rt, state, drawcalls);
+
     // Draw skybox
     if (cam->use_skybox && !cam->orthographic)
     {
         DrawCall dc_skybox;
-        RenderSettings &s = dc_skybox.settings;
+        RenderSettings s;
+        s.blend.enabled = false;
+        s.depth.test = true;
         s.depth.write = false;
         s.depth.func = DepthFunc::LessOrEqual;
-        s.stencil.test = true;
+        s.stencil.test = false;
         s.stencil.op_stencil_fail = StencilOp::Keep;
         s.stencil.op_depth_fail = StencilOp::Keep;
         s.stencil.op_stencil_pass = StencilOp::Keep;
@@ -428,9 +437,11 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         dc_skybox.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.skyboxMesh());
         dc_skybox.shader = renderer_.skyboxShader();
         dc_skybox.cubemaps.push_back({cam->skybox->id(), 0});
-        drawcalls.push_back(dc_skybox);
+        rt.clear_color = {};
+        rt.clear_depth_buffer = false;
+        rt.clear_stencil_buffer = false;
+        renderer_.draw(rt, s, {dc_skybox});
     }
-    renderer_.draw(rt, drawcalls);
 }
 
 void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
@@ -484,15 +495,13 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
         Transform *tr = world_->getComponent<Transform>(drawable_entity);
         ShaderMaterial *sh = mat->shader.get();
         DrawCall dc = makeDrawCall(dr, sh, tr, ForwardRenderPass::Transparent);
-        dc.ignore_settings = true;
         drawcalls.push_back(dc);
-        renderer_.draw(rt, {dc});
     }
     if (drawcalls.empty())
     {
         return;
     }
-    //renderer_.draw(rt, drawcalls);
+    renderer_.draw(rt, state, drawcalls);
 
     // Composite pass
     rt = RenderTarget();
@@ -522,8 +531,8 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
         dc.textures.push_back(DrawCall::Texture2DInfo{wboit_.getAccumTexture()->id(), 0});
         dc.textures.push_back(DrawCall::Texture2DInfo{wboit_.getRevealageTexture()->id(), 1});
         drawcalls.push_back(dc);
-        renderer_.draw(rt, {dc});
     }
+    renderer_.draw(rt, state, drawcalls);
 }
 
 void ForwardRenderSystem::pickFBOPass(Camera *cam)
@@ -541,6 +550,7 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
     rt.viewport_size = resolution_;
 
     RenderSettings state;
+    state.blend.enabled = false;
     state.depth.test = true;
     state.depth.write = true;
     state.stencil.test = false;
@@ -570,7 +580,7 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
         };
         drawcalls.push_back(dc);
     }
-    renderer_.draw(rt, drawcalls);
+    renderer_.draw(rt, state, drawcalls);
 }
 
 void ForwardRenderSystem::postprocessPass(Camera *cam)

@@ -90,7 +90,9 @@ class GLRenderer
     void resize(int top, int left, size_t width, size_t height);
 
     void draw(const RenderTarget &render_target, const std::vector<DrawCall> &drawcalls);
-
+    
+    void draw(const RenderTarget &render_target, const RenderSettings &state,
+              const std::vector<DrawCall> &drawcalls);
     void drawTexture(const RenderTarget &render_target, std::shared_ptr<Texture2D> texture);
 
     void drawSkybox(const RenderTarget &render_target, std::shared_ptr<TextureCubemap> texture,

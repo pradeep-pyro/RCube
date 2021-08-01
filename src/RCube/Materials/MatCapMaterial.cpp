@@ -353,7 +353,7 @@ MatCapRGBMaterial::MatCapRGBMaterial() : ShaderMaterial("MatCapRGBMaterial")
     state_.depth.write = true;
     state_.depth.func = DepthFunc::Less;
     state_.dither = false;
-    state_.stencil.test = true;
+    state_.stencil.test = false;
     state_.stencil.write = 0xFF;
     state_.stencil.func = StencilFunc::Always;
     state_.stencil.func_ref = 1;

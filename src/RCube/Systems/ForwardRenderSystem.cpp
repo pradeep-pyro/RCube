@@ -401,7 +401,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         {
             continue;
         }
-        if (mat->opacity < 0.9999f)
+        if (mat->shader->opacity < 1.f)
         {
             continue;
         }
@@ -486,7 +486,7 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
         {
             continue;
         }
-        if (mat->opacity >= 0.9999f)
+        if (mat->shader->opacity == 1.f)
         {
             continue;
         }
@@ -520,7 +520,7 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
         {
             continue;
         }
-        if (mat->opacity >= 0.9999f)
+        if (mat->shader->opacity == 1.f)
         {
             continue;
         }

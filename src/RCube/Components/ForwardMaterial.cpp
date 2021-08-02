@@ -25,9 +25,15 @@ ShaderMaterial::ShaderMaterial(const std::string &name) : name_(name)
 }
 void ShaderMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
+    if (shader == nullptr)
+    {
+        return;
+    }
+    shader->uniform("opacity").set(std::min(1.f, std::max(opacity, 0.f)));
 }
 void ShaderMaterial::drawGUI()
 {
+    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
 }
 
 void ForwardMaterial::drawGUI()
@@ -38,7 +44,6 @@ void ForwardMaterial::drawGUI()
         ImGui::Text("No valid shader found.");
         return;
     }
-    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
     size_t pass = 1;
     while (sh != nullptr)
     {

@@ -19,7 +19,6 @@ class MatCapRGBMaterial : public ShaderMaterial
   public:
     glm::vec3 color = glm::vec3(1, 1, 1);
     glm::vec3 emissive_color = glm::vec3(0, 0, 0);
-    float opacity = 1.f;
     bool wireframe = false;
     float wireframe_thickness = 1.f;
     glm::vec3 wireframe_color = glm::vec3(0, 0, 0);

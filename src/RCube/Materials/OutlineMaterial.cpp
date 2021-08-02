@@ -80,7 +80,7 @@ void OutlineMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
     shader->uniform("color").set(color);
     shader->uniform("thickness").set(thickness);
-    shader->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
+    ShaderMaterial::updateUniforms(shader);
 }
 
 void OutlineMaterial::drawGUI()
@@ -91,7 +91,6 @@ void OutlineMaterial::drawGUI()
     ImGui::ColorEdit3("Outline Color", glm::value_ptr(color),
                       ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV);
     ImGui::SliderFloat("Outline Thickness", &thickness, 0.01f, 1.f);
-    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
 }
 
 } // namespace rcube

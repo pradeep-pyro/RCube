@@ -34,7 +34,13 @@ void main()
 const static std::string UnlitFragmentShader = R"(
 in vec3 vert_position;
 in vec3 vert_color;
+
+#if RCUBE_RENDERPASS == 0
 out vec4 out_color;
+#elif RCUBE_RENDERPASS == 1
+layout (location = 0) out vec4 accum;
+layout (location = 1) out float reveal;
+#endif
 
 uniform vec3 color;
 uniform bool use_vertex_colors;
@@ -42,7 +48,15 @@ uniform float opacity;
 
 void main() {
     vec3 result = use_vertex_colors ? vert_color : color;
-    out_color = vec4(result, opacity);
+    vec4 final_color = vec4(result, opacity);
+#if RCUBE_RENDERPASS == 0
+    out_color = final_color;
+#elif RCUBE_RENDERPASS == 1
+    float weight = clamp(pow(min(1.0, final_color.a * 10.0) + 0.01, 3.0) * 1e8 * 
+                         pow(1.0 - gl_FragCoord.z * 0.9, 3.0), 1e-2, 3e3);
+    accum = vec4(final_color.rgb * final_color.a, final_color.a) * weight;
+    reveal = final_color.a;
+#endif
 }
 )";
 
@@ -64,8 +78,8 @@ UnlitMaterial::UnlitMaterial() : ShaderMaterial("UnlitMaterial")
 void UnlitMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
     shader->uniform("color").set(color);
-    shader->uniform("opacity").set(opacity);
     shader->uniform("use_vertex_colors").set(use_vertex_colors);
+    ShaderMaterial::updateUniforms(shader);
 }
 
 void UnlitMaterial::drawGUI()
@@ -75,8 +89,8 @@ void UnlitMaterial::drawGUI()
     ImGui::Separator();
     ImGui::ColorEdit3("Color", glm::value_ptr(color),
                       ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV);
+    ShaderMaterial::drawGUI();
     ImGui::Checkbox("Use vertex colors", &use_vertex_colors);
-    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
 }
 
 } // namespace rcube

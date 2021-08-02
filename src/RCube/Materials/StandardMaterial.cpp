@@ -142,7 +142,13 @@ noperspective in vec3 dist;
 
 #define RCUBE_MAX_DIRLIGHTS 5
 #define RCUBE_MAX_POINTLIGHTS 50
+
+#if RCUBE_RENDERPASS == 0
 out vec4 out_color;
+#elif RCUBE_RENDERPASS == 1
+layout (location = 0) out vec4 accum;
+layout (location = 1) out float reveal;
+#endif
 
 uniform vec3 albedo;
 uniform float roughness;
@@ -336,10 +342,10 @@ vec3 pointLightDirectContribution(int index, const vec3 N, const vec3 V, float N
 }
 
 void main() {
-    if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
+    /*if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
     {
         discard;
-    }
+    }*/
     vec3 position = geom_position;
     
     // Albedo
@@ -420,9 +426,17 @@ void main() {
     }
 
     vec3 result = direct + indirect;
+    vec4 final_color = vec4(result, opacity);
 
     // Output
-    out_color = vec4(result, 1.0);
+#if RCUBE_RENDERPASS == 0
+    out_color = final_color;
+#elif RCUBE_RENDERPASS == 1
+    float weight = clamp(pow(min(1.0, final_color.a * 10.0) + 0.01, 3.0) * 1e8 * 
+                         pow(1.0 - gl_FragCoord.z * 0.9, 3.0), 1e-2, 3e3);
+    accum = vec4(final_color.rgb * final_color.a, final_color.a) * weight;
+    reveal = final_color.a;
+#endif
 }
 )";
 
@@ -453,7 +467,6 @@ void StandardMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
     shader->uniform("albedo").set(glm::pow(albedo, glm::vec3(2.2f)));
     shader->uniform("roughness").set(roughness);
     shader->uniform("metallic").set(metallic);
-    shader->uniform("opacity").set(opacity);
     shader->uniform("use_albedo_texture").set(albedo_texture != nullptr);
     shader->uniform("use_roughness_texture").set(roughness_texture != nullptr);
     shader->uniform("use_normal_texture").set(normal_texture != nullptr);
@@ -464,6 +477,7 @@ void StandardMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
     shader->uniform("use_image_based_lighting")
         .set(image_based_lighting && ibl_irradiance != nullptr && ibl_prefilter != nullptr &&
              ibl_brdfLUT != nullptr);
+    ShaderMaterial::updateUniforms(shader);
 }
 
 const std::vector<DrawCall::Texture2DInfo> StandardMaterial::textureSlots()
@@ -526,7 +540,7 @@ void StandardMaterial::drawGUI()
     ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo));
     ImGui::SliderFloat("Roughness", &roughness, 0.04f, 1.f);
     ImGui::SliderFloat("Metallic", &metallic, 0.f, 1.f);
-    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
+    ShaderMaterial::drawGUI();
     ImGui::Text("Wireframe");
     ImGui::Checkbox("Show", &wireframe);
     ImGui::InputFloat("Thickness", &wireframe_thickness);

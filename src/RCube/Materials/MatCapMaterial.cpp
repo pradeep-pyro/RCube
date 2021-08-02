@@ -384,10 +384,10 @@ void MatCapRGBMaterial::updateUniforms(std::shared_ptr<ShaderProgram> shader)
 {
     shader->uniform("color").set(glm::pow(color, glm::vec3(2.2f)));
     shader->uniform("emissive_color").set(glm::pow(emissive_color, glm::vec3(2.2f)));
-    shader->uniform("opacity").set(std::max(0.f, std::min(1.f, opacity)));
     shader->uniform("wireframe.show").set(wireframe);
     shader->uniform("wireframe.color").set(glm::pow(wireframe_color, glm::vec3(2.2f)));
     shader->uniform("wireframe.thickness").set(wireframe_thickness);
+    ShaderMaterial::updateUniforms(shader);
 }
 
 const std::vector<DrawCall::Texture2DInfo> MatCapRGBMaterial::textureSlots()
@@ -403,7 +403,7 @@ void MatCapRGBMaterial::drawGUI()
     ImGui::Separator();
     ImGui::ColorEdit3("Color", glm::value_ptr(color));
     ImGui::ColorEdit3("Emissive color", glm::value_ptr(emissive_color));
-    ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
+    ShaderMaterial::drawGUI();
     ImGui::Separator();
     ImGui::Text("Wireframe");
     ImGui::Checkbox("Show", &wireframe);

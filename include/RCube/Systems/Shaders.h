@@ -68,13 +68,21 @@ vec3 tonemapReinhard(const vec3 color)
     return color / (color + vec3(1.0));
 }
 
+// From: https://github.com/dmnsgn/glsl-tone-map
+vec3 tonemapFilmic(const vec3 color)
+{
+    vec3 X = max(vec3(0.0), color - 0.004);
+    X = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
+    return pow(X, vec3(2.2));
+}
+
 void main() {
     // Bloom https://learnopengl.com/Advanced-Lighting/Bloom
     vec3 hdr_color = texture(scene, v_texcoord).rgb;
     vec3 bloom_color = texture(blur, v_texcoord).rgb;
     vec3 result = hdr_color + bloom_color;
     // Tone mapping
-    result = tonemapReinhard(result);
+    result = tonemapFilmic(result);
     // Gamma correction
     const float gamma = 2.2;
     result = pow(result, vec3(1.0 / gamma));

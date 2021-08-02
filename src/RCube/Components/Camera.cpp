@@ -33,7 +33,7 @@ Frustum Camera::frustum()
 
 void Camera::createGradientSkyBox(const glm::vec3 &color_top, const glm::vec3 &color_bot)
 {
-    skybox = TextureCubemap::create(256, 256, 1, true, TextureInternalFormat::RGB8);
+    skybox = TextureCubemap::create(256, 256, 1, true, TextureInternalFormat::sRGB8);
     Image front_back = gradientV(256, 256, color_top, color_bot, 2.f);
     Image top = gradientV(256, 256, color_top, color_top, 2.f);
     Image bottom = gradientV(256, 256, color_bot, color_bot, 2.f);

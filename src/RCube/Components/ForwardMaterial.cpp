@@ -4,10 +4,6 @@
 
 namespace rcube
 {
-const RenderSettings &ShaderMaterial::state() const
-{
-    return state_;
-}
 const std::string &ShaderMaterial::name() const
 {
     return name_;

@@ -55,24 +55,6 @@ void main() {
 
 OutlineMaterial::OutlineMaterial() : ShaderMaterial("OutlineMaterial")
 {
-    state_.blend.enabled = false;
-    state_.blend.blend[0].color_src = BlendFunc::One;
-    state_.blend.blend[0].color_dst = BlendFunc::One;
-
-    // Frontface culling is important to render the outline
-    // using the inverted-hull method that is used here
-    state_.cull.enabled = true;
-    state_.cull.mode = Cull::Front;
-    state_.depth.test = true;
-    state_.depth.write = true;
-    state_.depth.func = DepthFunc::Less;
-    state_.dither = false;
-    state_.stencil.test = true;
-    state_.stencil.write = 0x00;
-    state_.stencil.func = StencilFunc::NotEqual;
-    state_.stencil.func_ref = 1;
-    state_.stencil.func_mask = 0xFF;
-
     ForwardRenderSystemShaderManager::instance().create("OutlineMaterial", OutlineVertexShader, OutlineFragmentShader, true);
 }
 

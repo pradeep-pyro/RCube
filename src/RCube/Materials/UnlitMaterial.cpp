@@ -65,15 +65,6 @@ void main() {
 
 UnlitMaterial::UnlitMaterial() : ShaderMaterial("UnlitMaterial")
 {
-    state_.blend.enabled = true;
-    state_.cull.enabled = false;
-    state_.depth.test = true;
-    state_.depth.write = true;
-    state_.depth.func = DepthFunc::Less;
-    state_.dither = false;
-    state_.stencil.test = true;
-    state_.stencil.write = true;
-
     ForwardRenderSystemShaderManager::instance().create("UnlitMaterial", UnlitVertexShader,
                                                         UnlitFragmentShader, true);
 }

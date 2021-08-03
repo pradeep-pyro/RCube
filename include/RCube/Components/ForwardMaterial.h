@@ -11,7 +11,6 @@ namespace rcube
 class ShaderMaterial
 {
   protected:
-    [[deprecated]] RenderSettings state_;
     const std::string name_;
 
   public:

@@ -351,20 +351,6 @@ void main()
 
 MatCapRGBMaterial::MatCapRGBMaterial() : ShaderMaterial("MatCapRGBMaterial")
 {
-    state_.blend.enabled = false;
-    state_.depth.test = true;
-    state_.depth.write = true;
-    state_.depth.func = DepthFunc::Less;
-    state_.dither = false;
-    state_.stencil.test = false;
-    state_.stencil.write = 0xFF;
-    state_.stencil.func = StencilFunc::Always;
-    state_.stencil.func_ref = 1;
-    state_.stencil.func_mask = 0xFF;
-    state_.stencil.op_stencil_pass = StencilOp::Replace;
-    state_.stencil.op_stencil_fail = StencilOp::Keep;
-    state_.stencil.op_depth_fail = StencilOp::Keep;
-
     ForwardRenderSystemShaderManager::instance().create("MatCapRGBMaterial", MatCapVertexShader,
                                                         MatCapGeometryShader,
                                                         MatCapRGBFragmentShader, true);

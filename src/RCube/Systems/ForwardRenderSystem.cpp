@@ -667,6 +667,8 @@ void ForwardRenderSystem::finalPass(Camera *cam)
 const std::string WBOITCompositeFragmentShader = R"(
 #version 450
 
+// Based on https://learnopengl.com/Guest-Articles/2020/OIT/Weighted-Blended
+// and http://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html
 in vec2 v_texcoord;
 out vec4 out_color;
 

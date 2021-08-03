@@ -338,8 +338,11 @@ void main()
 #if RCUBE_RENDERPASS == 0
     out_color = vec4(visibility, visibility, visibility, 1) * final_color;
 #elif RCUBE_RENDERPASS == 1
-    float weight = clamp(pow(min(1.0, final_color.a * 10.0) + 0.01, 3.0) * 1e8 * 
-                         pow(1.0 - gl_FragCoord.z * 0.9, 3.0), 1e-2, 3e3);
+    // Based on https://learnopengl.com/Guest-Articles/2020/OIT/Weighted-Blended
+    // and http://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html
+    float a = min(1.0, final_color.a) * 8.0 + 0.01;
+    float b = -gl_FragCoord.z * 0.95 + 1.0;
+    float weight = clamp(a * a * a * 1e8 * b * b * b, 1e-2, 3e2);
     accum = vec4(final_color.rgb * final_color.a, final_color.a) * weight;
     reveal = final_color.a;
 #endif

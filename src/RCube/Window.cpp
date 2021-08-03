@@ -2,6 +2,9 @@
 #include "RCube/Window.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/RCube.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include <iostream>
 
 namespace rcube
@@ -290,6 +293,23 @@ static void callbackScroll(GLFWwindow *window, double xoffset, double yoffset)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void initImGUI(GLFWwindow *window)
+{
+    ImGui::CreateContext();
+
+    // Set up ImGUI glfw bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    const char *glsl_version = "#version 420";
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    ImGuiIO &io = ImGui::GetIO();
+    ImFontConfig config;
+    config.OversampleH = 5;
+    config.OversampleV = 5;
+
+    ImGui::StyleColorsClassic();
+}
+
 Window::Window(const std::string &title, glm::ivec2 size)
 {
     glfwSetErrorCallback(callbackOnError);
@@ -331,6 +351,8 @@ Window::Window(const std::string &title, glm::ivec2 size)
     glfwSetCursorPosCallback(window_, callbackMouseMove);
     glfwSetCursorEnterCallback(window_, callbackMouseEnter);
     glfwSetScrollCallback(window_, callbackScroll);
+
+    IMGUI_CHECKVERSION();
 }
 
 void Window::initialize()
@@ -387,16 +409,27 @@ glm::dvec2 Window::getMousePosition() const
 
 void Window::execute()
 {
+    initImGUI(window_);
     initialize(); // User should override this method
     glfwSwapInterval(0);
     while (!glfwWindowShouldClose(window_))
     {
+        // Initialize ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
         draw(); // User should override this method
+        // Draw ImGui
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwPollEvents();
         InputState::instance().update(window_);
         glfwSwapBuffers(window_);
         time_ = time();
     }
+    // Destroy ImGui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     beforeTerminate(); // User should override this method
     glfwDestroyWindow(window_);
     glfwTerminate();

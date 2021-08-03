@@ -13,34 +13,14 @@
 #include "RCubeViewer/Systems/PickTooltipSystem.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 
 namespace rcube
 {
 namespace viewer
 {
 
-void initImGUI(GLFWwindow *window)
-{
-
-    ImGui::CreateContext();
-
-    // Set up ImGUI glfw bindings
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    const char *glsl_version = "#version 420";
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    ImGuiIO &io = ImGui::GetIO();
-    ImFontConfig config;
-    config.OversampleH = 5;
-    config.OversampleV = 5;
-
-    ImGui::StyleColorsClassic();
-}
-
-RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
+RCubeViewer::RCubeViewer(RCubeViewerProps props)
+    : Window(props.title), use_transform_widgets_(props.use_transform_widgets)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
@@ -92,9 +72,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props) : Window(props.title)
     }
 
     world_.initialize();
-
-    IMGUI_CHECKVERSION();
-    initImGUI(window_);
 }
 
 EntityHandle RCubeViewer::addSurface(const std::string name, const TriangleMeshData &data)
@@ -181,10 +158,11 @@ void RCubeViewer::initialize()
 
 void RCubeViewer::draw()
 {
-    // Initialize ImGui
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    // ImGuizmo
+    ImGuizmo::BeginFrame();
+    ImGuizmo::Enable(true);
+    ImGuiIO &io = ImGui::GetIO();
+    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
     // Create GUI
     drawGUI();
@@ -193,9 +171,6 @@ void RCubeViewer::draw()
     // Render everything in the scene
     world_.update();
     ImGui::Render();
-
-    // Draw GUI
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void RCubeViewer::drawGUI()
@@ -339,7 +314,26 @@ void RCubeViewer::drawGUI()
                     {
                         if (ImGui::BeginTabItem("Transform"))
                         {
-                            ent.get<Transform>()->drawGUI();
+                            Transform *tr = ent.get<Transform>();
+                            tr->drawGUI();
+                            Camera *cam = camera_.get<Camera>();
+                            if (use_transform_widgets_)
+                            {
+                                tr->drawGUIWidgets(cam->worldToView(), cam->viewToProjection(),
+                                                   transform_edit_mode_);
+                                if (InputState::instance().isKeyJustDown(InputState::Key::T))
+                                {
+                                    transform_edit_mode_ = ImGuizmo::TRANSLATE;
+                                }
+                                else if (InputState::instance().isKeyJustDown(InputState::Key::R))
+                                {
+                                    transform_edit_mode_ = ImGuizmo::ROTATE;
+                                }
+                                else if (InputState::instance().isKeyJustDown(InputState::Key::S))
+                                {
+                                    transform_edit_mode_ = ImGuizmo::SCALE;
+                                }
+                            }
                             ImGui::EndTabItem();
                         }
                     }
@@ -400,9 +394,6 @@ void RCubeViewer::onResize(int w, int h)
 void RCubeViewer::beforeTerminate()
 {
     world_.cleanup();
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
 }
 
 glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
@@ -468,7 +459,7 @@ EntityHandle RCubeViewer::createGroundPlane()
     mat->roughness = 0.5f;
     mat->albedo_texture = Texture2D::create(1024, 1024, 1, TextureInternalFormat::sRGBA8);
     mat->albedo_texture->setData(checkerboard(1024, 1024, 32, 32, glm::vec3(1.f), glm::vec3(0.1f)));
-    //ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
+    // ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
     ground_.add(Name("Ground"));
     return ground_;
@@ -476,14 +467,15 @@ EntityHandle RCubeViewer::createGroundPlane()
 
 EntityHandle RCubeViewer::createGroundGrid()
 {
-    std::shared_ptr<Mesh> mesh = Mesh::create(grid(20, 20, 100, 100, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 0, 0)));
+    std::shared_ptr<Mesh> mesh = Mesh::create(
+        grid(20, 20, 100, 100, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 0, 0)));
     mesh->uploadToGPU();
     ground_ = createSurface();
     ForwardMaterial *mat = ground_.get<ForwardMaterial>();
     auto shader = std::make_shared<UnlitMaterial>();
     shader->use_vertex_colors = true;
     ground_.get<ForwardMaterial>()->shader = shader;
-    //ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
+    // ground_.get<Transform>()->translate(glm::vec3(0, -1, 0));
     ground_.get<Drawable>()->mesh = mesh;
     ground_.add(Name("Ground"));
     return ground_;
@@ -496,7 +488,6 @@ EntityHandle RCubeViewer::createDirLight()
     ent.get<DirectionalLight>()->setDirection(glm::vec3(0, -1, 0));
     return ent;
 }
-
 
 AABB RCubeViewer::worldBoundingBox()
 {

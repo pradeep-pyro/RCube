@@ -1,5 +1,4 @@
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
+#pragma once
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -11,6 +10,9 @@
 #include "RCube/Core/Arch/ComponentManager.h"
 #include "RCube/Core/Arch/System.h"
 #include "RCube/Core/Arch/World.h"
+
+#include "imgui.h"
+#include "ImGuizmo.h"
 
 namespace rcube
 {
@@ -134,6 +136,9 @@ class Transform : public Component<Transform>
 
     void drawGUI();
 
+    void drawGUIWidgets(const glm::mat4 &camera_world_to_view,
+                        const glm::mat4 &camera_view_to_projection, ImGuizmo::OPERATION mode);
+
   private:
     friend class TransformSystem;
     glm::vec3 position_, scale_;
@@ -145,5 +150,3 @@ class Transform : public Component<Transform>
 };
 
 } // namespace rcube
-
-#endif // TRANSFORM_H

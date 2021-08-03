@@ -25,17 +25,18 @@ add_subdirectory(dependencies/glfw)
 add_subdirectory(dependencies/glad)
 add_subdirectory(dependencies/stb_image)
 add_subdirectory(dependencies/imgui)
+add_subdirectory(dependencies/imguizmo)
 
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glm)
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw/include)
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include)
 target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui/include)
+target_include_directories(RCube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imguizmo/ImGuizmo/include)
 
+target_link_libraries(RCube glm_static glfw glad stb_image imgui imguizmo)
 
-target_link_libraries(RCube glm_static glfw glad stb_image imgui)
-
-option(RCUBE_BUILD_EXAMPLES "Whether to build examples (default: OFF)" ON)
+option(RCUBE_BUILD_EXAMPLES "Whether to build examples (default: ON)" ON)
 if(RCUBE_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()

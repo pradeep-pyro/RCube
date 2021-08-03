@@ -104,7 +104,7 @@ void Transform::drawGUI()
         dirty_ = true;
     }
 
-    static glm::vec3 euler = glm::eulerAngles(orientation_);
+    glm::vec3 euler = glm::eulerAngles(orientation_);
     if (ImGui::SliderAngle("Orientation X", glm::value_ptr(euler)))
     {
         setOrientation(glm::quat(euler));
@@ -117,10 +117,35 @@ void Transform::drawGUI()
     {
         setOrientation(glm::quat(euler));
     }
-
     if (ImGui::InputFloat3("Scale", glm::value_ptr(scale_), "%.2f"))
     {
         dirty_ = true;
+    }
+}
+
+void Transform::drawGUIWidgets(const glm::mat4 &camera_world_to_view,
+                               const glm::mat4 &camera_view_to_projection, ImGuizmo::OPERATION mode)
+{
+    glm::mat4 matrix[1] = {glm::mat4(localTransform())};
+    if (ImGuizmo::Manipulate(&camera_world_to_view[0][0], &camera_view_to_projection[0][0],
+                             mode, ImGuizmo::WORLD, &matrix[0][0][0]))
+    {
+        glm::vec3 translation, scale, euler_angles;
+        ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0][0], glm::value_ptr(translation),
+                                              glm::value_ptr(euler_angles), glm::value_ptr(scale));
+        if (mode == ImGuizmo::ROTATE)
+        {
+            euler_angles = glm::radians(euler_angles);
+            setOrientation(glm::quat(euler_angles));
+        }
+        else if (mode == ImGuizmo::TRANSLATE)
+        {
+            setPosition(translation);
+        }
+        else if (mode == ImGuizmo::SCALE)
+        {
+            setScale(scale);
+        }
     }
 }
 

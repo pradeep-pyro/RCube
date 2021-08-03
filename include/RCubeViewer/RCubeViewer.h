@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ImGuizmo.h" // This needs to be included after imgui
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
@@ -16,14 +17,15 @@
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Materials/DepthMaterial.h"
 #include "RCube/Materials/MatCapMaterial.h"
+#include "RCube/Materials/OutlineMaterial.h"
 #include "RCube/Materials/StandardMaterial.h"
 #include "RCube/Materials/UnlitMaterial.h"
-#include "RCube/Materials/OutlineMaterial.h"
 #include "RCube/Systems/CameraSystem.h"
 #include "RCube/Systems/DeferredRenderSystem.h"
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
+#include "imgui.h"
 #include <memory>
 
 namespace rcube
@@ -52,7 +54,9 @@ struct RCubeViewerProps
     float camera_fov = glm::radians(30.f); // Vertical FOV of the camera in radians
     [[deprecated]] bool camera_orthographic = false;
     bool ground_plane = true; // Whether to add a ground plane grid
-    bool sunlight = false;     // Whether to add a sunlight (directional light)
+    bool sunlight = false;    // Whether to add a sunlight (directional light)
+    bool use_transform_widgets =
+        true; // Whether to display widgets to edit Transform components
     RenderSystemType render_system = RenderSystemType::Forward; // Render system to use
 };
 
@@ -66,6 +70,8 @@ class RCubeViewer : public rcube::Window
     bool needs_screenshot_ = false;
     glm::vec3 default_surface_color_ = glm::vec3(0.75, 0.75, 0.75);
     std::shared_ptr<ShaderMaterial> default_shader_;
+    bool use_transform_widgets_ = true;
+    ImGuizmo::OPERATION transform_edit_mode_ = ImGuizmo::TRANSLATE;
 
   public:
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());

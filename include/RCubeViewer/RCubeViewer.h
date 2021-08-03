@@ -55,7 +55,7 @@ struct RCubeViewerProps
     [[deprecated]] bool camera_orthographic = false;
     bool ground_plane = true; // Whether to add a ground plane grid
     bool sunlight = false;    // Whether to add a sunlight (directional light)
-    bool use_transform_widgets =
+    bool show_transform_widgets =
         true; // Whether to display widgets to edit Transform components
     RenderSystemType render_system = RenderSystemType::Forward; // Render system to use
 };

@@ -673,41 +673,26 @@ out vec4 out_color;
 layout (binding=0) uniform sampler2D accum;
 layout (binding=1) uniform sampler2D reveal;
 
-const float EPS = 0.0001f;
-
-bool isApproximatelyEqual(float a, float b)
-{
-	return abs(a - b) <= (abs(a) < abs(b) ? abs(b) : abs(a)) * EPS;
-}
+const float epsilon = 0.00001f;
 
 float max3(vec3 v) 
 {
-	return max(max(v.x, v.y), v.z);
+    return max(max(v.x, v.y), v.z);
 }
 
 void main()
 {
-	// fragment revealage
-	float revealage = texture(reveal, v_texcoord).r;
-	
-	// save the blending and color texture fetch cost if there is not a transparent fragment
-	if (isApproximatelyEqual(revealage, 1.0f)) 
-		discard;
- 
-	// fragment color
-	vec4 accumulation = texture(accum, v_texcoord);
-	
-	// suppress overflow
-	if (isinf(max3(abs(accumulation.rgb)))) 
+    float revealage = texture(reveal, v_texcoord).r;
+    if (revealage == 1.0f)
     {
-		accumulation.rgb = vec3(accumulation.a);
+        discard;
     }
-
-	// prevent floating point precision bug
-	vec3 average_color = accumulation.rgb / max(accumulation.a, EPS);
-
-	// blend pixels
-	out_color = vec4(average_color, 1.0f - revealage);
+    vec4 accumulation = texture(accum, v_texcoord);
+    if (isinf(max3(abs(accumulation.rgb)))) 
+    {
+        accumulation.rgb = vec3(accumulation.a);
+    }
+    out_color = vec4(accumulation.rgb / max(accumulation.a, epsilon), 1.0f - revealage);
 }
 )";
 
@@ -715,10 +700,10 @@ void WeightedBlendedOITManager::initialize(glm::ivec2 resolution,
                                            std::shared_ptr<Texture2D> opaque_depth)
 {
     fbo_ = Framebuffer::create();
-    accum_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::RGBA16F);
+    accum_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::RGBA32F);
     accum_tex_->setFilterMode(TextureFilterMode::Linear);
     revealage_tex_ =
-        Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::R16F);
+        Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::R8);
     revealage_tex_->setFilterMode(TextureFilterMode::Linear);
     fbo_->setColorAttachment(0, accum_tex_);
     fbo_->setColorAttachment(1, revealage_tex_);

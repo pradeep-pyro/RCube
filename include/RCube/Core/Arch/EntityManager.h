@@ -1,5 +1,4 @@
-#ifndef ENTITYMANAGER_H
-#define ENTITYMANAGER_H
+#pragma once
 
 #include "RCube/Core/Arch/Entity.h"
 #include <algorithm>
@@ -37,15 +36,18 @@ class EntityManager
      */
     Entity createEntity()
     {
+        Entity ent;
         // Reuse deleted entities if there are any
         if (deleted_entities.size() > 0)
         {
-            Entity ent = deleted_entities[deleted_entities.size() - 1];
+            ent = deleted_entities[deleted_entities.size() - 1];
             deleted_entities.pop_back();
-            return ent;
         }
-        // Otherwise, create a new entity
-        Entity ent = Entity(last_id++);
+        else
+        {
+            // Otherwise, create a new entity
+            ent = Entity(last_id++);
+        }
         entities.insert(ent);
         return ent;
     }
@@ -92,5 +94,3 @@ class EntityManager
 };
 
 } // namespace rcube
-
-#endif // ENTITYMANAGER_H

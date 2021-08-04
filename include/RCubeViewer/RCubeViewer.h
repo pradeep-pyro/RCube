@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RCube/ImGuizmo.h"
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
@@ -15,6 +14,7 @@
 #include "RCube/Core/Graphics/OpenGL/Buffer.h"
 #include "RCube/Core/Graphics/OpenGL/CheckGLError.h"
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
+#include "RCube/ImGuizmo.h"
 #include "RCube/Materials/DepthMaterial.h"
 #include "RCube/Materials/MatCapMaterial.h"
 #include "RCube/Materials/OutlineMaterial.h"
@@ -31,6 +31,15 @@ namespace rcube
 {
 namespace viewer
 {
+
+struct TransformWidgetsProps
+{
+    bool show = false;
+    float snap_angle_degrees = 0.f;
+    float snap_scale = 0.f;
+    glm::vec3 snap_translation = glm::vec3(0.f);
+    TransformOperation operation = TransformOperation::None;
+};
 
 /**
  * A set of properties to configure the viewer
@@ -52,11 +61,12 @@ struct RCubeViewerProps
         glm::vec3(82.f / 255.f, 87.f / 255.f, 110.f / 255.f); // Background bottom color
     float camera_fov = glm::radians(30.f); // Vertical FOV of the camera in radians
     [[deprecated]] bool camera_orthographic = false;
-    bool ground_plane = true; // Whether to add a ground plane grid
-    bool sunlight = false;    // Whether to add a sunlight (directional light)
-    bool show_transform_widgets =
-        true; // Whether to display widgets to edit Transform components
+    bool ground_plane = true;           // Whether to add a ground plane grid
+    bool sunlight = false;              // Whether to add a sunlight (directional light)
+    bool show_transform_widgets = true; // Whether to display widgets to edit Transform components
+    bool snap_transform_widgets_ = false;
     RenderSystemType render_system = RenderSystemType::Forward; // Render system to use
+    TransformWidgetsProps transform_widgets;
 };
 
 class RCubeViewer : public rcube::Window
@@ -67,10 +77,8 @@ class RCubeViewer : public rcube::Window
     rcube::EntityHandle camera_;
     bool needs_camera_extents_fit_ = false;
     bool needs_screenshot_ = false;
-    glm::vec3 default_surface_color_ = glm::vec3(0.75, 0.75, 0.75);
-    std::shared_ptr<ShaderMaterial> default_shader_;
     bool show_transform_widgets_ = true;
-    ImGuizmo::OPERATION transform_edit_mode_ = ImGuizmo::TRANSLATE;
+    TransformWidgetsProps transform_widgets_;
 
   public:
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
@@ -126,6 +134,8 @@ class RCubeViewer : public rcube::Window
     EntityHandle createGroundGrid();
 
     EntityHandle createDirLight();
+
+    virtual void onKeyPress(int key, int scancode) override;
 };
 
 } // namespace viewer

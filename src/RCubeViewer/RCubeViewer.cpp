@@ -20,7 +20,7 @@ namespace viewer
 {
 
 RCubeViewer::RCubeViewer(RCubeViewerProps props)
-    : Window(props.title), show_transform_widgets_(props.show_transform_widgets)
+    : Window(props.title), transform_widgets_(props.transform_widgets)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
@@ -191,10 +191,10 @@ void RCubeViewer::drawGUI()
 
     ///////////////////////////////////////////////////////////////////////////
     // Default camera
+    Camera *cam = camera_.get<Camera>();
+    Transform *cam_tr = camera_.get<Transform>();
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        Camera *cam = camera_.get<Camera>();
-        Transform *cam_tr = camera_.get<Transform>();
         CameraController *cam_ctrl = camera_.get<CameraController>();
 
         // Fit camera to extents if requested in previous frame
@@ -299,6 +299,21 @@ void RCubeViewer::drawGUI()
             EntityHandle ent = getEntity(std::string(current_item));
             if (ent.valid())
             {
+                Transform *tr = ent.get<Transform>();
+                if (tr != nullptr)
+                {
+                    if (show_transform_widgets_)
+                    {
+                        tr->drawTransformWidget(
+                            cam->worldToView(), cam->viewToProjection(),
+                            transform_widgets_.operation,
+                            transform_widgets_.operation == TransformOperation::Scale
+                                ? ImGuizmo::MODE::LOCAL
+                                : ImGuizmo::MODE::WORLD,
+                            transform_widgets_.snap_translation,
+                            transform_widgets_.snap_angle_degrees, transform_widgets_.snap_scale);
+                    }
+                }
                 ImGui::PushID(current_item);
                 if (ImGui::BeginTabBar("Components"))
                 {
@@ -310,30 +325,11 @@ void RCubeViewer::drawGUI()
                             ImGui::EndTabItem();
                         }
                     }
-                    if (ent.has<Transform>())
+                    if (tr != nullptr /*ent.has<Transform>()*/)
                     {
                         if (ImGui::BeginTabItem("Transform"))
                         {
-                            Transform *tr = ent.get<Transform>();
                             tr->drawGUI();
-                            Camera *cam = camera_.get<Camera>();
-                            if (show_transform_widgets_)
-                            {
-                                tr->drawTransformWidget(cam->worldToView(), cam->viewToProjection(),
-                                                        transform_edit_mode_);
-                                if (InputState::instance().isKeyJustDown(InputState::Key::T))
-                                {
-                                    transform_edit_mode_ = ImGuizmo::TRANSLATE;
-                                }
-                                else if (InputState::instance().isKeyJustDown(InputState::Key::R))
-                                {
-                                    transform_edit_mode_ = ImGuizmo::ROTATE;
-                                }
-                                else if (InputState::instance().isKeyJustDown(InputState::Key::S))
-                                {
-                                    transform_edit_mode_ = ImGuizmo::SCALE;
-                                }
-                            }
                             ImGui::EndTabItem();
                         }
                     }
@@ -487,6 +483,26 @@ EntityHandle RCubeViewer::createDirLight()
     ent.add<DirectionalLight>();
     ent.get<DirectionalLight>()->setDirection(glm::vec3(0, -1, 0));
     return ent;
+}
+
+void RCubeViewer::onKeyPress(int key, int scancode)
+{
+    if (key == GLFW_KEY_ESCAPE)
+    {
+        transform_widgets_.operation = TransformOperation::None;
+    }
+    else if (key == GLFW_KEY_T)
+    {
+        transform_widgets_.operation = TransformOperation::Translate;
+    }
+    else if (key == GLFW_KEY_R)
+    {
+        transform_widgets_.operation = TransformOperation::Rotate;
+    }
+    else if (key == GLFW_KEY_S)
+    {
+        transform_widgets_.operation = TransformOperation::Scale;
+    }
 }
 
 AABB RCubeViewer::worldBoundingBox()

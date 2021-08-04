@@ -15,6 +15,14 @@
 namespace rcube
 {
 
+enum class TransformOperation
+{
+    None,
+    Translate = ImGuizmo::TRANSLATE,
+    Rotate = ImGuizmo::ROTATE,
+    Scale = ImGuizmo::SCALE,
+};
+
 class TransformSystem;
 
 /**
@@ -135,7 +143,9 @@ class Transform : public Component<Transform>
     void drawGUI();
 
     void drawTransformWidget(const glm::mat4 &camera_world_to_view,
-                             const glm::mat4 &camera_view_to_projection, ImGuizmo::OPERATION mode);
+                             const glm::mat4 &camera_view_to_projection,
+                             TransformOperation transformation, ImGuizmo::MODE transformation_space,
+                             glm::vec3 snap_translate, float snap_angle_degrees, float snap_scale);
 
   private:
     friend class TransformSystem;

@@ -125,26 +125,46 @@ void Transform::drawGUI()
 
 void Transform::drawTransformWidget(const glm::mat4 &camera_world_to_view,
                                     const glm::mat4 &camera_view_to_projection,
-                                    ImGuizmo::OPERATION mode)
+                                    TransformOperation transformation,
+                                    ImGuizmo::MODE transformation_space, glm::vec3 snap_translate,
+                                    float snap_angle_degrees, float snap_scale)
 {
+    if (transformation == TransformOperation::None)
+    {
+        return;
+    }
+    float *snap = nullptr;
+    if (transformation == TransformOperation::Translate)
+    {
+        snap = glm::value_ptr(snap_translate);
+    }
+    else if (transformation == TransformOperation::Rotate)
+    {
+        snap = &snap_angle_degrees;
+    }
+    else if (transformation == TransformOperation::Scale)
+    {
+        snap = &snap_scale;
+    }
     glm::mat4 matrix = glm::mat4(localTransform());
     if (ImGuizmo::Manipulate(glm::value_ptr(camera_world_to_view),
-                             glm::value_ptr(camera_view_to_projection), mode, ImGuizmo::WORLD,
-                             glm::value_ptr(matrix)))
+                             glm::value_ptr(camera_view_to_projection),
+                             static_cast<ImGuizmo::OPERATION>(transformation), transformation_space,
+                             glm::value_ptr(matrix), nullptr, snap))
     {
         glm::vec3 translation, scale, euler_angles;
         ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(matrix), glm::value_ptr(translation),
                                               glm::value_ptr(euler_angles), glm::value_ptr(scale));
-        if (mode == ImGuizmo::ROTATE)
+        if (transformation == TransformOperation::Rotate)
         {
             euler_angles = glm::radians(euler_angles);
             setOrientation(glm::quat(euler_angles));
         }
-        else if (mode == ImGuizmo::TRANSLATE)
+        else if (transformation == TransformOperation::Translate)
         {
             setPosition(translation);
         }
-        else if (mode == ImGuizmo::SCALE)
+        else if (transformation == TransformOperation::Scale)
         {
             setScale(scale);
         }

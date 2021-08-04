@@ -67,7 +67,7 @@ bool VectorField::updateArrows()
     // Don't recompute the arrows if nothing has changed
     if (dirty_)
     {
-        assert(points_.size() == vectors.size());
+        assert(points_.size() == vectors_.size());
         mesh_.clear();
         if (points_.empty())
         {

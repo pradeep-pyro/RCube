@@ -57,9 +57,9 @@ void Pointcloud::createMesh()
 
     //// Make sphere primitives for BVH (this is more efficient than
     //// the triangle mesh)
-    //std::vector<PrimitivePtr> prims;
-    //prims.reserve(points_.size());
-    //for (size_t i = 0; i < points_.size(); ++i)
+    // std::vector<PrimitivePtr> prims;
+    // prims.reserve(points_.size());
+    // for (size_t i = 0; i < points_.size(); ++i)
     //{
     //    prims.push_back(std::shared_ptr<Point>(new Point(i, points_[i], 0.5f * point_size_)));
     //}
@@ -106,7 +106,7 @@ size_t Pointcloud::trianglesPerPoint() const
 }
 void Pointcloud::addScalarField(std::string name, const ScalarField &sf)
 {
-    assert(sf.data.size() == numPoints());
+    assert(sf.data_.size() == numPoints());
     scalar_fields_[name] = sf;
 }
 void Pointcloud::removeScalarField(std::string name)
@@ -263,8 +263,8 @@ void Pointcloud::drawGUI()
     {
         showScalarField(current_sf);
         ImGui::PlotHistogram("Histogram", scalarField(current_sf).histogram_.data(),
-                             static_cast<int>(scalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f, 1.0f,
-                             ImVec2(0, 80.0f));
+                             static_cast<int>(scalarField(current_sf).histogram_.size()), 0,
+                             nullptr, 0.0f, 1.0f, ImVec2(0, 80.0f));
         if (ImGui::InputFloat("Min. value", &scalarField(current_sf).vmin_))
         {
             scalarField(current_sf).dirty_ = true;
@@ -349,7 +349,7 @@ void Pointcloud::setColor(const glm::vec3 &col)
 }
 void Pointcloud::addVectorField(std::string name, const VectorField &vf)
 {
-    assert(vf.data.size() == numPoints());
+    assert(vf.vectors_.size() == numPoints());
     vector_fields_[name] = vf;
 }
 void Pointcloud::removeVectorField(std::string name)

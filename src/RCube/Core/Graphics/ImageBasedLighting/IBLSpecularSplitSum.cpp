@@ -296,11 +296,10 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         unsigned int mip_width = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         unsigned int mip_height = static_cast<unsigned int>(resolution_ * std::pow(0.5, mip));
         auto color = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::RGB16F);
-        auto depth =
-            Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::Depth24Stencil8);
+        auto depth = Texture2D::create(mip_width, mip_height, 1, TextureInternalFormat::Depth32F);
         auto fbo = Framebuffer::create();
         fbo->setColorAttachment(0, color);
-        fbo->setDepthStencilAttachment(depth);
+        fbo->setDepthAttachment(depth);
         fbos.push_back(fbo);
     }
 

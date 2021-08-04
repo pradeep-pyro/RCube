@@ -108,7 +108,7 @@ IBLDiffuse::IBLDiffuse(unsigned int resolution, int num_samples)
     fbo_->setColorAttachment(
         0, Texture2D::create(resolution, resolution, 1, TextureInternalFormat::RGB16F));
     fbo_->setDepthAttachment(
-        Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth24Stencil8));
+        Texture2D::create(resolution, resolution, 1, TextureInternalFormat::Depth32));
 
     // Matrices for rendering the cubemap from cameras set pointing at the
     // cube faces

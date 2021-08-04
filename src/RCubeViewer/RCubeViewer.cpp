@@ -279,7 +279,7 @@ void RCubeViewer::drawGUI()
 
         static const char *current_item = entity_names[0];
         ImGui::PushItemWidth(-1);
-        ImGui::ListBoxHeader("");
+        if (ImGui::ListBoxHeader(""))
         {
             for (int i = 0; i < entity_names.size(); ++i)
             {
@@ -293,8 +293,8 @@ void RCubeViewer::drawGUI()
                     ImGui::SetItemDefaultFocus();
                 }
             }
+            ImGui::ListBoxFooter();
         }
-        ImGui::ListBoxFooter();
         ImGui::PopItemWidth();
         if (current_item != "(None)")
         {

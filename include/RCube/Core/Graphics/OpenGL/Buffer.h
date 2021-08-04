@@ -57,14 +57,14 @@ template <BufferType Type> class Buffer
               typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
     void setData(const float *buf, size_t size, size_t offset = 0)
     {
-        assert(size * sizeof(float) == size_);
+        assert(size * sizeof(float) <= size_);
         glNamedBufferSubData(id_, offset, size * sizeof(float), buf);
     }
     template <BufferType T = Type,
               typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
     void setData(const int *buf, size_t size, size_t offset = 0)
     {
-        assert(size * sizeof(int) == size_);
+        assert(size * sizeof(int) <= size_);
         glNamedBufferSubData(id_, offset, size * sizeof(int), buf);
     }
     template <BufferType T = Type,
@@ -86,7 +86,7 @@ template <BufferType Type> class Buffer
     template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
     void setData(const unsigned int *buf, size_t size)
     {
-        assert(size * sizeof(unsigned int) == size_);
+        assert(size * sizeof(unsigned int) <= size_);
         glNamedBufferSubData(id_, 0, size * sizeof(unsigned int), buf);
     }
     template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>

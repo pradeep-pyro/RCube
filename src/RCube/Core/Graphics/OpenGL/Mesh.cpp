@@ -202,12 +202,27 @@ std::shared_ptr<Mesh> Mesh::create(const LineMeshData &linemesh)
 std::shared_ptr<Mesh> Mesh::create(const TriangleMeshData &trimesh)
 {
     auto mesh = Mesh::createTriangleMesh(trimesh.indexed);
-    mesh->attributes_["positions"]->setData(trimesh.vertices);
-    mesh->attributes_["normals"]->setData(trimesh.normals);
-    mesh->attributes_["colors"]->setData(trimesh.colors);
-    mesh->attributes_["uvs"]->setData(trimesh.texcoords);
-    mesh->attributes_["tangents"]->setData(trimesh.tangents);
-    if (trimesh.indexed)
+    if (!trimesh.vertices.empty())
+    {
+        mesh->attributes_["positions"]->setData(trimesh.vertices);
+    }
+    if (!trimesh.normals.empty())
+    {
+        mesh->attributes_["normals"]->setData(trimesh.normals);
+    }
+    if (!trimesh.colors.empty())
+    {
+        mesh->attributes_["colors"]->setData(trimesh.colors);
+    }
+    if (!trimesh.texcoords.empty())
+    {
+        mesh->attributes_["uvs"]->setData(trimesh.texcoords);
+    }
+    if (!trimesh.tangents.empty())
+    {
+        mesh->attributes_["tangents"]->setData(trimesh.tangents);
+    }
+    if (trimesh.indexed && !trimesh.indices.empty())
     {
         mesh->indices_->setData(trimesh.indices);
     }
@@ -266,7 +281,7 @@ std::shared_ptr<Mesh> Mesh::createTriangleMesh(bool indexed, bool strip)
          AttributeBuffer::create("uvs", GLuint(AttributeLocation::UV), 2),
          AttributeBuffer::create("colors", GLuint(AttributeLocation::COLOR), 3),
          AttributeBuffer::create("tangents", GLuint(AttributeLocation::TANGENT), 3),
-        AttributeBuffer::create("wireframe", GLuint(AttributeLocation::WIREFRAME), 1)},
+         AttributeBuffer::create("wireframe", GLuint(AttributeLocation::WIREFRAME), 1)},
         strip ? MeshPrimitive::TriangleStrip : MeshPrimitive::Triangles, indexed);
 }
 
@@ -466,19 +481,19 @@ void Mesh::setDefaultValue(GLuint id, float val)
     glVertexAttrib1f(id, val);
 }
 //
-//void Mesh::updateBVH()
+// void Mesh::updateBVH()
 //{
-//    // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh data
-//    std::vector<PrimitivePtr> prims;
-//    const glm::vec3 *pos = attributes_["positions"]->ptrVec3();
-//    if (numIndexData() > 0)
+//    // TODO(pradeep): find a way to avoid creating all these primitives and reuse original mesh
+//    data std::vector<PrimitivePtr> prims; const glm::vec3 *pos =
+//    attributes_["positions"]->ptrVec3(); if (numIndexData() > 0)
 //    {
 //        const unsigned int *ind = indices_->ptr();
 //        prims.reserve(indices_->size() / 3);
 //        size_t face_id = 0;
 //        for (size_t i = 0; i < indices_->size(); i += 3)
 //        {
-//            prims.push_back(std::make_shared<Triangle>(face_id++, pos[ind[i + 0]], pos[ind[i + 1]],
+//            prims.push_back(std::make_shared<Triangle>(face_id++, pos[ind[i + 0]], pos[ind[i +
+//            1]],
 //                                                       pos[ind[i + 2]]));
 //        }
 //    }
@@ -496,12 +511,12 @@ void Mesh::setDefaultValue(GLuint id, float val)
 //    bvh_ = buildBVH(prims);
 //}
 //
-//void Mesh::updateBVH(const std::vector<PrimitivePtr> &prims)
+// void Mesh::updateBVH(const std::vector<PrimitivePtr> &prims)
 //{
 //    bvh_ = buildBVH(prims);
 //}
 //
-//bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim)
+// bool Mesh::rayIntersect(const Ray &ray, glm::vec3 &pt, PrimitivePtr &prim)
 //{
 //    if (bvh_ == nullptr)
 //    {

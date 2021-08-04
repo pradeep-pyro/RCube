@@ -1,5 +1,4 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include "RCube/Core/Arch/Component.h"
 #include "RCube/Core/Graphics/OpenGL/Effect.h"
@@ -7,6 +6,8 @@
 #include "glm/glm.hpp"
 #include <array>
 #include <vector>
+#include "imgui.h"
+#include "RCube/ImGuizmo.h"
 
 namespace rcube
 {
@@ -93,5 +94,3 @@ class Camera : public Component<Camera>
 };
 
 } // namespace rcube
-
-#endif // CAMERA_H

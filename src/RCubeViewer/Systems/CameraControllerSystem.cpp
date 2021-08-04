@@ -37,7 +37,7 @@ CameraControllerSystem::CameraControllerSystem() : System()
 }
 void CameraControllerSystem::update(bool /*force*/)
 {
-    if (ImGui::GetIO().WantCaptureMouse)
+    if (ImGui::GetIO().WantCaptureMouse || ImGuizmo::IsUsing())
     {
         InputState::instance().setScrollAmount(0, 0);
         return;

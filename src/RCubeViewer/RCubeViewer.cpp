@@ -20,7 +20,7 @@ namespace viewer
 {
 
 RCubeViewer::RCubeViewer(RCubeViewerProps props)
-    : Window(props.title), use_transform_widgets_(props.use_transform_widgets)
+    : Window(props.title), show_transform_widgets_(props.show_transform_widgets)
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
@@ -317,10 +317,10 @@ void RCubeViewer::drawGUI()
                             Transform *tr = ent.get<Transform>();
                             tr->drawGUI();
                             Camera *cam = camera_.get<Camera>();
-                            if (use_transform_widgets_)
+                            if (show_transform_widgets_)
                             {
-                                tr->drawGUIWidgets(cam->worldToView(), cam->viewToProjection(),
-                                                   transform_edit_mode_);
+                                tr->drawTransformWidget(cam->worldToView(), cam->viewToProjection(),
+                                                        transform_edit_mode_);
                                 if (InputState::instance().isKeyJustDown(InputState::Key::T))
                                 {
                                     transform_edit_mode_ = ImGuizmo::TRANSLATE;

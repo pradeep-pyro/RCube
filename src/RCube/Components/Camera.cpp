@@ -1,7 +1,5 @@
 #include "RCube/Components/Camera.h"
 #include "RCube/Core/Graphics/TexGen/Gradient.h"
-#include "imgui.h"
-#include "ImGuizmo.h"
 
 namespace rcube
 {

@@ -1,5 +1,4 @@
-#ifndef CAMERASYSTEM_H
-#define CAMERASYSTEM_H
+#pragma once
 
 #include "RCube/Core/Arch/System.h"
 
@@ -25,5 +24,3 @@ class CameraSystem : public System
 };
 
 } // namespace rcube
-
-#endif // CAMERASYSTEM_H

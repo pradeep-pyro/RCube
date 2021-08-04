@@ -10,9 +10,7 @@
 #include "RCube/Core/Arch/ComponentManager.h"
 #include "RCube/Core/Arch/System.h"
 #include "RCube/Core/Arch/World.h"
-
-#include "imgui.h"
-#include "ImGuizmo.h"
+#include "RCube/ImGuizmo.h"
 
 namespace rcube
 {
@@ -136,8 +134,8 @@ class Transform : public Component<Transform>
 
     void drawGUI();
 
-    void drawGUIWidgets(const glm::mat4 &camera_world_to_view,
-                        const glm::mat4 &camera_view_to_projection, ImGuizmo::OPERATION mode);
+    void drawTransformWidget(const glm::mat4 &camera_world_to_view,
+                             const glm::mat4 &camera_view_to_projection, ImGuizmo::OPERATION mode);
 
   private:
     friend class TransformSystem;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImGuizmo.h" // This needs to be included after imgui
+#include "RCube/ImGuizmo.h"
 #include "RCube/Components/Camera.h"
 #include "RCube/Components/DirectionalLight.h"
 #include "RCube/Components/Drawable.h"
@@ -25,7 +25,6 @@
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
-#include "imgui.h"
 #include <memory>
 
 namespace rcube
@@ -70,7 +69,7 @@ class RCubeViewer : public rcube::Window
     bool needs_screenshot_ = false;
     glm::vec3 default_surface_color_ = glm::vec3(0.75, 0.75, 0.75);
     std::shared_ptr<ShaderMaterial> default_shader_;
-    bool use_transform_widgets_ = true;
+    bool show_transform_widgets_ = true;
     ImGuizmo::OPERATION transform_edit_mode_ = ImGuizmo::TRANSLATE;
 
   public:

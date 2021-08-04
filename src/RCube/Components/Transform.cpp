@@ -123,15 +123,17 @@ void Transform::drawGUI()
     }
 }
 
-void Transform::drawGUIWidgets(const glm::mat4 &camera_world_to_view,
-                               const glm::mat4 &camera_view_to_projection, ImGuizmo::OPERATION mode)
+void Transform::drawTransformWidget(const glm::mat4 &camera_world_to_view,
+                                    const glm::mat4 &camera_view_to_projection,
+                                    ImGuizmo::OPERATION mode)
 {
-    glm::mat4 matrix[1] = {glm::mat4(localTransform())};
-    if (ImGuizmo::Manipulate(&camera_world_to_view[0][0], &camera_view_to_projection[0][0],
-                             mode, ImGuizmo::WORLD, &matrix[0][0][0]))
+    glm::mat4 matrix = glm::mat4(localTransform());
+    if (ImGuizmo::Manipulate(glm::value_ptr(camera_world_to_view),
+                             glm::value_ptr(camera_view_to_projection), mode, ImGuizmo::WORLD,
+                             glm::value_ptr(matrix)))
     {
         glm::vec3 translation, scale, euler_angles;
-        ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0][0], glm::value_ptr(translation),
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(matrix), glm::value_ptr(translation),
                                               glm::value_ptr(euler_angles), glm::value_ptr(scale));
         if (mode == ImGuizmo::ROTATE)
         {

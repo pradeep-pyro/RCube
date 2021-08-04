@@ -68,9 +68,9 @@ void ForwardRenderSystem::initialize()
     framebuffer_hdr_ = Framebuffer::create();
     auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
     auto depth =
-        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32FStencil8);
+        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32F);
     framebuffer_hdr_->setColorAttachment(0, color);
-    framebuffer_hdr_->setDepthStencilAttachment(depth);
+    framebuffer_hdr_->setDepthAttachment(depth);
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
 
@@ -81,9 +81,9 @@ void ForwardRenderSystem::initialize()
         auto color_ms =
             Texture2D::createMS(resolution_.x, resolution_.y, msaa_, TextureInternalFormat::RGB16F);
         auto depth_ms = Texture2D::createMS(resolution_.x, resolution_.y, msaa_,
-                                            TextureInternalFormat::Depth32FStencil8);
+                                            TextureInternalFormat::Depth32F);
         framebuffer_hdr_ms_->setColorAttachment(0, color_ms);
-        framebuffer_hdr_ms_->setDepthStencilAttachment(depth_ms);
+        framebuffer_hdr_ms_->setDepthAttachment(depth_ms);
         framebuffer_hdr_ms_->setDrawBuffers({0});
         assert(framebuffer_hdr_ms_->isComplete());
     }
@@ -363,7 +363,7 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
     RenderTarget rt;
     rt.clear_color = {glm::vec4(0.f)};
     rt.clear_depth_buffer = true;
-    rt.clear_stencil_buffer = true;
+    rt.clear_stencil_buffer = false;
     rt.framebuffer = msaa_ > 0 ? framebuffer_hdr_ms_->id() : framebuffer_hdr_->id();
     rt.viewport_origin = glm::ivec2(0, 0);
     rt.viewport_size = resolution_;
@@ -375,13 +375,6 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
     state.depth.func = DepthFunc::Less;
     state.dither = false;
     state.stencil.test = false;
-    state.stencil.write = 0xFF;
-    state.stencil.func = StencilFunc::Always;
-    state.stencil.func_ref = 1;
-    state.stencil.func_mask = 0xFF;
-    state.stencil.op_stencil_pass = StencilOp::Replace;
-    state.stencil.op_stencil_fail = StencilOp::Keep;
-    state.stencil.op_depth_fail = StencilOp::Keep;
 
     std::vector<DrawCall> drawcalls;
     const auto &drawable_entities =
@@ -426,13 +419,6 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
         s.depth.write = false;
         s.depth.func = DepthFunc::LessOrEqual;
         s.stencil.test = false;
-        s.stencil.op_stencil_fail = StencilOp::Keep;
-        s.stencil.op_depth_fail = StencilOp::Keep;
-        s.stencil.op_stencil_pass = StencilOp::Keep;
-        s.stencil.func = StencilFunc::NotEqual;
-        s.stencil.func_ref = 1;
-        s.stencil.func_mask = 0xFF;
-        s.stencil.write = 0x00;
         dc_skybox.mesh = GLRenderer::getDrawCallMeshInfo(renderer_.skyboxMesh());
         dc_skybox.shader = renderer_.skyboxShader();
         dc_skybox.cubemaps.push_back({cam->skybox->id(), 0});
@@ -704,8 +690,7 @@ void WeightedBlendedOITManager::initialize(glm::ivec2 resolution,
     fbo_ = Framebuffer::create();
     accum_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::RGBA32F);
     accum_tex_->setFilterMode(TextureFilterMode::Linear);
-    revealage_tex_ =
-        Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::R8);
+    revealage_tex_ = Texture2D::create(resolution[0], resolution[1], 1, TextureInternalFormat::R8);
     revealage_tex_->setFilterMode(TextureFilterMode::Linear);
     fbo_->setColorAttachment(0, accum_tex_);
     fbo_->setColorAttachment(1, revealage_tex_);
@@ -748,7 +733,7 @@ void WeightedBlendedOITManager::prepareTransparentPass(RenderTarget &rt, RenderS
 
     state.depth.test = true;
     state.depth.write = false;
-    state.stencil.test = true;
+    state.stencil.test = false;
     state.cull.enabled = false;
     state.blend.enabled = true;
     state.blend.blend.resize(2);

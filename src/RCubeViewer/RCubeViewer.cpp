@@ -278,7 +278,8 @@ void RCubeViewer::drawGUI()
         }
 
         static const char *current_item = entity_names[0];
-        if (ImGui::BeginCombo("", current_item))
+        ImGui::PushItemWidth(-1);
+        ImGui::ListBoxHeader("");
         {
             for (int i = 0; i < entity_names.size(); ++i)
             {
@@ -292,8 +293,9 @@ void RCubeViewer::drawGUI()
                     ImGui::SetItemDefaultFocus();
                 }
             }
-            ImGui::EndCombo();
         }
+        ImGui::ListBoxFooter();
+        ImGui::PopItemWidth();
         if (current_item != "(None)")
         {
             EntityHandle ent = getEntity(std::string(current_item));

@@ -2509,8 +2509,9 @@ namespace ImGuizmo
       }
    }
 
-   void ViewManipulate(float* view, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor)
+   bool ViewManipulate(float* view, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor)
    {
+      bool changed = false;
       static bool isDraging = false;
       static bool isClicking = false;
       static bool isInside = false;
@@ -2682,6 +2683,7 @@ namespace ImGuizmo
          newUp = interpolationUp;
          vec_t newEye = camTarget + newDir * length;
          LookAt(&newEye.x, &camTarget.x, &newUp.x, view);
+         changed = true;
       }
       isInside = ImRect(position, position + size).Contains(io.MousePos);
 
@@ -2722,9 +2724,11 @@ namespace ImGuizmo
 
          vec_t newEye = camTarget + newDir * length;
          LookAt(&newEye.x, &camTarget.x, &referenceUp.x, view);
+         changed = true;
       }
 
       // restore view/projection because it was used to compute ray
       ComputeContext(svgView.m16, svgProjection.m16, gContext.mModelSource.m16, gContext.mMode);
+      return changed;
    }
 };

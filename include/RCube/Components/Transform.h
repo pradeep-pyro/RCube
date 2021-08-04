@@ -80,6 +80,13 @@ class Transform : public Component<Transform>
     const glm::vec3 &scale() const;
 
     /**
+     * Scale the object in local coordinates with respect
+     * to the parent Transform
+     * @param[in] 3D scale of the object
+     */
+    void scale(const glm::vec3 &sc);
+
+    /**
      * Sets the position of the object in local coordinates with respect
      * to the parent Transform
      * @param pos Local position
@@ -126,11 +133,18 @@ class Transform : public Component<Transform>
     void translate(const glm::vec3 &tr);
 
     /**
-     * Rotate the object by multiplying the given quaternion with
+     * Rotate the object by right multiplying the given quaternion with
      * current orientation
-     * @param quaternion Unit quaternion
+     * @param quaternion Unit quaternion in model space
      */
-    void rotate(const glm::quat &quaternion);
+    void rotateModelSpace(const glm::quat &quaternion_model);
+
+    /**
+     * Rotate the object by left multiplying the given quaternion with
+     * current orientation
+     * @param quaternion Unit quaternion in world space
+     */
+    void rotateWorldSpace(const glm::quat &quaternion_world);
 
     /**
      * Transform such that the object is in given the lookAt configuration

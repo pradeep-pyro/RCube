@@ -61,6 +61,12 @@ void Transform::setScale(const glm::vec3 &sc)
     dirty_ = true;
 }
 
+void Transform::scale(const glm::vec3 &sc)
+{
+    scale_ *= sc;
+    dirty_ = true;
+}
+
 const glm::mat4 &Transform::localTransform()
 {
     return local_transform_;
@@ -82,12 +88,17 @@ void Transform::translate(const glm::vec3 &tr)
     dirty_ = true;
 }
 
-void Transform::rotate(const glm::quat &quaternion)
+void Transform::rotateModelSpace(const glm::quat &quaternion_model)
 {
-    orientation_ *= quaternion;
+    orientation_ = orientation_ * quaternion_model;
     dirty_ = true;
 }
 
+void Transform::rotateWorldSpace(const glm::quat &quaternion_world)
+{
+    orientation_ = quaternion_world * orientation_;
+    dirty_ = true;
+}
 void Transform::lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up)
 {
     setPosition(position);
@@ -146,27 +157,30 @@ void Transform::drawTransformWidget(const glm::mat4 &camera_world_to_view,
     {
         snap = &snap_scale;
     }
-    glm::mat4 matrix = glm::mat4(localTransform());
+    glm::mat4 matrix = glm::mat4(worldTransform());
+    glm::mat4 delta = glm::identity<glm::mat4>();
     if (ImGuizmo::Manipulate(glm::value_ptr(camera_world_to_view),
                              glm::value_ptr(camera_view_to_projection),
                              static_cast<ImGuizmo::OPERATION>(transformation), transformation_space,
-                             glm::value_ptr(matrix), nullptr, snap))
+                             glm::value_ptr(matrix), glm::value_ptr(delta), snap))
     {
-        glm::vec3 translation, scale, euler_angles;
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(matrix), glm::value_ptr(translation),
-                                              glm::value_ptr(euler_angles), glm::value_ptr(scale));
+        glm::vec3 translation, scale, euler_angles_deg;
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(delta), glm::value_ptr(translation),
+                                              glm::value_ptr(euler_angles_deg),
+                                              glm::value_ptr(scale));
         if (transformation == TransformOperation::Rotate)
         {
-            euler_angles = glm::radians(euler_angles);
-            setOrientation(glm::quat(euler_angles));
+            glm::vec3 euler_angles_rad = glm::radians(euler_angles_deg);
+            glm::quat world_rotation(euler_angles_rad);
+            rotateWorldSpace(world_rotation);
         }
         else if (transformation == TransformOperation::Translate)
         {
-            setPosition(translation);
+            translate(translation);
         }
         else if (transformation == TransformOperation::Scale)
         {
-            setScale(scale);
+            this->scale(scale);
         }
     }
 }

@@ -315,7 +315,7 @@ IBLSpecularSplitSum::prefilter(std::shared_ptr<TextureCubemap> env_map)
         rt.framebuffer = fbos[mip]->id();
         rt.clear_color = {glm::vec4(0.)};
         rt.clear_depth_buffer = true;
-        rt.clear_stencil_buffer = true;
+        rt.clear_stencil_buffer = false;
         rt.viewport_origin = glm::ivec2(0, 0);
         rt.viewport_size = glm::ivec2(mip_width, mip_height);
         RenderSettings s;

@@ -80,7 +80,7 @@ void SurfaceMesh::createMesh(const TriangleMeshData &data)
         prims.push_back(std::make_shared<Triangle>(i, data.vertices[ind[0]], data.vertices[ind[1]],
                                                    data.vertices[ind[2]]));
     }*/
-    //updateBVH(prims);
+    // updateBVH(prims);
     uploadToGPU();
 }
 
@@ -458,11 +458,18 @@ void SurfaceMesh::setVertexArrowMesh(const TriangleMeshData &mesh)
 
 void SurfaceMesh::showVertexVectorField(std::string name)
 {
-    VectorField &vf = vertexVectorField(name);
-    if (vf.updateArrows() || visible_vertex_vector_field_ != name)
+    try
     {
-        setVertexArrowMesh(vf.mesh_);
-        visible_vertex_vector_field_ = name;
+        VectorField &vf = vertexVectorField(name);
+        if (vf.updateArrows() || visible_vertex_vector_field_ != name)
+        {
+            setVertexArrowMesh(vf.mesh_);
+            visible_vertex_vector_field_ = name;
+        }
+    }
+    catch (std::exception &)
+    {
+        return;
     }
 }
 
@@ -546,181 +553,195 @@ void SurfaceMesh::drawGUI()
     {
         setColor(color_);
     }
-    /////////////////////////////////////////////////////////
-    // Scalar fields
-    // -> Vertex
-    ImGui::Separator();
-    static const char *current_sf = nullptr;
-    static bool is_vertex_based = true;
-    if (ImGui::BeginCombo("Scalar field", current_sf))
+    try
     {
-        bool is_selected = (current_sf == "(None)");
-        if (ImGui::Selectable("(None)", is_selected))
-        {
-            current_sf = "(None)";
-        }
-        static bool temp;
-        ImGui::Selectable("Per-vertex", temp, ImGuiSelectableFlags_Disabled);
-        for (auto &kv : vertex_scalar_fields_)
-        {
-            bool is_selected = (current_sf == kv.first.c_str());
-            if (ImGui::Selectable(kv.first.c_str(), is_selected))
-            {
-                current_sf = kv.first.c_str();
-                is_vertex_based = true;
-            }
-            if (is_selected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
+        /////////////////////////////////////////////////////////
+        // Scalar fields
+        // -> Vertex
         ImGui::Separator();
-        ImGui::Selectable("Per-face", temp, ImGuiSelectableFlags_Disabled);
-        for (auto &kv : face_scalar_fields_)
+        static const char *current_sf = nullptr;
+        static bool is_vertex_based = true;
+        if (ImGui::BeginCombo("Scalar field", current_sf))
         {
-            bool is_selected = (current_sf == kv.first.c_str());
-            if (ImGui::Selectable(kv.first.c_str(), is_selected))
+            bool is_selected = (current_sf == "(None)");
+            if (ImGui::Selectable("(None)", is_selected))
             {
-                current_sf = kv.first.c_str();
-                is_vertex_based = false;
+                current_sf = "(None)";
             }
-            if (is_selected)
+            static bool temp;
+            ImGui::Selectable("Per-vertex", temp, ImGuiSelectableFlags_Disabled);
+            for (auto &kv : vertex_scalar_fields_)
             {
-                ImGui::SetItemDefaultFocus();
+                bool is_selected = (current_sf == kv.first.c_str());
+                if (ImGui::Selectable(kv.first.c_str(), is_selected))
+                {
+                    current_sf = kv.first.c_str();
+                    is_vertex_based = true;
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::Separator();
+            ImGui::Selectable("Per-face", temp, ImGuiSelectableFlags_Disabled);
+            for (auto &kv : face_scalar_fields_)
+            {
+                bool is_selected = (current_sf == kv.first.c_str());
+                if (ImGui::Selectable(kv.first.c_str(), is_selected))
+                {
+                    current_sf = kv.first.c_str();
+                    is_vertex_based = false;
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if (current_sf != nullptr && current_sf != "(None)")
+        {
+            if (is_vertex_based)
+            {
+                showVertexScalarField(current_sf);
+                ImGui::PlotHistogram(
+                    "Histogram", vertexScalarField(current_sf).histogram_.data(),
+                    static_cast<int>(vertexScalarField(current_sf).histogram_.size()), 0, nullptr,
+                    0.0f, 1.0f, ImVec2(0, 80.0f));
+                if (ImGui::InputFloat("Min. value###sf1", &vertexScalarField(current_sf).vmin_))
+                {
+                    vertexScalarField(current_sf).dirty_ = true;
+                }
+                if (ImGui::InputFloat("Max. value###sf2", &vertexScalarField(current_sf).vmax_))
+                {
+                    vertexScalarField(current_sf).dirty_ = true;
+                }
+                if (ImGui::Button("Fit data range###sf3"))
+                {
+                    vertexScalarField(current_sf).fitDataRange();
+                }
+            }
+            else
+            {
+                showFaceScalarField(current_sf);
+                ImGui::PlotHistogram(
+                    "Histogram", faceScalarField(current_sf).histogram_.data(),
+                    static_cast<int>(faceScalarField(current_sf).histogram_.size()), 0, nullptr,
+                    0.0f, 1.0f, ImVec2(0, 80.0f));
+                if (ImGui::InputFloat("Min. value###sf4", &faceScalarField(current_sf).vmin_))
+                {
+                    faceScalarField(current_sf).dirty_ = true;
+                }
+                if (ImGui::InputFloat("Max. value###sf5", &faceScalarField(current_sf).vmax_))
+                {
+                    faceScalarField(current_sf).dirty_ = true;
+                }
+                if (ImGui::Button("Fit data range###sf6"))
+                {
+                    faceScalarField(current_sf).fitDataRange();
+                }
             }
         }
-        ImGui::EndCombo();
+        if (current_sf == "(None)")
+        {
+            hideAllScalarFields();
+        }
+        /////////////////////////////////////////////////////////
+        // Vector fields
+        // -> Vertex
+        ImGui::Separator();
+        static const char *current_vf = "(None)";
+        if (ImGui::BeginCombo("Vertex vector field", current_vf))
+        {
+            bool is_selected = (current_vf == "(None)");
+            if (ImGui::Selectable("(None)", is_selected))
+            {
+                current_vf = "(None)";
+            }
+            for (auto &kv : vertex_vector_fields_)
+            {
+                bool is_selected = (current_vf == kv.first.c_str());
+                if (ImGui::Selectable(kv.first.c_str(), is_selected))
+                {
+                    current_vf = kv.first.c_str();
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if (current_vf != nullptr && current_vf != "(None)")
+        {
+            showVertexVectorField(current_vf);
+            try
+            {
+                if (ImGui::SliderFloat("Max. length###vvf1",
+                                       &vertexVectorField(current_vf).max_length_, 0.f, 1.f))
+                {
+                    vertexVectorField(current_vf).dirty_ = true;
+                }
+                if (ImGui::Checkbox("Scale by magnitude###vvf2",
+                                    &vertexVectorField(current_vf).scale_by_magnitude_))
+                {
+                    vertexVectorField(current_vf).dirty_ = true;
+                }
+            }
+            catch (std::exception &)
+            {
+            }
+        }
+        if (current_vf == "(None)")
+        {
+            hideAllVertexVectorFields();
+        }
+        // -> Face
+        ImGui::Separator();
+        static const char *current_fvf = "(None)";
+        if (ImGui::BeginCombo("Face vector field", current_fvf))
+        {
+            bool is_selected = (current_fvf == "(None)");
+            if (ImGui::Selectable("(None)", is_selected))
+            {
+                current_fvf = "(None)";
+            }
+            for (auto &kv : face_vector_fields_)
+            {
+                bool is_selected = (current_fvf == kv.first.c_str());
+                if (ImGui::Selectable(kv.first.c_str(), is_selected))
+                {
+                    current_fvf = kv.first.c_str();
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if (current_fvf != nullptr && current_fvf != "(None)")
+        {
+            showFaceVectorField(current_fvf);
+            if (ImGui::SliderFloat("Max. length###fvf1", &faceVectorField(current_fvf).max_length_,
+                                   0.f, 1.f))
+            {
+                faceVectorField(current_fvf).dirty_ = true;
+            }
+            if (ImGui::Checkbox("Scale by magnitude###fvf2",
+                                &faceVectorField(current_fvf).scale_by_magnitude_))
+            {
+                faceVectorField(current_fvf).dirty_ = true;
+            }
+        }
+        if (current_fvf == "(None)")
+        {
+            hideAllFaceVectorFields();
+        }
     }
-    if (current_sf != nullptr && current_sf != "(None)")
+    catch (const std::exception &)
     {
-        if (is_vertex_based)
-        {
-            showVertexScalarField(current_sf);
-            ImGui::PlotHistogram("Histogram", vertexScalarField(current_sf).histogram_.data(),
-                                 static_cast<int>(vertexScalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f,
-                                 1.0f, ImVec2(0, 80.0f));
-            if (ImGui::InputFloat("Min. value###sf1", &vertexScalarField(current_sf).vmin_))
-            {
-                vertexScalarField(current_sf).dirty_ = true;
-            }
-            if (ImGui::InputFloat("Max. value###sf2", &vertexScalarField(current_sf).vmax_))
-            {
-                vertexScalarField(current_sf).dirty_ = true;
-            }
-            if (ImGui::Button("Fit data range###sf3"))
-            {
-                vertexScalarField(current_sf).fitDataRange();
-            }
-        }
-        else
-        {
-            showFaceScalarField(current_sf);
-            ImGui::PlotHistogram("Histogram", faceScalarField(current_sf).histogram_.data(),
-                                 static_cast<int>(faceScalarField(current_sf).histogram_.size()), 0, nullptr, 0.0f,
-                                 1.0f, ImVec2(0, 80.0f));
-            if (ImGui::InputFloat("Min. value###sf4", &faceScalarField(current_sf).vmin_))
-            {
-                faceScalarField(current_sf).dirty_ = true;
-            }
-            if (ImGui::InputFloat("Max. value###sf5", &faceScalarField(current_sf).vmax_))
-            {
-                faceScalarField(current_sf).dirty_ = true;
-            }
-            if (ImGui::Button("Fit data range###sf6"))
-            {
-                faceScalarField(current_sf).fitDataRange();
-            }
-        }
-    }
-    if (current_sf == "(None)")
-    {
-        hideAllScalarFields();
-    }
-    /////////////////////////////////////////////////////////
-    // Vector fields
-    // -> Vertex
-    ImGui::Separator();
-    static const char *current_vf = "(None)";
-    if (ImGui::BeginCombo("Vertex vector field", current_vf))
-    {
-        bool is_selected = (current_vf == "(None)");
-        if (ImGui::Selectable("(None)", is_selected))
-        {
-            current_vf = "(None)";
-        }
-        for (auto &kv : vertex_vector_fields_)
-        {
-            bool is_selected = (current_vf == kv.first.c_str());
-            if (ImGui::Selectable(kv.first.c_str(), is_selected))
-            {
-                current_vf = kv.first.c_str();
-            }
-            if (is_selected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-    if (current_vf != nullptr && current_vf != "(None)")
-    {
-        showVertexVectorField(current_vf);
-        if (ImGui::SliderFloat("Max. length###vvf1", &vertexVectorField(current_vf).max_length_,
-                               0.f, 1.f))
-        {
-            vertexVectorField(current_vf).dirty_ = true;
-        }
-        if (ImGui::Checkbox("Scale by magnitude###vvf2",
-                            &vertexVectorField(current_vf).scale_by_magnitude_))
-        {
-            vertexVectorField(current_vf).dirty_ = true;
-        }
-    }
-    if (current_vf == "(None)")
-    {
-        hideAllVertexVectorFields();
-    }
-    // -> Face
-    ImGui::Separator();
-    static const char *current_fvf = "(None)";
-    if (ImGui::BeginCombo("Face vector field", current_fvf))
-    {
-        bool is_selected = (current_fvf == "(None)");
-        if (ImGui::Selectable("(None)", is_selected))
-        {
-            current_fvf = "(None)";
-        }
-        for (auto &kv : face_vector_fields_)
-        {
-            bool is_selected = (current_fvf == kv.first.c_str());
-            if (ImGui::Selectable(kv.first.c_str(), is_selected))
-            {
-                current_fvf = kv.first.c_str();
-            }
-            if (is_selected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-    if (current_fvf != nullptr && current_fvf != "(None)")
-    {
-        showFaceVectorField(current_fvf);
-        if (ImGui::SliderFloat("Max. length###fvf1", &faceVectorField(current_fvf).max_length_, 0.f,
-                               1.f))
-        {
-            faceVectorField(current_fvf).dirty_ = true;
-        }
-        if (ImGui::Checkbox("Scale by magnitude###fvf2",
-                            &faceVectorField(current_fvf).scale_by_magnitude_))
-        {
-            faceVectorField(current_fvf).dirty_ = true;
-        }
-    }
-    if (current_fvf == "(None)")
-    {
-        hideAllFaceVectorFields();
     }
 }
 

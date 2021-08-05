@@ -26,7 +26,7 @@ struct RenderTarget
     float clear_depth = 1.f;
     bool clear_depth_buffer = true;
     GLint clear_stencil = 0;
-    bool clear_stencil_buffer = true;
+    bool clear_stencil_buffer = false;
     glm::ivec2 viewport_origin;
     glm::ivec2 viewport_size;
 };

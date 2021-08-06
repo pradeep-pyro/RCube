@@ -442,7 +442,7 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 
     state.depth.test = true;
     state.depth.write = false;
-    state.stencil.test = true;
+    state.stencil.test = false;
     state.cull.enabled = false;
     state.blend.enabled = true;
     state.blend.blend.resize(2);

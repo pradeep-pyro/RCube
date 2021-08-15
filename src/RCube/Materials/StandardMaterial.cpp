@@ -15,6 +15,8 @@ layout (location = 3) in vec3 color;
 layout (location = 4) in vec3 tangent;
 layout (location = 5) in float wire;
 
+invariant gl_Position;
+
 layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;

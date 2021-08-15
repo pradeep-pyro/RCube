@@ -17,6 +17,8 @@ layout (std140, binding=0) uniform Camera {
     vec3 eye_pos;
 };
 
+invariant gl_Position;
+
 out vec3 vert_position;
 out vec3 vert_color;
 

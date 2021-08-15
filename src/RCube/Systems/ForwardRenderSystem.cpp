@@ -31,7 +31,7 @@ DrawCall makeDrawCall(Drawable *dr, ShaderMaterial *material, Transform *tr, For
         Uniform nor_mat;
         if (dc.shader->hasUniform("normal_matrix", nor_mat))
         {
-            nor_mat.set(glm::mat3(tr->worldTransform()));
+            nor_mat.set(glm::transpose(glm::inverse(glm::mat3(tr->worldTransform()))));
         }
         material->updateUniforms(dc.shader);
     };
@@ -64,13 +64,26 @@ ForwardRenderSystem::ForwardRenderSystem(glm::ivec2 resolution, unsigned int msa
 
 void ForwardRenderSystem::initialize()
 {
+    // Depth prepass
+    depth_ = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32F);
+    framebuffer_depth_ = Framebuffer::create();
+    framebuffer_depth_->setDepthAttachment(depth_);
+    assert(framebuffer_depth_->isComplete());
+    if (msaa_ > 0)
+    {
+        depth_ms_ = Texture2D::createMS(resolution_.x, resolution_.y, msaa_,
+                                        TextureInternalFormat::Depth32F);
+        framebuffer_depth_ms_ = Framebuffer::create();
+        framebuffer_depth_ms_->setDepthAttachment(depth_ms_);
+        assert(framebuffer_depth_ms_->isComplete());
+    }
+    shader_depth_ = common::depthShader();
+
     // HDR framebuffer
     framebuffer_hdr_ = Framebuffer::create();
     auto color = Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
-    auto depth =
-        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32F);
     framebuffer_hdr_->setColorAttachment(0, color);
-    framebuffer_hdr_->setDepthAttachment(depth);
+    framebuffer_hdr_->setDepthAttachment(depth_);
     framebuffer_hdr_->setDrawBuffers({0});
     assert(framebuffer_hdr_->isComplete());
 
@@ -80,10 +93,8 @@ void ForwardRenderSystem::initialize()
         framebuffer_hdr_ms_ = Framebuffer::create();
         auto color_ms =
             Texture2D::createMS(resolution_.x, resolution_.y, msaa_, TextureInternalFormat::RGB16F);
-        auto depth_ms = Texture2D::createMS(resolution_.x, resolution_.y, msaa_,
-                                            TextureInternalFormat::Depth32F);
         framebuffer_hdr_ms_->setColorAttachment(0, color_ms);
-        framebuffer_hdr_ms_->setDepthAttachment(depth_ms);
+        framebuffer_hdr_ms_->setDepthAttachment(depth_ms_);
         framebuffer_hdr_ms_->setDrawBuffers({0});
         assert(framebuffer_hdr_ms_->isComplete());
     }
@@ -99,7 +110,7 @@ void ForwardRenderSystem::initialize()
     dirlight_data_.resize(RCUBE_MAX_DIRECTIONAL_LIGHTS * 24);
     // Point lights: Each light has one 3D position, one bool flag for shadow casting, one 3D color,
     // one float for radius, one float for intensity and 3 empty floats for padding. Finally there
-    // is one int (treated as float) for number of directional lights
+    // is one int (treated as float) for number of point lights
     ubo_pointlights_ =
         UniformBuffer::create(RCUBE_MAX_POINT_LIGHTS * 12 * sizeof(float) + sizeof(float));
     pointlight_data_.resize(RCUBE_MAX_POINT_LIGHTS * 12);
@@ -122,14 +133,13 @@ void ForwardRenderSystem::initialize()
     auto obj_id_tex =
         Texture2D::create(resolution_[0], resolution_[1], 1, TextureInternalFormat::RG32UI);
     framebuffer_pick_->setColorAttachment(0, obj_id_tex);
-    framebuffer_pick_->setDepthAttachment(
-        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32F));
+    framebuffer_pick_->setDepthAttachment(depth_);
     framebuffer_pick_->setDrawBuffers({0});
     assert(framebuffer_pick_->isComplete());
     shader_picking_ = common::uniqueColorShader();
 
     // Transparency
-    wboit_.initialize(resolution_, depth);
+    wboit_.initialize(resolution_, depth_);
 
     // Initialize renderer
     renderer_.initialize();
@@ -345,6 +355,8 @@ void ForwardRenderSystem::update(bool)
                      cam->projection_to_viewport);
 
         // Render passes
+        depthPrepass(cam);
+        pickFBOPass(cam);
         opaqueGeometryPass(cam);
         // Resolve MSAA framebuffer if needed
         if (msaa_ > 0)
@@ -352,17 +364,71 @@ void ForwardRenderSystem::update(bool)
             framebuffer_hdr_ms_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_);
         }
         transparentGeometryPass(cam);
-        pickFBOPass(cam);
         postprocessPass(cam);
         finalPass(cam);
     }
+}
+
+void ForwardRenderSystem::depthPrepass(Camera *cam)
+{
+    RenderTarget rt;
+    rt.clear_depth_buffer = true;
+    rt.clear_stencil_buffer = false;
+    rt.framebuffer = msaa_ > 0 ? framebuffer_depth_ms_->id() : framebuffer_depth_->id();
+    rt.viewport_origin = glm::ivec2(0, 0);
+    rt.viewport_size = resolution_;
+
+    RenderSettings state;
+    state.blend.enabled = false;
+    state.depth.test = true;
+    state.depth.write = true;
+    state.depth.func = DepthFunc::LessOrEqual;
+    state.stencil.test = false;
+    state.cull.enabled = true;
+    state.cull.mode = Cull::Back;
+
+    const auto &drawable_entities =
+        getFilteredEntities({Transform::family(), Drawable::family(), ForwardMaterial::family()});
+
+    std::vector<DrawCall> drawcalls;
+    drawcalls.reserve(drawable_entities.size());
+    for (Entity drawable_entity : drawable_entities)
+    {
+        Drawable *dr = world_->getComponent<Drawable>(drawable_entity);
+        if (!dr->visible)
+        {
+            continue;
+        }
+        // Consider only opaque objects for depth prepass
+        ForwardMaterial *mat = world_->getComponent<ForwardMaterial>(drawable_entity);
+        if (mat->shader == nullptr)
+        {
+            continue;
+        }
+        if (mat->shader->opacity < 1.f)
+        {
+            continue;
+        }
+        // Create draw call
+        DrawCall dc;
+        DrawCall::MeshInfo mi = GLRenderer::getDrawCallMeshInfo(dr->mesh);
+        dc.mesh = mi;
+        Transform *tr = world_->getComponent<Transform>(drawable_entity);
+        dc.shader = shader_depth_;
+        const int id = static_cast<int>(drawable_entity.id());
+        dc.update_uniforms = [tr, id](std::shared_ptr<ShaderProgram> shader) {
+            shader->uniform("model_matrix").set(tr->worldTransform());
+        };
+        drawcalls.push_back(dc);
+    }
+    renderer_.draw(rt, state, drawcalls);
 }
 
 void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
 {
     RenderTarget rt;
     rt.clear_color = {glm::vec4(0.f)};
-    rt.clear_depth_buffer = true;
+    rt.clear_depth_buffer = false;
     rt.clear_stencil_buffer = false;
     rt.framebuffer = msaa_ > 0 ? framebuffer_hdr_ms_->id() : framebuffer_hdr_->id();
     rt.viewport_origin = glm::ivec2(0, 0);
@@ -371,8 +437,8 @@ void ForwardRenderSystem::opaqueGeometryPass(Camera *cam)
     RenderSettings state;
     state.blend.enabled = false;
     state.depth.test = true;
-    state.depth.write = true;
-    state.depth.func = DepthFunc::Less;
+    state.depth.write = false;
+    state.depth.func = DepthFunc::LessOrEqual;
     state.dither = false;
     state.stencil.test = false;
 
@@ -442,6 +508,7 @@ void ForwardRenderSystem::transparentGeometryPass(Camera *cam)
 
     state.depth.test = true;
     state.depth.write = false;
+    state.depth.func = DepthFunc::LessOrEqual;
     state.stencil.test = false;
     state.cull.enabled = false;
     state.blend.enabled = true;
@@ -528,7 +595,7 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
     }
     RenderTarget rt;
     rt.clear_color = {glm::ivec2(-1, -1)}; // Clear texture channels to -1
-    rt.clear_depth_buffer = true;
+    rt.clear_depth_buffer = false;
     rt.clear_stencil_buffer = false;
     rt.framebuffer = framebuffer_pick_->id();
     rt.viewport_origin = glm::ivec2(0, 0);
@@ -537,7 +604,8 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
     RenderSettings state;
     state.blend.enabled = false;
     state.depth.test = true;
-    state.depth.write = true;
+    state.depth.write = false;
+    state.depth.func = DepthFunc::LessOrEqual;
     state.stencil.test = false;
     state.cull.enabled = false;
 

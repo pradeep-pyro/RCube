@@ -16,6 +16,8 @@ layout (location = 1) in vec3 normal;
 layout (location = 3) in vec3 color;
 layout (location = 5) in float wire;
 
+invariant gl_Position;
+
 #define RCUBE_MAX_DIRLIGHTS 5
 #define RCUBE_MAX_POINTLIGHTS 50
 
@@ -40,7 +42,7 @@ void main()
     vec4 world_pos = model_matrix * vec4(position, 1.0);
     world_position = vec3(world_pos);
     vert_position = world_pos.xyz;
-    vert_normal = normalize(vec3(model_matrix * vec4(normal, 0.0))); // Model space
+    vert_normal = normalize(normal_matrix * normal); // Model space
     vert_color = pow(color, vec3(2.2));
     vert_wire = wire;
     gl_Position = projection_matrix * view_matrix * world_pos;

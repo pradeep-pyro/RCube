@@ -94,6 +94,7 @@ layout (location = 0) in vec3 position;
 
 uniform mat4 light_matrix;
 uniform mat4 model_matrix;
+invariant gl_Position;
 
 void main()
 {
@@ -143,6 +144,7 @@ layout (std140, binding=0) uniform Camera {
 };
 
 uniform mat4 model_matrix;
+invariant gl_Position;
 
 void main()
 {
@@ -150,6 +152,43 @@ void main()
 }
 )";
 
+
+/**
+ * Depth pass: fragment shader
+ */
+const static std::string DEPTH_FRAGMENT_SHADER = R"(
+#version 450
+
+void main()
+{
+}
+)";
+
+
+/**
+ * Depth pass: vertex shader
+ */
+const static std::string DEPTH_VERTEX_SHADER = R"(
+#version 450
+
+layout (location = 0) in vec3 position;
+
+layout (std140, binding=0) uniform Camera {
+    mat4 view_matrix;
+    mat4 projection_matrix;
+    mat4 viewport_matrix;
+    vec3 eye_pos;
+};
+
+uniform mat4 model_matrix;
+invariant gl_Position;
+
+void main()
+{
+    vec4 world_position = model_matrix * vec4(position, 1.0);
+    gl_Position = projection_matrix * view_matrix * world_position;
+}
+)";
 
 /**
  * Create a shader for rendering fullscreen quad with a user-defined fragment shader
@@ -174,6 +213,11 @@ std::shared_ptr<ShaderProgram> shadowMapShader();
  * Create a shader for rendering each entity with a unique ID
  */
 std::shared_ptr<ShaderProgram> uniqueColorShader();
+
+/**
+ * Create a shader for depth pre-pass
+ */
+std::shared_ptr<ShaderProgram> depthShader();
 
 
 } // namespace common

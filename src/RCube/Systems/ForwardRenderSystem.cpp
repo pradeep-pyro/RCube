@@ -382,7 +382,7 @@ void ForwardRenderSystem::depthPrepass(Camera *cam)
     state.blend.enabled = false;
     state.depth.test = true;
     state.depth.write = true;
-    state.depth.func = DepthFunc::LessOrEqual;
+    state.depth.func = DepthFunc::Less;
     state.stencil.test = false;
     state.cull.enabled = true;
     state.cull.mode = Cull::Back;

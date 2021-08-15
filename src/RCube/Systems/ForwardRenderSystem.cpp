@@ -384,8 +384,7 @@ void ForwardRenderSystem::depthPrepass(Camera *cam)
     state.depth.write = true;
     state.depth.func = DepthFunc::Less;
     state.stencil.test = false;
-    state.cull.enabled = true;
-    state.cull.mode = Cull::Back;
+    state.cull.enabled = false;
 
     const auto &drawable_entities =
         getFilteredEntities({Transform::family(), Drawable::family(), ForwardMaterial::family()});

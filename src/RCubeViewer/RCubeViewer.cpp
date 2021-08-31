@@ -175,6 +175,8 @@ void RCubeViewer::draw()
 
 void RCubeViewer::drawGUI()
 {
+    ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode |
+                                              ImGuiDockNodeFlags_NoDockingInCentralNode);
     ImGui::Begin("RCubeViewer");
 
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,

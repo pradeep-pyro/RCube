@@ -303,6 +303,7 @@ void initImGUI(GLFWwindow *window)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImFontConfig config;
     config.OversampleH = 5;
     config.OversampleV = 5;

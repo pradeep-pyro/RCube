@@ -83,8 +83,7 @@ void UnlitMaterial::drawGUI()
     ImGui::Text("UnlitMaterial");
     ImGui::Text("This material renders the object with a\nsingle color or per-vertex colors");
     ImGui::Separator();
-    ImGui::ColorEdit3("Color", glm::value_ptr(color),
-                      ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV);
+    ImGui::ColorEdit3("Color", glm::value_ptr(color), ImGuiColorEditFlags_DisplayRGB);
     ShaderMaterial::drawGUI();
     ImGui::Checkbox("Use vertex colors", &use_vertex_colors);
 }

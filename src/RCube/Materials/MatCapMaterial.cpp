@@ -43,7 +43,7 @@ void main()
     world_position = vec3(world_pos);
     vert_position = world_pos.xyz;
     vert_normal = normalize(normal_matrix * normal); // Model space
-    vert_color = pow(color, vec3(2.2));
+    vert_color = color;
     vert_wire = wire;
     gl_Position = projection_matrix * view_matrix * world_pos;
 }

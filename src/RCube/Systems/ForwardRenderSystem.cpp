@@ -356,13 +356,13 @@ void ForwardRenderSystem::update(bool)
 
         // Render passes
         depthPrepass(cam);
-        pickFBOPass(cam);
         opaqueGeometryPass(cam);
         // Resolve MSAA framebuffer if needed
         if (msaa_ > 0)
         {
             framebuffer_hdr_ms_->blit(framebuffer_hdr_, {0, 0}, resolution_, {0, 0}, resolution_);
         }
+        pickFBOPass(cam);
         transparentGeometryPass(cam);
         postprocessPass(cam);
         finalPass(cam);
@@ -604,7 +604,9 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
     state.blend.enabled = false;
     state.depth.test = true;
     state.depth.write = false;
-    state.depth.func = DepthFunc::LessOrEqual;
+    // TODO(Pradeep): This should be LessOrEqual ideally
+    // but there are some depth buffer precision issues
+    state.depth.func = DepthFunc::Always;
     state.stencil.test = false;
     state.cull.enabled = false;
 

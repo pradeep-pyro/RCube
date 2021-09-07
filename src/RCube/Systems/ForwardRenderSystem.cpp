@@ -132,8 +132,10 @@ void ForwardRenderSystem::initialize()
     framebuffer_pick_ = Framebuffer::create();
     auto obj_id_tex =
         Texture2D::create(resolution_[0], resolution_[1], 1, TextureInternalFormat::RG32UI);
+    auto depth_pick_ =
+        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::Depth32F);
     framebuffer_pick_->setColorAttachment(0, obj_id_tex);
-    framebuffer_pick_->setDepthAttachment(depth_);
+    framebuffer_pick_->setDepthAttachment(depth_pick_);
     framebuffer_pick_->setDrawBuffers({0});
     assert(framebuffer_pick_->isComplete());
     shader_picking_ = common::uniqueColorShader();
@@ -594,7 +596,7 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
     }
     RenderTarget rt;
     rt.clear_color = {glm::ivec2(-1, -1)}; // Clear texture channels to -1
-    rt.clear_depth_buffer = false;
+    rt.clear_depth_buffer = true;
     rt.clear_stencil_buffer = false;
     rt.framebuffer = framebuffer_pick_->id();
     rt.viewport_origin = glm::ivec2(0, 0);
@@ -603,10 +605,8 @@ void ForwardRenderSystem::pickFBOPass(Camera *cam)
     RenderSettings state;
     state.blend.enabled = false;
     state.depth.test = true;
-    state.depth.write = false;
-    // TODO(Pradeep): This should be LessOrEqual ideally
-    // but there are some depth buffer precision issues
-    state.depth.func = DepthFunc::Always;
+    state.depth.write = true;
+    state.depth.func = DepthFunc::LessOrEqual;
     state.stencil.test = false;
     state.cull.enabled = false;
 

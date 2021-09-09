@@ -18,9 +18,6 @@ layout (location = 5) in float wire;
 
 invariant gl_Position;
 
-#define RCUBE_MAX_DIRLIGHTS 5
-#define RCUBE_MAX_POINTLIGHTS 50
-
 layout (std140, binding=0) uniform Camera {
     mat4 view_matrix;
     mat4 projection_matrix;
@@ -28,11 +25,9 @@ layout (std140, binding=0) uniform Camera {
     vec3 eye_pos;
 };
 
-out vec3 vert_position;
 out vec3 vert_color;
 out vec3 vert_normal;
 flat out float vert_wire;
-out vec3 world_position;
 
 uniform mat4 model_matrix;
 uniform mat3 normal_matrix;
@@ -40,9 +35,7 @@ uniform mat3 normal_matrix;
 void main()
 {
     vec4 world_pos = model_matrix * vec4(position, 1.0);
-    world_position = vec3(world_pos);
-    vert_position = world_pos.xyz;
-    vert_normal = normalize(normal_matrix * normal); // Model space
+    vert_normal = vec3(view_matrix * vec4(normal_matrix * normal, 0.0));
     vert_color = color;
     vert_wire = wire;
     gl_Position = projection_matrix * view_matrix * world_pos;
@@ -61,16 +54,12 @@ layout (std140, binding=0) uniform Camera {
     vec3 eye_pos;
 };
 
-in vec3 vert_position[];
-out vec3 geom_position;
 in vec3 vert_normal[];
 out vec3 geom_normal;
 in vec3 vert_color[];
 out vec3 geom_color;
 flat in float vert_wire[];
 out float geom_wire;
-in vec3 world_position[];
-out vec3 g2f_world_position;
 
 noperspective out vec3 dist;
 
@@ -95,31 +84,25 @@ void main() {
 
     // Emit vertex 1
     dist = vec3(ha, 0, 0);
-    geom_position = vert_position[0];
     geom_color = vert_color[0];
     geom_normal = vert_normal[0];
     geom_wire = vert_wire[0];
-    g2f_world_position = world_position[0];
     gl_Position = gl_in[0].gl_Position;
     EmitVertex();
 
     // Emit vertex 2
     dist = vec3(0, hb, 0);
-    geom_position = vert_position[1];
     geom_color = vert_color[1];
     geom_normal = vert_normal[1];
     geom_wire = vert_wire[1];
-    g2f_world_position = world_position[1];
     gl_Position = gl_in[1].gl_Position;
     EmitVertex();
 
     // Emit vertex 3
     dist = vec3(0, 0, hc);
-    geom_position = vert_position[2];
     geom_color = vert_color[2];
     geom_normal = vert_normal[2];
     geom_wire = vert_wire[2];
-    g2f_world_position = world_position[2];
     gl_Position = gl_in[2].gl_Position;
     EmitVertex();
     EndPrimitive();
@@ -128,11 +111,9 @@ void main() {
 
 const std::string MatCapFragmentShader =
     R"(
-in vec3 geom_position;
 in vec3 geom_color;
 in vec3 geom_normal;
 in float geom_wire;
-in vec3 g2f_world_position;
 noperspective in vec3 dist;
 out vec4 out_color;
 
@@ -182,7 +163,7 @@ void main()
         }
     }
 
-    vec2 uv = 0.5 * vec2(view_matrix * vec4(normalize(geom_normal), 0)) + vec2(0.5, 0.5);
+    vec2 uv = 0.498 * vec2(normalize(geom_normal)) + vec2(0.5, 0.5);
     uv.y = 1.0 - uv.y;
     if (valid_texture)
     {
@@ -194,14 +175,8 @@ void main()
 
 const std::string MatCapRGBFragmentShader =
     R"(
-#define RCUBE_MAX_DIRLIGHTS 5
-#define RCUBE_MAX_POINTLIGHTS 50
-//#define RCUBE_TRANSPARENCY_DITHERING
-
-in vec3 geom_position;
 in vec3 geom_color;
 in vec3 geom_normal;
-in vec3 g2f_world_position;
 in float geom_wire;
 noperspective in vec3 dist;
 
@@ -224,22 +199,6 @@ layout (std140, binding=0) uniform Camera {
     vec3 eye_pos;
 };
 
-struct DirectionalLight
-{
-    vec3 direction;
-    float cast_shadow;
-    vec3 color;
-    float intensity;
-    mat4 view_proj;
-};
-
-layout (std140, binding=1) uniform DirectionalLights {
-    DirectionalLight dirlights[RCUBE_MAX_DIRLIGHTS];
-    int num_dirlights;
-};
-
-layout(binding=10) uniform sampler2D shadow_atlas;
-
 uniform vec3 color;
 uniform vec3 emissive_color;
 uniform float opacity;
@@ -255,58 +214,8 @@ uniform bool show_wireframe;
 const vec3 PINK = pow(vec3(255.0 / 255.0, 20.0 / 255.0, 147.0 / 255.0), vec3(2.2));
 const vec3 PURPLE = pow(vec3(138.0 / 255.0, 43.0 / 255.0, 226.0 / 255.0), vec3(2.2));
 
-#ifdef RCUBE_TRANSPARENCY_DITHERING
-// Reference:
-// https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm
-const mat4 bayerMatrix = mat4(
-    vec4(1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0),
-    vec4(13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0),
-    vec4(4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0),
-    vec4(16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0)
-);
-#endif
-
-float shadowAmount(int index, vec3 N)
-{
-    if (dirlights[index].cast_shadow < 0.1)
-    {
-        return 0.0;
-    }
-    // TODO(pradeep): expose this as a uniform
-    const float texel_size = 1.0 / float(textureSize(shadow_atlas, 0).x);
-    float normal_bias = 3;
-    vec4 ls_fragpos = dirlights[index].view_proj * vec4(g2f_world_position + N * normal_bias * texel_size, 1.0);
-    vec3 shadow_coords = ls_fragpos.xyz / ls_fragpos.w;
-    if(shadow_coords.z > 1.0)
-    {
-        return 0.0;
-    }
-    shadow_coords = shadow_coords * 0.5 + 0.5;
-    float shadow = 0.0;
-    float current_z = shadow_coords.z;
-    const float LdotN = clamp(dot(N, -dirlights[index].direction), 0.0, 1.0);
-    float depth_bias = 2;
-    const float bias = depth_bias * texel_size * (1.0 - LdotN);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcf_depth = texture(shadow_atlas, shadow_coords.xy + vec2(x, y) * texel_size).r;
-            shadow += current_z - bias > pcf_depth ? 1.0 : 0.0;
-        }
-    }
-    shadow /= 9.0;
-    return shadow;
-}
-
 void main()
 {
-#ifdef RCUBE_TRANSPARENCY_DITHERING
-    if (bayerMatrix[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4] > opacity)
-    {
-        discard;
-    }
-#endif
     vec3 frag_color = geom_color * color + emissive_color;
 
     int edge_flag = int(round(geom_wire));
@@ -328,17 +237,16 @@ void main()
         }
     }
 
-    vec2 uv = 0.5 * vec2(view_matrix * vec4(normalize(geom_normal), 0)) + vec2(0.5, 0.5);
+    vec2 uv = 0.498 * vec2(normalize(geom_normal)) + vec2(0.5, 0.5);
     uv.y = 1.0 - uv.y;
     vec3 red = texture2D(matcap_red, uv).rgb;
     vec3 green = texture2D(matcap_green, uv).rgb;
     vec3 blue = texture2D(matcap_blue, uv).rgb;
     vec3 black = texture2D(matcap_black, uv).rgb;
-    float visibility = max(1.0 - shadowAmount(0, geom_normal), 0.25);
     vec4 final_color = vec4(frag_color.r * red + frag_color.g * green + frag_color.b * blue + (1.0 - frag_color.r - frag_color.g - frag_color.b) * black, opacity);
 
 #if RCUBE_RENDERPASS == 0
-    out_color = vec4(visibility, visibility, visibility, 1) * final_color;
+    out_color = final_color;
 #elif RCUBE_RENDERPASS == 1
     // Based on https://learnopengl.com/Guest-Articles/2020/OIT/Weighted-Blended
     // and http://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html

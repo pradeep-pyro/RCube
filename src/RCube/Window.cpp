@@ -427,11 +427,11 @@ void Window::execute()
         glfwSwapBuffers(window_);
         time_ = time();
     }
+    beforeTerminate(); // User should override this method
     // Destroy ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-    beforeTerminate(); // User should override this method
     glfwDestroyWindow(window_);
     glfwTerminate();
 }

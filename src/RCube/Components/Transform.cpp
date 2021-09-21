@@ -1,6 +1,7 @@
 #include "RCube/Components/Transform.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/matrix_decompose.hpp"
 #include "imgui.h"
 
 namespace rcube
@@ -58,12 +59,14 @@ void Transform::setOrientation(const glm::quat &ort)
 void Transform::setScale(const glm::vec3 &sc)
 {
     scale_ = sc;
+    scale_ = glm::clamp(scale_, glm::vec3(0), glm::vec3(1e10));
     dirty_ = true;
 }
 
 void Transform::scale(const glm::vec3 &sc)
 {
     scale_ *= sc;
+    scale_ = glm::clamp(scale_, glm::vec3(0), glm::vec3(1e10));
     dirty_ = true;
 }
 
@@ -77,7 +80,7 @@ const glm::mat4 &Transform::worldTransform()
     return world_transform_;
 }
 
-const std::vector<Transform *> Transform::children() const
+const std::vector<Transform *>& Transform::children() const
 {
     return children_;
 }
@@ -88,13 +91,18 @@ void Transform::translate(const glm::vec3 &tr)
     dirty_ = true;
 }
 
-void Transform::rotateModelSpace(const glm::quat &quaternion_model)
+void Transform::rotate(const glm::quat &quaternion_model)
 {
     orientation_ = orientation_ * quaternion_model;
     dirty_ = true;
 }
 
-void Transform::rotateWorldSpace(const glm::quat &quaternion_world)
+glm::quat Transform::relativeRotation(const glm::quat &target, const glm::quat &current)
+{
+    return target * glm::inverse(current);
+}
+
+void Transform::rotateWorld(const glm::quat &quaternion_world)
 {
     orientation_ = quaternion_world * orientation_;
     dirty_ = true;
@@ -134,6 +142,26 @@ void Transform::drawGUI()
     }
 }
 
+const glm::mat4 Transform::parentTransform()
+{
+    return parent_ == nullptr ? glm::mat4(1) : parent_->world_transform_;
+}
+
+void Transform::translateWorld(const glm::vec3 &tr)
+{
+    glm::mat4 translation_matrix = glm::translate(tr);
+    glm::mat4 updated_world_matrix = glm::inverse(this->parentTransform()) * translation_matrix *
+                                     this->parentTransform() * this->localTransform();
+    glm::vec3 uscal, utran, uskew;
+    glm::vec4 upers;
+    glm::quat uorie;
+    glm::decompose(updated_world_matrix, uscal, uorie, utran, uskew, upers);
+    this->position_ = utran;
+    this->orientation_ = uorie;
+    this->scale_ = uscal;
+    dirty_ = true;
+}
+
 void Transform::drawTransformWidget(const glm::mat4 &camera_world_to_view,
                                     const glm::mat4 &camera_view_to_projection,
                                     TransformOperation transformation,
@@ -157,30 +185,44 @@ void Transform::drawTransformWidget(const glm::mat4 &camera_world_to_view,
     {
         snap = &snap_scale;
     }
-    glm::mat4 matrix = glm::mat4(worldTransform());
+    glm::mat4 matrix = worldTransform();
     glm::mat4 delta = glm::identity<glm::mat4>();
     if (ImGuizmo::Manipulate(glm::value_ptr(camera_world_to_view),
                              glm::value_ptr(camera_view_to_projection),
                              static_cast<ImGuizmo::OPERATION>(transformation), transformation_space,
                              glm::value_ptr(matrix), glm::value_ptr(delta), snap))
     {
-        glm::vec3 translation, scale, euler_angles_deg;
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(delta), glm::value_ptr(translation),
-                                              glm::value_ptr(euler_angles_deg),
-                                              glm::value_ptr(scale));
+        glm::vec3 dtranslation, dscale, deuler_angles_deg;
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(delta), glm::value_ptr(dtranslation),
+                                              glm::value_ptr(deuler_angles_deg),
+                                              glm::value_ptr(dscale));
         if (transformation == TransformOperation::Rotate)
         {
-            glm::vec3 euler_angles_rad = glm::radians(euler_angles_deg);
-            glm::quat world_rotation(euler_angles_rad);
-            rotateWorldSpace(world_rotation);
+            glm::vec3 euler_angles_rad = glm::radians(deuler_angles_deg);
+            glm::quat rotation(euler_angles_rad);
+            if (transformation_space == ImGuizmo::MODE::WORLD)
+            {
+                this->rotateWorld(rotation);
+            }
+            else
+            {
+                this->rotate(rotation);
+            }
         }
         else if (transformation == TransformOperation::Translate)
         {
-            translate(translation);
+            if (transformation_space == ImGuizmo::MODE::WORLD)
+            {
+                this->translateWorld(dtranslation);
+            }
+            else
+            {
+                this->translate(dtranslation);
+            }
         }
         else if (transformation == TransformOperation::Scale)
         {
-            this->scale(scale);
+            this->scale(dscale);
         }
     }
 }

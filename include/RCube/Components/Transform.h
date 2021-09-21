@@ -36,6 +36,8 @@ class Transform : public Component<Transform>
   public:
     Transform();
 
+    static glm::quat Transform::relativeRotation(const glm::quat &target, const glm::quat &current);
+
     /**
      * Returns the parent
      * @return Pointer to parent or nullptr if there is none
@@ -120,10 +122,17 @@ class Transform : public Component<Transform>
     const glm::mat4 &worldTransform();
 
     /**
+     * Returns the global transformation matrix in world space of the parent
+     * transform, or an identity matrix if there's no parent
+     * @return 4x4 transformation matrix combining rotation and translation
+     */
+    const glm::mat4 parentTransform();
+
+    /**
      * Returns the children of the current Transform
      * @return list of children
      */
-    const std::vector<Transform *> children() const;
+    const std::vector<Transform *>& children() const;
 
     /**
      * Translate the object by adding the given vector to
@@ -133,18 +142,18 @@ class Transform : public Component<Transform>
     void translate(const glm::vec3 &tr);
 
     /**
-     * Rotate the object by right multiplying the given quaternion with
+     * Rotate the object in local space by right multiplying the given quaternion with
      * current orientation
      * @param quaternion Unit quaternion in model space
      */
-    void rotateModelSpace(const glm::quat &quaternion_model);
+    void rotate(const glm::quat &quaternion_model);
 
     /**
-     * Rotate the object by left multiplying the given quaternion with
+     * Rotate the object in world space by left multiplying the given quaternion with
      * current orientation
      * @param quaternion Unit quaternion in world space
      */
-    void rotateWorldSpace(const glm::quat &quaternion_world);
+    void rotateWorld(const glm::quat &quaternion_world);
 
     /**
      * Transform such that the object is in given the lookAt configuration
@@ -155,6 +164,8 @@ class Transform : public Component<Transform>
     void lookAt(const glm::vec3 &position, const glm::vec3 &target, const glm::vec3 &up);
 
     void drawGUI();
+
+    void translateWorld(const glm::vec3 &tr);
 
     void drawTransformWidget(const glm::mat4 &camera_world_to_view,
                              const glm::mat4 &camera_view_to_projection,

@@ -136,26 +136,26 @@ TriangleMeshData loadOBJ(const std::string &file_name)
                     if (sscanf(word, "%ld/%ld/%ld", &i, &it, &in) == 3)
                     {
                         // face, norm, tex
-                        f.push_back(unsigned int(i < 0 ? i + mesh_data.vertices.size() : i - 1));
-                        ft.push_back(unsigned int(i < 0 ? i + mesh_data.texcoords.size() : i - 1));
-                        fn.push_back(unsigned int(i < 0 ? i + mesh_data.normals.size() : i - 1));
+                        f.push_back((unsigned int)(i < 0 ? i + mesh_data.vertices.size() : i - 1));
+                        ft.push_back((unsigned int)(i < 0 ? i + mesh_data.texcoords.size() : i - 1));
+                        fn.push_back((unsigned int)(i < 0 ? i + mesh_data.normals.size() : i - 1));
                     }
                     else if (sscanf(word, "%ld/%ld", &i, &it) == 2)
                     {
                         // face, tex
-                        f.push_back(unsigned int(i < 0 ? i + mesh_data.vertices.size() : i - 1));
-                        ft.push_back(unsigned int(i < 0 ? i + mesh_data.texcoords.size() : i - 1));
+                        f.push_back((unsigned int)(i < 0 ? i + mesh_data.vertices.size() : i - 1));
+                        ft.push_back((unsigned int)(i < 0 ? i + mesh_data.texcoords.size() : i - 1));
                     }
                     else if (sscanf(word, "%ld//%ld", &i, &it) == 3)
                     {
                         // face, norm
-                        f.push_back(unsigned int(i < 0 ? i + mesh_data.vertices.size() : i - 1));
-                        fn.push_back(unsigned int(i < 0 ? i + mesh_data.normals.size() : i - 1));
+                        f.push_back((unsigned int)(i < 0 ? i + mesh_data.vertices.size() : i - 1));
+                        fn.push_back((unsigned int)(i < 0 ? i + mesh_data.normals.size() : i - 1));
                     }
                     else if (sscanf(word, "%ld", &i) == 1)
                     {
                         // face
-                        f.push_back(unsigned int(i < 0 ? i + mesh_data.vertices.size() : i - 1));
+                        f.push_back((unsigned int)(i < 0 ? i + mesh_data.vertices.size() : i - 1));
                     }
                     else
                     {

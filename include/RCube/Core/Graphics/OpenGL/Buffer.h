@@ -54,63 +54,63 @@ template <BufferType Type> class Buffer
         id_ = 0;
     }
     template <BufferType T = Type,
-              typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
+              typename = typename std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
     void setData(const float *buf, size_t size, size_t offset = 0)
     {
         assert(size * sizeof(float) <= size_);
         glNamedBufferSubData(id_, offset, size * sizeof(float), buf);
     }
     template <BufferType T = Type,
-              typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
+              typename = typename std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
     void setData(const int *buf, size_t size, size_t offset = 0)
     {
         assert(size * sizeof(int) <= size_);
         glNamedBufferSubData(id_, offset, size * sizeof(int), buf);
     }
     template <BufferType T = Type,
-              typename = std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
+              typename = typename std::enable_if<T == BufferType::Array || T == BufferType::Uniform>::type>
     void setData(const std::vector<float> &buf)
     {
         setData(&buf[0], buf.size());
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::Array>::type>
     void setData(const std::vector<glm::vec3> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 3);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Array>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::Array>::type>
     void setData(const std::vector<glm::vec2> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 2);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::ElementArray>::type>
     void setData(const unsigned int *buf, size_t size)
     {
         assert(size * sizeof(unsigned int) <= size_);
         glNamedBufferSubData(id_, 0, size * sizeof(unsigned int), buf);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::ElementArray>::type>
     void setData(const std::vector<unsigned int> &buf)
     {
         setData(&buf[0], buf.size());
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::ElementArray>::type>
     void setData(const std::vector<glm::uvec3> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 3);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::ElementArray>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::ElementArray>::type>
     void setData(const std::vector<glm::uvec2> &buf)
     {
         setData(glm::value_ptr(buf[0]), buf.size() * 2);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::PixelPack>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::PixelPack>::type>
     void *map()
     {
         void *mapped_buffer = glMapNamedBuffer(id_, GL_READ_ONLY);
         return mapped_buffer;
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::PixelPack>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::PixelPack>::type>
     void unmap()
     {
         glUnmapNamedBuffer(id_);
@@ -131,7 +131,7 @@ template <BufferType Type> class Buffer
     {
         glBindBuffer(GLenum(Type), 0);
     }
-    template <BufferType T = Type, typename = std::enable_if<T == BufferType::Uniform>::type>
+    template <BufferType T = Type, typename = typename std::enable_if<T == BufferType::Uniform>::type>
     void bindBase(int index) const
     {
         glBindBufferBase(GLenum(Type), index, id_);

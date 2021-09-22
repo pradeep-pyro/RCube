@@ -36,9 +36,9 @@ TriangleMeshData icoSphere(float radius, unsigned int subdivisions)
             glm::vec3 bc = (b + c) / 2.f;
             glm::vec3 ca = (c + a) / 2.f;
             verts.insert(verts.end(), {ab, bc, ca});
-            unsigned int ij = unsigned int(verts.size()) - 3;
-            unsigned int jk = unsigned int(verts.size()) - 2;
-            unsigned int ki = unsigned int(verts.size()) - 1;
+            unsigned int ij = (unsigned int)(verts.size()) - 3;
+            unsigned int jk = (unsigned int)(verts.size()) - 2;
+            unsigned int ki = (unsigned int)(verts.size()) - 1;
             faces.insert(faces.end(), {{i, ij, ki}, {ij, j, jk}, {ki, jk, k}});
             faces[idx] = {jk, ki, ij};
         }

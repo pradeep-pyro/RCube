@@ -36,7 +36,7 @@ class Transform : public Component<Transform>
   public:
     Transform();
 
-    static glm::quat Transform::relativeRotation(const glm::quat &target, const glm::quat &current);
+    static glm::quat relativeRotation(const glm::quat &target, const glm::quat &current);
 
     /**
      * Returns the parent

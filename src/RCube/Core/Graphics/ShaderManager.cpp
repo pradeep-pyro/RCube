@@ -1,5 +1,5 @@
 #include "RCube/Core/Graphics/ShaderManager.h"
-#include < iostream>
+#include <iostream>
 
 namespace rcube
 {

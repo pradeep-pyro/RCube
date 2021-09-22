@@ -14,7 +14,7 @@ const glm::vec3 &Ray::origin() const
     return origin_;
 }
 
-void Ray::setOrigin(glm::vec3 &origin)
+void Ray::setOrigin(const glm::vec3 &origin)
 {
     origin_ = origin;
 }

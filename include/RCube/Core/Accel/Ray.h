@@ -21,7 +21,7 @@ class Ray
 
     const glm::vec3 &origin() const;
 
-    void setOrigin(glm::vec3 &origin);
+    void setOrigin(const glm::vec3 &origin);
 
     const glm::vec3 &direction() const;
 

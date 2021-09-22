@@ -201,7 +201,7 @@ void colormap(const double palette[256][3], float value, glm::vec3 &rgb)
     const float b_min = static_cast<float>(palette[least][2]);
     const float b_max = static_cast<float>(palette[most][2]);
 
-    float t = std::max(zero, std::min(one, fmod(value_clamped * static_cast<float>(256), one)));
+    float t = std::max(zero, std::min(one, (float)fmod(value_clamped * 256.f, one)));
 
     rgb.r = std::max(zero, std::min(one, (one - t) * r_min + t * r_max));
     rgb.g = std::max(zero, std::min(one, (one - t) * g_min + t * g_max));

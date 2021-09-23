@@ -39,6 +39,7 @@ struct TransformWidgetsProps
     float snap_scale = 0.f;
     glm::vec3 snap_translation = glm::vec3(0.f);
     TransformOperation operation = TransformOperation::None;
+    ImGuizmo::MODE space = ImGuizmo::MODE::WORLD;
 };
 
 /**
@@ -118,6 +119,10 @@ class RCubeViewer : public rcube::Window
     virtual void draw() override;
 
     virtual void drawGUI();
+
+    virtual void drawMainMenuBarGUI();
+
+    virtual void drawEntityInspectorGUI();
 
     virtual void onResize(int w, int h) override;
 

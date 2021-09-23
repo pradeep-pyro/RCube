@@ -173,32 +173,30 @@ void RCubeViewer::draw()
     ImGui::Render();
 }
 
-void RCubeViewer::drawGUI()
+void RCubeViewer::drawMainMenuBarGUI()
 {
-    ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode |
-                                              ImGuiDockNodeFlags_NoDockingInCentralNode);
-    ImGui::Begin("RCubeViewer");
-
-    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
-                ImGui::GetIO().Framerate);
-
-    // Screenshot
-    static ImVec4 coral_color = ImVec4(1.f, 127.f / 255.f, 80.f / 255.f, 1.f);
-    ImGui::PushStyleColor(ImGuiCol_Button, coral_color);
-    if (ImGui::Button("Screenshot", ImVec2(ImGui::GetContentRegionAvailWidth(), 0.f)))
+    ImGui::BeginMainMenuBar();
+    if (ImGui::BeginMenu("File"))
     {
-        needs_screenshot_ = true;
+        if (ImGui::MenuItem("Screenshot"))
+        {
+            needs_screenshot_ = true;
+        }
+        if (ImGui::MenuItem("Exit"))
+        {
+            this->shouldClose(true);
+        }
+        ImGui::EndMenu();
     }
-    ImGui::PopStyleColor();
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Default camera
-    Camera *cam = camera_.get<Camera>();
-    Transform *cam_tr = camera_.get<Transform>();
-    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::BeginMenu("Camera"))
     {
+        Camera *cam = camera_.get<Camera>();
         CameraController *cam_ctrl = camera_.get<CameraController>();
-
+        Transform *cam_tr = camera_.get<Transform>();
+        cam->drawGUI();
+        ImGui::Separator();
+        cam_ctrl->drawGUI();
+        ImGui::Separator();
         // Fit camera to extents if requested in previous frame
         if (needs_camera_extents_fit_)
         {
@@ -252,13 +250,67 @@ void RCubeViewer::drawGUI()
         {
             needs_camera_extents_fit_ = true;
         }
-        cam->drawGUI();
-        cam_ctrl->drawGUI();
+        ImGui::EndMenu();
     }
+    if (ImGui::BeginMenu("Transform"))
+    {
+        if (ImGui::MenuItem("Translate", "T",
+                            transform_widgets_.operation == TransformOperation::Translate))
+        {
+            transform_widgets_.operation = TransformOperation::Translate;
+        }
+        if (ImGui::MenuItem("Rotate", "R",
+                            transform_widgets_.operation == TransformOperation::Rotate))
+        {
+            transform_widgets_.operation = TransformOperation::Rotate;
+        }
+        if (ImGui::MenuItem("Scale", "S",
+                            transform_widgets_.operation == TransformOperation::Scale))
+        {
+            transform_widgets_.operation = TransformOperation::Scale;
+        }
+        if (ImGui::MenuItem("None", "Esc",
+                            transform_widgets_.operation == TransformOperation::None))
+        {
+            transform_widgets_.operation = TransformOperation::None;
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Local space", nullptr,
+                            transform_widgets_.space == ImGuizmo::MODE::LOCAL))
+        {
+            transform_widgets_.space = ImGuizmo::MODE::LOCAL;
+        }
+        if (ImGui::MenuItem("World space", nullptr,
+                            transform_widgets_.space == ImGuizmo::MODE::WORLD))
+        {
+            transform_widgets_.space = ImGuizmo::MODE::WORLD;
+        }
+        ImGui::Separator();
+        static float snap_pos = 0.f;
+        if (ImGui::SliderFloat("Snap tr.", &snap_pos, 0.f, 100.f))
+        {
+            transform_widgets_.snap_translation = glm::vec3(snap_pos);
+        }
+        ImGui::SliderFloat("Snap ang. (deg.)", &transform_widgets_.snap_angle_degrees, 0.f, 360.f);
+        ImGui::SliderFloat("Snap sc.", &transform_widgets_.snap_scale, 0.1f, 100.f);
+        ImGui::EndMenu();
+    }
+    ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+    ImGui::PushItemWidth(-500);
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate);
+    ImGui::PopItemWidth();
+    ImGui::EndMainMenuBar();
+}
 
-    ///////////////////////////////////////////////////////////////////////////
+void RCubeViewer::drawEntityInspectorGUI()
+{
+    ImGui::Begin("Entity Inspector");
 
-    if (ImGui::CollapsingHeader("Entities", ImGuiTreeNodeFlags_DefaultOpen))
+    Camera *cam = camera_.get<Camera>();
+    Transform *cam_tr = camera_.get<Transform>();
+
+    ImGui::Text("Entities");
     {
         auto it = world_.entities();
 
@@ -313,77 +365,98 @@ void RCubeViewer::drawGUI()
                             transform_widgets_.operation,
                             transform_widgets_.operation == TransformOperation::Scale
                                 ? ImGuizmo::MODE::LOCAL
-                                : ImGuizmo::MODE::WORLD,
+                                : transform_widgets_.space,
                             transform_widgets_.snap_translation,
                             transform_widgets_.snap_angle_degrees, transform_widgets_.snap_scale);
                     }
                 }
+                ImGui::Separator();
+                ImGui::Text("Components");
                 ImGui::PushID(current_item);
-                if (ImGui::BeginTabBar("Components"))
+                // if (ImGui::BeginTabBar("Components"))
                 {
                     if (ent.has<Drawable>())
                     {
-                        if (ImGui::BeginTabItem("Drawable"))
+                        // if (ImGui::BeginTabItem("Drawable"))
+                        if (ImGui::CollapsingHeader("Drawable", ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             ent.get<Drawable>()->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
-                    if (tr != nullptr /*ent.has<Transform>()*/)
+                    if (tr != nullptr)
                     {
-                        if (ImGui::BeginTabItem("Transform"))
+                        // if (ImGui::BeginTabItem("Transform"))
+                        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             tr->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
                     if (ent.has<Material>())
                     {
-                        if (ImGui::BeginTabItem("Material"))
+                        // if (ImGui::BeginTabItem("Material"))
+                        if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             ent.get<Material>()->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
                     if (ent.has<ForwardMaterial>())
                     {
-                        if (ImGui::BeginTabItem("ForwardMaterial"))
+                        // if (ImGui::BeginTabItem("ForwardMaterial"))
+                        if (ImGui::CollapsingHeader("ForwardMaterial",
+                                                    ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             ent.get<ForwardMaterial>()->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
                     if (ent.has<Camera>())
                     {
-                        if (ImGui::BeginTabItem("Camera"))
+                        // if (ImGui::BeginTabItem("Camera"))
+                        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             ent.get<Camera>()->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
                     if (ent.has<DirectionalLight>())
                     {
-                        if (ImGui::BeginTabItem("DirectionalLight"))
+                        // if (ImGui::BeginTabItem("DirectionalLight"))
+                        if (ImGui::CollapsingHeader("DirectionalLight",
+                                                    ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             ent.get<DirectionalLight>()->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
                     if (ent.has<PointLight>())
                     {
-                        if (ImGui::BeginTabItem("PointLight"))
+                        // if (ImGui::BeginTabItem("PointLight"))
+                        if (ImGui::CollapsingHeader("PointLight", ImGuiTreeNodeFlags_DefaultOpen))
                         {
                             ent.get<PointLight>()->drawGUI();
-                            ImGui::EndTabItem();
+                            // ImGui::EndTabItem();
                         }
                     }
-                    ImGui::EndTabBar();
+                    // ImGui::EndTabBar();
                 }
                 ImGui::PopID();
             }
         }
     }
     ImGui::End();
+}
+
+void RCubeViewer::drawGUI()
+{
+    ImGui::DockSpaceOverViewport(nullptr, ImGuiDockNodeFlags_PassthruCentralNode |
+                                              ImGuiDockNodeFlags_NoDockingInCentralNode);
+
+    drawMainMenuBarGUI();
+
+    drawEntityInspectorGUI();
 }
 
 void RCubeViewer::onResize(int w, int h)

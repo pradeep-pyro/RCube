@@ -80,6 +80,7 @@ class RCubeViewer : public rcube::Window
     bool needs_screenshot_ = false;
     bool show_transform_widgets_ = true;
     TransformWidgetsProps transform_widgets_;
+    std::string selected_entity_ = "(None)";
 
   public:
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
@@ -96,6 +97,12 @@ class RCubeViewer : public rcube::Window
     EntityHandle getEntity(std::string name);
 
     void removeEntity(EntityHandle ent);
+
+    void selectEntity(const std::string &name);
+
+    const std::string & selectedEntity() const;
+
+    void clearSelection();
 
     EntityHandle camera();
 

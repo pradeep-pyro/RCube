@@ -150,6 +150,16 @@ EntityHandle RCubeViewer::camera()
     return camera_;
 }
 
+void RCubeViewer::selectEntity(const std::string &name)
+{
+    selected_entity_ = name;
+}
+
+const std::string &RCubeViewer::selectedEntity() const
+{
+    return selected_entity_;
+}
+
 void RCubeViewer::initialize()
 {
     // Update the PBR image-based lighting maps for all object's materials
@@ -335,16 +345,15 @@ void RCubeViewer::drawEntityInspectorGUI()
             entity_names.push_back(ent.get<Name>()->name.c_str());
         }
 
-        static const char *current_item = entity_names[0];
         ImGui::PushItemWidth(-1);
         if (ImGui::ListBoxHeader(""))
         {
             for (int i = 0; i < entity_names.size(); ++i)
             {
-                bool is_selected = (current_item == entity_names[i]);
+                bool is_selected = (selected_entity_ == entity_names[i]);
                 if (ImGui::Selectable(entity_names[i], is_selected))
                 {
-                    current_item = entity_names[i];
+                    selected_entity_ = entity_names[i];
                 }
                 if (is_selected)
                 {
@@ -354,9 +363,9 @@ void RCubeViewer::drawEntityInspectorGUI()
             ImGui::ListBoxFooter();
         }
         ImGui::PopItemWidth();
-        if (current_item != "(None)")
+        if (selected_entity_ != "(None)")
         {
-            EntityHandle ent = getEntity(std::string(current_item));
+            EntityHandle ent = getEntity(selected_entity_);
             if (ent.valid())
             {
                 Transform *tr = ent.get<Transform>();
@@ -376,7 +385,7 @@ void RCubeViewer::drawEntityInspectorGUI()
                 }
                 ImGui::Separator();
                 ImGui::Text("Components");
-                ImGui::PushID(current_item);
+                ImGui::PushID(selected_entity_.c_str());
                 // if (ImGui::BeginTabBar("Components"))
                 {
                     if (ent.has<Drawable>())
@@ -497,6 +506,11 @@ void RCubeViewer::updateImageBasedLighting()
         camera_.get<Camera>()->prefilter = prefilter_map;
         camera_.get<Camera>()->brdfLUT = brdf_lut;
     }
+}
+
+void RCubeViewer::clearSelection()
+{
+    selected_entity_ = "(None)";
 }
 
 ///////////////////////////////////////////////////////////////////////////////

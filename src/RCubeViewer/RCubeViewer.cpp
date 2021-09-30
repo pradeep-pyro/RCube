@@ -287,12 +287,16 @@ void RCubeViewer::drawMainMenuBarGUI()
         }
         ImGui::Separator();
         static float snap_pos = 0.f;
-        if (ImGui::SliderFloat("Snap tr.", &snap_pos, 0.f, 100.f))
+        if (ImGui::SliderFloat("Snap tr.", &snap_pos, 0.f, 1.f))
         {
             transform_widgets_.snap_translation = glm::vec3(snap_pos);
         }
-        ImGui::SliderFloat("Snap ang. (deg.)", &transform_widgets_.snap_angle_degrees, 0.f, 360.f);
-        ImGui::SliderFloat("Snap sc.", &transform_widgets_.snap_scale, 0.1f, 100.f);
+        static int snap_angle = 0;
+        if (ImGui::SliderInt("Snap ang. (deg.)", &snap_angle, 0, 90))
+        {
+            transform_widgets_.snap_angle_degrees = static_cast<float>(snap_angle);
+        }
+        ImGui::SliderFloat("Snap sc.", &transform_widgets_.snap_scale, 0.1f, 1.f);
         ImGui::EndMenu();
     }
     ImGui::SameLine(ImGui::GetWindowWidth() - 200);

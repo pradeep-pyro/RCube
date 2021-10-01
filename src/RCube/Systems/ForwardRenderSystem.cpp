@@ -263,7 +263,7 @@ void ForwardRenderSystem::initializePostprocess()
     // HDR framebuffer for postprocessing
     framebuffer_pp_ = Framebuffer::create();
     auto pp_color =
-        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB16F);
+        Texture2D::create(resolution_.x, resolution_.y, 1, TextureInternalFormat::RGB8);
     framebuffer_pp_->setColorAttachment(0, pp_color);
 
     shader_blur_ = common::fullScreenQuadShader(shaders::BlurFragmentShader);

@@ -51,6 +51,14 @@ class ForwardRenderSystem : public System
         }
         return framebuffer_pick_->colorAttachment(0);
     }
+    Image screenshot() const
+    {
+        if (framebuffer_pp_ == nullptr)
+        {
+            return Image();
+        }
+        return framebuffer_pp_->getImage();
+    }
 
   protected:
     void setCameraUBO(const glm::vec3 &eye_pos, const glm::mat4 &world_to_view,

@@ -14,9 +14,9 @@
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include <chrono>
+#include <filesystem>
 #include <iomanip>
 #include <sstream>
-#include <filesystem>
 
 namespace rcube
 {
@@ -190,7 +190,6 @@ void RCubeViewer::draw()
 void RCubeViewer::drawMainMenuBarGUI()
 {
     ImGui::BeginMainMenuBar();
-    static int frames_passed_since_screenshot = 181;
 
     if (ImGui::BeginMenu("File"))
     {
@@ -209,7 +208,7 @@ void RCubeViewer::drawMainMenuBarGUI()
                 screenshot_filename_ += ".bmp";
                 screenshot_filename_ = std::filesystem::absolute(screenshot_filename_).string();
                 im.saveBMP(screenshot_filename_, true);
-                frames_passed_since_screenshot = 0;
+                time_point_ = std::chrono::high_resolution_clock::now();
             }
         }
         if (ImGui::MenuItem("Exit"))
@@ -329,20 +328,18 @@ void RCubeViewer::drawMainMenuBarGUI()
         ImGui::SliderFloat("Snap sc.", &transform_widgets_.snap_scale, 0.1f, 1.f);
         ImGui::EndMenu();
     }
-    if (frames_passed_since_screenshot <= 180)
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - time_point_)
+            .count() <= 3000)
     {
         ImGui::SameLine(0.f, 10.f);
         ImGui::Text(("Saved to: " + screenshot_filename_).c_str());
-        ++frames_passed_since_screenshot;
     }
-    else
-    {
-        ImGui::SameLine(ImGui::GetWindowWidth() - 200);
-        ImGui::PushItemWidth(-500);
-        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
-                    ImGui::GetIO().Framerate);
-        ImGui::PopItemWidth();
-    }
+    ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+    ImGui::PushItemWidth(-500);
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate);
+    ImGui::PopItemWidth();
     ImGui::EndMainMenuBar();
 }
 

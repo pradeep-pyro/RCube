@@ -26,6 +26,7 @@
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
 #include <memory>
+#include <chrono>
 
 namespace rcube
 {
@@ -77,6 +78,7 @@ class RCubeViewer : public rcube::Window
     rcube::EntityHandle ground_;
     rcube::EntityHandle camera_;
     std::string screenshot_filename_ = "";
+    std::chrono::time_point<std::chrono::high_resolution_clock> time_point_;
     bool needs_camera_extents_fit_ = false;
     bool show_transform_widgets_ = true;
     TransformWidgetsProps transform_widgets_;

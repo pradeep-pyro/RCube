@@ -55,7 +55,6 @@ class World
         updateEntityToSystem(entity, ComponentType::family(), true);
     }
 
-
     /**
      * Remove the component of type ComponentType from the entity
      * An easier approach is to get an EntityHandle from create entity and
@@ -94,6 +93,22 @@ class World
      * Adds a system that will process certain components
      */
     void addSystem(std::unique_ptr<System> sys);
+
+    /**
+     * Gets a system given its type as a template argument
+     */
+    template <typename SystemType> SystemType *getSystem()
+    {
+        for (auto &sys : systems_)
+        {
+            auto sys_ptr = dynamic_cast<SystemType *>(sys.get());
+            if (sys_ptr != nullptr)
+            {
+                return sys_ptr;
+            }
+        }
+        return nullptr;
+    }
 
     /**
      * Creates an entity and returns an EntityHandle

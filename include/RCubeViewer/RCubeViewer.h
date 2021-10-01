@@ -76,8 +76,8 @@ class RCubeViewer : public rcube::Window
     rcube::World world_;
     rcube::EntityHandle ground_;
     rcube::EntityHandle camera_;
+    std::string screenshot_filename_ = "";
     bool needs_camera_extents_fit_ = false;
-    bool needs_screenshot_ = false;
     bool show_transform_widgets_ = true;
     TransformWidgetsProps transform_widgets_;
     std::string selected_entity_ = "(None)";

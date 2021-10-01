@@ -13,6 +13,10 @@
 #include "RCubeViewer/Systems/PickTooltipSystem.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <filesystem>
 
 namespace rcube
 {
@@ -186,11 +190,27 @@ void RCubeViewer::draw()
 void RCubeViewer::drawMainMenuBarGUI()
 {
     ImGui::BeginMainMenuBar();
+    static int frames_passed_since_screenshot = 181;
+
     if (ImGui::BeginMenu("File"))
     {
         if (ImGui::MenuItem("Screenshot"))
         {
-            needs_screenshot_ = true;
+            auto render_system = world_.getSystem<ForwardRenderSystem>();
+            if (render_system != nullptr)
+            {
+                auto im = render_system->screenshot();
+                // Get timestamp for filename
+                auto time = std::time(nullptr);
+                std::stringstream ss;
+                ss << std::put_time(std::localtime(&time), "%F_%T");
+                screenshot_filename_ = ss.str();
+                std::replace(screenshot_filename_.begin(), screenshot_filename_.end(), ':', '-');
+                screenshot_filename_ += ".bmp";
+                screenshot_filename_ = std::filesystem::absolute(screenshot_filename_).string();
+                im.saveBMP(screenshot_filename_, true);
+                frames_passed_since_screenshot = 0;
+            }
         }
         if (ImGui::MenuItem("Exit"))
         {
@@ -309,11 +329,20 @@ void RCubeViewer::drawMainMenuBarGUI()
         ImGui::SliderFloat("Snap sc.", &transform_widgets_.snap_scale, 0.1f, 1.f);
         ImGui::EndMenu();
     }
-    ImGui::SameLine(ImGui::GetWindowWidth() - 200);
-    ImGui::PushItemWidth(-500);
-    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
-                ImGui::GetIO().Framerate);
-    ImGui::PopItemWidth();
+    if (frames_passed_since_screenshot <= 180)
+    {
+        ImGui::SameLine(0.f, 10.f);
+        ImGui::Text(("Saved to: " + screenshot_filename_).c_str());
+        ++frames_passed_since_screenshot;
+    }
+    else
+    {
+        ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+        ImGui::PushItemWidth(-500);
+        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                    ImGui::GetIO().Framerate);
+        ImGui::PopItemWidth();
+    }
     ImGui::EndMainMenuBar();
 }
 

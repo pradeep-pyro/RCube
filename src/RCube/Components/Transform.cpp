@@ -75,12 +75,23 @@ const glm::mat4 &Transform::localTransform()
     return local_transform_;
 }
 
+void Transform::setLocalTransform(const glm::mat4 &mat)
+{
+    glm::vec3 scal, tran, skew;
+    glm::vec4 pers;
+    glm::quat orie;
+    glm::decompose(mat, scal, orie, tran, skew, pers);
+    setPosition(tran);
+    setOrientation(orie);
+    setScale(scal);
+}
+
 const glm::mat4 &Transform::worldTransform()
 {
     return world_transform_;
 }
 
-const std::vector<Transform *>& Transform::children() const
+const std::vector<Transform *> &Transform::children() const
 {
     return children_;
 }

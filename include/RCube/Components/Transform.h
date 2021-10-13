@@ -111,9 +111,17 @@ class Transform : public Component<Transform>
 
     /**
      * Returns the local transformation matrix
-     * @return 4x4 transformation matrix combining rotation and translation
+     * @return 4x4 transformation matrix combining scale, rotation and translation
      */
     const glm::mat4 &localTransform();
+
+    /**
+     * Sets the local transformation matrix and extracts the position, orientation
+     * and scale from it.
+     *
+     * @param mat 4x4 transformation matrix combining scale, rotation and translation
+     */
+    void setLocalTransform(const glm::mat4 &mat);
 
     /**
      * Returns the global transformation matrix in world space
@@ -132,7 +140,7 @@ class Transform : public Component<Transform>
      * Returns the children of the current Transform
      * @return list of children
      */
-    const std::vector<Transform *>& children() const;
+    const std::vector<Transform *> &children() const;
 
     /**
      * Translate the object by adding the given vector to

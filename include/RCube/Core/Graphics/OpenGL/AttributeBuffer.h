@@ -143,7 +143,14 @@ class AttributeBuffer
                                      std::to_string(data.size()) + "which is not divisible by " +
                                      std::to_string(dim_) + " (dim)");
         }
-        data_ = data;
+        if (data.empty())
+        {
+            data_.clear();
+        }
+        else
+        {
+            data_ = data;
+        }
     }
 
     void setData(const std::vector<glm::vec2> &data)
@@ -153,7 +160,14 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to set 2D data, expected " + std::to_string(dim_) +
                                      "D data");
         }
-        data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 2);
+        if (data.empty())
+        {
+            data_.clear();
+        }
+        else
+        {
+            data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 2);
+        }
     }
 
     void setData(const std::vector<glm::vec3> &data)
@@ -163,7 +177,14 @@ class AttributeBuffer
             throw std::runtime_error("Attempting to set 3D data, expected " + std::to_string(dim_) +
                                      "D data");
         }
-        data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 3);
+        if (data.empty())
+        {
+            data_.clear();
+        }
+        else
+        {
+            data_.assign(glm::value_ptr(data[0]), glm::value_ptr(data[0]) + data.size() * 3);
+        }
     }
 
     void update()

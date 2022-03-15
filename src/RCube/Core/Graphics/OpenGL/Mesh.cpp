@@ -385,6 +385,18 @@ void Mesh::drawGUI()
     }
 }
 
+AABB Mesh::boundingBox()
+{
+    AABB bbox;
+    auto positions = attribute("positions")->ptrVec3();
+    size_t num_vertices = attribute("positions")->count();
+    for (size_t i = 0; i < num_vertices; ++i)
+    {
+        bbox.expandBy(positions[i]);
+    }
+    return bbox;
+}
+
 void Mesh::use() const
 {
     if (!valid())

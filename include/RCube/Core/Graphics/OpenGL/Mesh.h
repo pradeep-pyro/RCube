@@ -156,6 +156,8 @@ class Mesh
 
     virtual void drawGUI();
 
+    AABB boundingBox();
+
   private:
     void setDefaultValue(GLuint id, const glm::vec3 &val);
 

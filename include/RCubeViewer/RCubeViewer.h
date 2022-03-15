@@ -25,8 +25,9 @@
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
-#include <memory>
+#include "RCubeViewer/Systems/PickSystem.h"
 #include <chrono>
+#include <memory>
 
 namespace rcube
 {
@@ -83,6 +84,7 @@ class RCubeViewer : public rcube::Window
     bool show_transform_widgets_ = true;
     TransformWidgetsProps transform_widgets_;
     std::string selected_entity_ = "(None)";
+    rcube::viewer::PingPongHelper<std::shared_ptr<rcube::PixelPackBuffer>> pbos_; // For picking
 
   public:
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
@@ -102,7 +104,9 @@ class RCubeViewer : public rcube::Window
 
     void selectEntity(const std::string &name);
 
-    const std::string & selectedEntity() const;
+    void getEntityAtCoord(double xpos, double ypos, EntityHandle &entity, size_t &primitiveId);
+
+    const std::string &selectedEntity() const;
 
     void clearSelection();
 

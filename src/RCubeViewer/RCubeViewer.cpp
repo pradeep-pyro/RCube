@@ -10,7 +10,6 @@
 #include "RCubeViewer/Components/Name.h"
 #include "RCubeViewer/Systems/CameraControllerSystem.h"
 #include "RCubeViewer/Systems/PickSystem.h"
-#include "RCubeViewer/Systems/PickTooltipSystem.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include <chrono>
@@ -38,7 +37,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props)
     }
     world_.addSystem(std::make_unique<CameraControllerSystem>());
     world_.addSystem(std::make_unique<PickSystem>());
-    world_.addSystem(std::make_unique<PickTooltipSystem>());
 
     // Create a default camera
     camera_ = createCamera();
@@ -157,6 +155,66 @@ EntityHandle RCubeViewer::camera()
 void RCubeViewer::selectEntity(const std::string &name)
 {
     selected_entity_ = name;
+}
+
+void RCubeViewer::getEntityAtCoord(double xpos, double ypos, EntityHandle &entity,
+                                   size_t &primitiveId)
+{
+    auto render_base_system = world_.getSystem("ForwardRenderSystem");
+    if (render_base_system == nullptr)
+    {
+        return;
+    }
+    ForwardRenderSystem *render_system = dynamic_cast<ForwardRenderSystem *>(render_base_system);
+    if (render_system == nullptr)
+    {
+        return;
+    }
+    // Get the texture holding the picking information
+    std::shared_ptr<Texture2D> objPrimID = render_system->objPrimIDTexture();
+    if (objPrimID != nullptr)
+    {
+        int w, h;
+        glfwGetWindowSize(window_, &w, &h);
+
+        // Initialize double-buffered PBOs if not already available
+        if (pbos_.first() == nullptr)
+        {
+            pbos_.first() = PixelPackBuffer::create(size_t(w) * size_t(h), GL_STREAM_READ);
+        }
+        if (pbos_.second() == nullptr)
+        {
+            pbos_.second() = PixelPackBuffer::create(size_t(w) * size_t(h), GL_STREAM_READ);
+        }
+        // Transform mouse coordinate to texture image space
+        xpos /= w;
+        ypos /= h;
+        ypos = 1.0 - ypos;
+        xpos *= objPrimID->width();
+        ypos *= objPrimID->height();
+        // Return if mouse is outside window
+        if (xpos < 0 || ypos < 0 || xpos >= objPrimID->width() || ypos >= objPrimID->height())
+        {
+            return;
+        }
+        // Copy a single pixel from the texture asynchronously
+        pbos_.first()->use();
+        objPrimID->getSubImage(int(xpos), int(ypos), 1, 1, (uint32_t *)NULL, 2);
+        pbos_.second()->use();
+        GLuint *ptr = (GLuint *)pbos_.second()->map();
+        int entity_id = -1;
+        int primitive_id = -1;
+        if (ptr != nullptr)
+        {
+            entity.world = &world_;
+            entity.entity = ptr[0]; // Entity ID
+            primitive_id = ptr[1];  // Primitive ID
+            pbos_.second()->unmap();
+        }
+        pbos_.second()->done();
+        // Swap the buffers
+        pbos_.increment();
+    }
 }
 
 const std::string &RCubeViewer::selectedEntity() const

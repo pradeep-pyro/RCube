@@ -101,8 +101,8 @@ class Window
     virtual void onKeyPress(int key, int mods);
     virtual void onKeyRelease(int key, int mods);
     virtual void onKeyRepeat(int key, int mods);
-    virtual void onMousePress(int key, int mods);
-    virtual void onMouseRelease(int key, int mods);
+    virtual void onMousePress(int button, int mods);
+    virtual void onMouseRelease(int button, int mods);
     virtual void onMouseMove(double xpos, double ypos);
     virtual void onScroll(double xoffset, double yoffset);
     double time();

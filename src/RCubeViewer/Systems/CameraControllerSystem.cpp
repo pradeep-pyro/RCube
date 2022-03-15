@@ -37,11 +37,6 @@ CameraControllerSystem::CameraControllerSystem() : System()
 }
 void CameraControllerSystem::update(bool /*force*/)
 {
-    if (ImGui::GetIO().WantCaptureMouse || ImGuizmo::IsUsing())
-    {
-        InputState::instance().setScrollAmount(0, 0);
-        return;
-    }
     const int x = static_cast<int>(InputState::instance().mousePos()[0]);
     const int y = static_cast<int>(InputState::instance().mousePos()[1]);
     const glm::dvec2 scroll = InputState::instance().scrollAmount();
@@ -51,6 +46,13 @@ void CameraControllerSystem::update(bool /*force*/)
         CameraController *opz = world_->getComponent<CameraController>(ent);
         if (!opz->active)
         {
+            continue;
+        }
+        if (ImGui::GetIO().WantCaptureMouse || ImGuizmo::IsUsing())
+        {
+            InputState::instance().setScrollAmount(0, 0);
+            opz->panning_ = false;
+            opz->orbiting_ = false;
             continue;
         }
         Camera *cam = world_->getComponent<Camera>(ent);

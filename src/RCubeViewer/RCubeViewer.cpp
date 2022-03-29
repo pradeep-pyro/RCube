@@ -6,12 +6,12 @@
 #include "RCube/Core/Graphics/TexGen/CheckerBoard.h"
 #include "RCube/Core/Graphics/TexGen/Gradient.h"
 #include "RCube/Systems/DeferredRenderSystem.h"
-#include "RCubeViewer/Components/CameraController.h"
 #include "RCubeViewer/Components/Name.h"
-#include "RCubeViewer/Systems/CameraControllerSystem.h"
-#include "RCubeViewer/Systems/PickSystem.h"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/string_cast.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include <chrono>
 #include <filesystem>
 #include <iomanip>
@@ -22,8 +22,29 @@ namespace rcube
 namespace viewer
 {
 
+void initImGUI(GLFWwindow *window)
+{
+    IMGUI_CHECKVERSION();
+
+    ImGui::CreateContext();
+
+    // Set up ImGUI glfw bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    const char *glsl_version = "#version 420";
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImFontConfig config;
+    config.OversampleH = 5;
+    config.OversampleV = 5;
+
+    ImGui::StyleColorsClassic();
+}
+
 RCubeViewer::RCubeViewer(RCubeViewerProps props)
-    : Window(props.title), transform_widgets_(props.transform_widgets)
+    : Window(props.title), transform_widgets_(props.transform_widgets),
+      time_per_frame_(1.0 / static_cast<double>(props.frames_per_second))
 {
     world_.addSystem(std::make_unique<TransformSystem>());
     world_.addSystem(std::make_unique<CameraSystem>());
@@ -35,8 +56,6 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props)
     {
         world_.addSystem(std::make_unique<ForwardRenderSystem>(props.resolution, props.MSAA));
     }
-    world_.addSystem(std::make_unique<CameraControllerSystem>());
-    world_.addSystem(std::make_unique<PickSystem>());
 
     // Create a default camera
     camera_ = createCamera();
@@ -49,6 +68,9 @@ RCubeViewer::RCubeViewer(RCubeViewerProps props)
     camera_.get<Camera>()->createGradientSkyBox(props.background_color_top,
                                                 props.background_color_bottom);
     camera_.get<Camera>()->use_skybox = true;
+
+    // Assign camera to controller
+    ctrl_.setCamera(camera_.get<Camera>(), camera_.get<Transform>());
 
     // Create a sunlight
     if (props.sunlight)
@@ -224,25 +246,38 @@ const std::string &RCubeViewer::selectedEntity() const
 
 void RCubeViewer::initialize()
 {
+    initImGUI(window_);
     // Update the PBR image-based lighting maps for all object's materials
     updateImageBasedLighting();
 }
 
 void RCubeViewer::draw()
 {
-    // ImGuizmo
-    ImGuizmo::BeginFrame();
-    ImGuizmo::Enable(true);
-    ImGuiIO &io = ImGui::GetIO();
-    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-
-    // Create GUI
-    drawGUI();
-    customGUI(*this);
-
     // Render everything in the scene
-    world_.update();
-    ImGui::Render();
+    double now = time();
+    double delta_time = now - last_time_;
+    if (delta_time >= time_per_frame_)
+    {
+        // Initialize ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        // ImGuizmo
+        ImGuizmo::BeginFrame();
+        ImGuizmo::Enable(true);
+        ImGuiIO &io = ImGui::GetIO();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+        io.DeltaTime = static_cast<float>(delta_time);
+
+        // Create GUI
+        drawGUI();
+
+        world_.update();
+        last_time_ = now;
+        current_fps_ = 1.0 / delta_time;
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 }
 
 void RCubeViewer::drawMainMenuBarGUI()
@@ -278,11 +313,10 @@ void RCubeViewer::drawMainMenuBarGUI()
     if (ImGui::BeginMenu("Camera"))
     {
         Camera *cam = camera_.get<Camera>();
-        CameraController *cam_ctrl = camera_.get<CameraController>();
         Transform *cam_tr = camera_.get<Transform>();
         cam->drawGUI();
         ImGui::Separator();
-        cam_ctrl->drawGUI();
+        ctrl_.drawGUI();
         ImGui::Separator();
         // Fit camera to extents if requested in previous frame
         if (needs_camera_extents_fit_)
@@ -395,8 +429,9 @@ void RCubeViewer::drawMainMenuBarGUI()
     }
     ImGui::SameLine(ImGui::GetWindowWidth() - 200);
     ImGui::PushItemWidth(-500);
-    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
-                ImGui::GetIO().Framerate);
+    /*ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate);*/
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / current_fps_, current_fps_);
     ImGui::PopItemWidth();
     ImGui::EndMainMenuBar();
 }
@@ -564,6 +599,10 @@ void RCubeViewer::onResize(int w, int h)
 void RCubeViewer::beforeTerminate()
 {
     world_.cleanup();
+    // Destroy ImGui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 glm::vec2 RCubeViewer::screenToNDC(int xpos, int ypos)
@@ -620,7 +659,6 @@ EntityHandle RCubeViewer::createCamera()
     auto ent = world_.createEntity();
     ent.add<Camera>(Camera());
     ent.add<Transform>(Transform());
-    ent.add<CameraController>();
     return ent;
 }
 
@@ -682,6 +720,35 @@ void RCubeViewer::onKeyPress(int key, int scancode)
     {
         transform_widgets_.operation = TransformOperation::Scale;
     }
+}
+
+void RCubeViewer::onMousePress(int button, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    {
+        ctrl_.startRotation(getMousePosition());
+    }
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+    {
+        ctrl_.startPanning(getMousePosition());
+    }
+}
+
+void RCubeViewer::onMouseRelease(int button, int mods)
+{
+    ctrl_.stopPanning();
+    ctrl_.stopRotation();
+}
+
+void RCubeViewer::onMouseMove(double xpos, double ypos)
+{
+    ctrl_.rotate(xpos, ypos);
+    ctrl_.pan(xpos, ypos);
+}
+
+void RCubeViewer::onScroll(double xoffset, double yoffset)
+{
+    ctrl_.zoom(yoffset);
 }
 
 AABB RCubeViewer::worldBoundingBox()

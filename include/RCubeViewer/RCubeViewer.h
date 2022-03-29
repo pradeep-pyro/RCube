@@ -25,7 +25,8 @@
 #include "RCube/Systems/ForwardRenderSystem.h"
 #include "RCube/Systems/TransformSystem.h"
 #include "RCube/Window.h"
-#include "RCubeViewer/Systems/PickSystem.h"
+#include "RCube/Helpers/OrbitCameraController.h"
+#include "RCube/Helpers/PingPongHelper.h"
 #include <chrono>
 #include <memory>
 
@@ -70,6 +71,7 @@ struct RCubeViewerProps
     bool snap_transform_widgets_ = false;
     RenderSystemType render_system = RenderSystemType::Forward; // Render system to use
     TransformWidgetsProps transform_widgets;
+    size_t frames_per_second = 60;
 };
 
 class RCubeViewer : public rcube::Window
@@ -84,7 +86,10 @@ class RCubeViewer : public rcube::Window
     bool show_transform_widgets_ = true;
     TransformWidgetsProps transform_widgets_;
     std::string selected_entity_ = "(None)";
-    rcube::viewer::PingPongHelper<std::shared_ptr<rcube::PixelPackBuffer>> pbos_; // For picking
+    rcube::PingPongHelper<std::shared_ptr<rcube::PixelPackBuffer>> pbos_; // For picking
+    double time_per_frame_ = 1.0 / 60.0;
+    double last_time_ = 0.0;
+    double current_fps_ = 0;
 
   public:
     RCubeViewer(RCubeViewerProps props = RCubeViewerProps());
@@ -123,9 +128,6 @@ class RCubeViewer : public rcube::Window
 
     void fitCameraExtents();
 
-    // Function to setup custom GUI windows
-    std::function<void(RCubeViewer &viewer)> customGUI = [](RCubeViewer & /*viewer*/) {};
-
   protected:
     virtual void initialize() override;
 
@@ -154,6 +156,16 @@ class RCubeViewer : public rcube::Window
     EntityHandle createDirLight();
 
     virtual void onKeyPress(int key, int scancode) override;
+
+    virtual void onMousePress(int button, int mods) override;
+
+    virtual void onMouseRelease(int button, int mods) override;
+
+    virtual void onMouseMove(double xpos, double ypos) override;
+
+    virtual void onScroll(double xoffset, double yoffset) override;
+
+    OrbitCameraController ctrl_;
 };
 
 } // namespace viewer

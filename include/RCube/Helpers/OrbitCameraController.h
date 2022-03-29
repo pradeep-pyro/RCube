@@ -1,22 +1,15 @@
-#pragma once
-
-#include "RCube/Core/Arch/Component.h"
-#include "RCube/Window.h"
+#include <limits>
+#include "glm/glm.hpp"
 #include "glm/gtc/constants.hpp"
+#include "RCube/Components/Camera.h"
+#include "RCube/Components/Transform.h"
 
 namespace rcube
 {
-namespace viewer
-{
 
-class CameraControllerSystem;
-
-class CameraController : public Component<CameraController>
+class OrbitCameraController
 {
   public:
-    bool active = true;
-    InputState::Mouse pan = InputState::Mouse::Middle;
-    InputState::Mouse rotate = InputState::Mouse::Right;
     float min_horizontal_angle =
         -std::numeric_limits<float>::infinity(); /// Minimum horizontal angle (radians) to constrain
                                                  /// the camera
@@ -36,17 +29,34 @@ class CameraController : public Component<CameraController>
 
     void drawGUI();
 
-  private:
-    friend class CameraControllerSystem;
-    float width_ = 1280;
-    float height_ = 720;
-    bool orbiting_ = false;
-    int last_ox_ = 0;
-    int last_oy_ = 0;
-    bool panning_ = false;
-    int last_px_ = 0;
-    int last_py_ = 0;
-};
+    void startRotation(double x, double y);
 
-} // namespace viewer
-} // namespace rcube
+    void startRotation(const glm::dvec2 &pos);
+
+    void stopRotation();
+
+    void startPanning(double x, double y);
+
+    void startPanning(const glm::dvec2 &pos);
+
+    void stopPanning();
+
+    void rotate(double x, double y);
+
+    void pan(double x, double y);
+
+    void zoom(double amount);
+
+    void setCamera(Camera *cam, Transform *tr);
+
+  private:
+    bool orbiting_ = false;
+    double last_ox_ = 0;
+    double last_oy_ = 0;
+    bool panning_ = false;
+    double last_px_ = 0;
+    double last_py_ = 0;
+    Camera *camera_ = nullptr;
+    Transform *transform_ = nullptr;
+};
+}

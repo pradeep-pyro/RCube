@@ -224,13 +224,11 @@ void RCubeViewer::getEntityAtCoord(double xpos, double ypos, EntityHandle &entit
         objPrimID->getSubImage(int(xpos), int(ypos), 1, 1, (uint32_t *)NULL, 2);
         pbos_.second()->use();
         GLuint *ptr = (GLuint *)pbos_.second()->map();
-        int entity_id = -1;
-        int primitive_id = -1;
         if (ptr != nullptr)
         {
             entity.world = &world_;
             entity.entity = ptr[0]; // Entity ID
-            primitive_id = ptr[1];  // Primitive ID
+            primitiveId = ptr[1];   // Primitive ID
             pbos_.second()->unmap();
         }
         pbos_.second()->done();

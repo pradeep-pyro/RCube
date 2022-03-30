@@ -206,13 +206,24 @@ struct EntityHandle
     }
     /**
      * Get the component of type T from the entity
-     * @return Pointer to the component which is actually stored in
+     * @return Pointer to the component which is actually stored in 
      * the world's component manager
      */
     template <typename T> T *get()
     {
         assert(valid());
         return world->getComponent<T>(entity);
+    }
+
+    /**
+     * Get the component of type T from the entity
+     * @return Pointer to the component which is actually stored in 
+     * the world's component manager. Could be nullptr
+     */
+    template <typename T> T *getUnsafe()
+    {
+        assert(valid());
+        return world->getComponentUnsafe<T>(entity);
     }
 
     /**

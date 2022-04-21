@@ -7,3 +7,9 @@
 [submodule "dependencies/imgui/imgui"]
 	path = dependencies/imgui/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "dependencies/DiligentCore"]
+	path = dependencies/DiligentCore
+	url = https://github.com/DiligentGraphics/DiligentCore.git
+[submodule "dependencies/DiligentTools"]
+	path = dependencies/DiligentTools
+	url = https://github.com/DiligentGraphics/DiligentTools

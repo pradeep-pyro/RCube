@@ -434,6 +434,11 @@ void RCubeViewer::drawMainMenuBarGUI()
     ImGui::EndMainMenuBar();
 }
 
+void RCubeViewer::drawControls()
+{
+    ImGui::Begin("Entity Inspector");
+}
+
 void RCubeViewer::drawEntityInspectorGUI()
 {
     ImGui::Begin("Entity Inspector");
@@ -786,22 +791,20 @@ void RCubeViewer::fitCameraExtents()
     Camera *cam = camera().get<Camera>();
     Transform *cam_tr = camera().get<Transform>();
     AABB world_bbox = worldBoundingBox();
-    glm::vec3 center = (world_bbox.min() + world_bbox.max()) / 2.f;
+    const glm::vec3 center = world_bbox.center();
     float bounding_size = world_bbox.size()[glm::length_t(world_bbox.longestAxis())];
-
     // Don't try to fit if the bounding box is empty
     if (bounding_size < 1e-5)
     {
         return;
     }
-    float tmp = 0.5f * cam->fov;
-    float aspect = float(cam->viewport_size[0]) / float(cam->viewport_size[1]);
-    if (aspect < 1.0)
+    float approx_radius = -1.f;
+    for (const glm::vec3 &corner : world_bbox.corners())
     {
-        tmp = std::atan(aspect * std::tan(tmp));
+        approx_radius = std::max(approx_radius, glm::length(center - corner));
     }
-    float distance = (bounding_size * 0.5f) / std::tan(tmp);
-    glm::vec3 forward = glm::normalize(cam->target - cam_tr->worldPosition());
+    float distance = approx_radius / std::sin(0.5f * cam->fov);
+    glm::vec3 forward = glm::normalize(cam->target - cam_tr->position());
     cam->target = center;
     cam_tr->setPosition(center - forward * distance);
 }

@@ -68,6 +68,12 @@ vec3 tonemapReinhard(const vec3 color)
     return color / (color + vec3(1.0));
 }
 
+vec3 tonemapReinhardExtended(vec3 color, float white_level)
+{
+    vec3 numerator = color * (1.0f + (color / vec3(white_level * white_level)));
+    return numerator / (1.0f + color);
+}
+
 // From: https://github.com/dmnsgn/glsl-tone-map
 vec3 tonemapFilmic(const vec3 color)
 {
@@ -82,7 +88,7 @@ void main() {
     vec3 bloom_color = texture(blur, v_texcoord).rgb;
     vec3 result = hdr_color + bloom_color;
     // Tone mapping
-    result = tonemapFilmic(result);
+    result = tonemapReinhardExtended(result, 0.75);
     // Gamma correction
     const float gamma = 2.2;
     result = pow(result, vec3(1.0 / gamma));

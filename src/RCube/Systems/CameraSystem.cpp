@@ -44,10 +44,8 @@ void CameraSystem::update(bool /* force */)
         }
         else
         {
-            float fH = std::tan(cam->fov) * cam->near_plane;
-            float fW = fH * aspect_ratio;
             cam->view_to_projection =
-                glm::frustum(-fW, fW, -fH, fH, cam->near_plane, cam->far_plane);
+                glm::perspective(cam->fov, aspect_ratio, cam->near_plane, cam->far_plane);
         }
     }
 }

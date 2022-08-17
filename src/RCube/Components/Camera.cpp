@@ -30,6 +30,12 @@ Frustum Camera::frustum()
     return fr;
 }
 
+glm::vec3 Camera::viewportToWorld(glm::vec2 xy, float distance_from_camera)
+{
+    glm::mat4 viewport_to_world = glm::inverse(projection_to_viewport * view_to_projection * world_to_view);
+    return glm::vec3(viewport_to_world *glm::vec4(xy.x, xy.y, distance_from_camera, 1.0));
+}
+
 void Camera::createGradientSkyBox(const glm::vec3 &color_top, const glm::vec3 &color_bot)
 {
     skybox = TextureCubemap::create(256, 256, 1, true, TextureInternalFormat::sRGB8);

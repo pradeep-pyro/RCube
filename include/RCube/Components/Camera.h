@@ -83,6 +83,8 @@ class Camera : public Component<Camera>
 
     void drawGUI();
 
+    glm::vec3 viewportToWorld(glm::vec2 xy, float distance_from_camera);
+
   private:
     friend class CameraSystem;         // This will update the camera matrices
     friend class RenderSystem;         // This will make use of the matrices

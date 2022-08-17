@@ -97,4 +97,40 @@ bool AABB::rayIntersect(const Ray &ray, float &t)
     return true;
 }
 
+std::array<glm::vec3, 8> AABB::corners() const
+{
+    return std::array<glm::vec3, 8>{
+        glm::vec3(min_.x, min_.y, min_.z), glm::vec3(max_.x, min_.y, min_.z),
+        glm::vec3(min_.x, max_.y, min_.z), glm::vec3(min_.x, min_.y, max_.z),
+        glm::vec3(max_.x, max_.y, min_.z), glm::vec3(max_.x, min_.y, max_.z),
+        glm::vec3(min_.x, max_.y, max_.z), glm::vec3(max_.x, max_.y, max_.z),
+    };
+}
+
+glm::vec3 AABB::center() const
+{
+    return 0.5f * (max_ + min_);
+}
+
+float AABB::diagonal() const
+{
+    return glm::length(max_ - min_);
+}
+
+glm::vec3 AABB::extents() const
+{
+    return glm::abs(max_ - min_);
+}
+
+
+AABB operator*(const glm::mat4 &mat, const AABB &box)
+{
+    glm::vec3 mn(mat * glm::vec4(box.min(), 1.0));
+    glm::vec3 mx(mat * glm::vec4(box.max(), 1.0));
+    AABB transformed_box;
+    transformed_box.expandBy(mn);
+    transformed_box.expandBy(mx);
+    return transformed_box;
+}
+
 } // namespace rcube

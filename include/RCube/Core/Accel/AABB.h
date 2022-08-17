@@ -3,6 +3,7 @@
 #include "RCube/Core/Accel/Ray.h"
 #include "glm/glm.hpp"
 #include <algorithm>
+#include <array>
 
 namespace rcube
 {
@@ -34,6 +35,16 @@ class AABB
     glm::vec3 size() const;
 
     bool rayIntersect(const Ray &ray, float &t);
+
+    std::array<glm::vec3, 8> corners() const;
+
+    glm::vec3 center() const;
+
+    float diagonal() const;
+
+    glm::vec3 extents() const;
 };
+
+AABB operator*(const glm::mat4 &mat, const AABB &box);
 
 } // namespace rcube

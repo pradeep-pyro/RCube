@@ -115,16 +115,25 @@ void OrbitCameraController::pan(double x, double y)
     }
     if (panning_ && (last_px_ != x) && (last_py_ != y))
     {
-        float dx = static_cast<float>(x - last_px_) / static_cast<float>(camera_->viewport_size[0]);
-        float dy =
-            -static_cast<float>(y - last_py_) / static_cast<float>(camera_->viewport_size[1]);
+        float dx = static_cast<float>(x - last_px_);
+        float dy = static_cast<float>(y - last_py_);
         dx *= pan_speed;
         dy *= pan_speed;
+
+        // Center to top of screen distance
+        const glm::vec3 eye_to_target = camera_->target - transform_->worldPosition();
+        float target_dist = glm::length(eye_to_target) * std::tan(camera_->fov * 0.5f);
+
+        // Use height to normalize rather than width and height to avoid aspect ratio influences
+        float pan_side_offset = (2 * dx * target_dist / camera_->viewport_size[1]);
+        float pan_up_offset = (2 * dy * target_dist / camera_->viewport_size[1]);
+
+        // Apply offset to target and eye
         const glm::vec3 up = glm::normalize(transform_->orientation() * YAXIS_POSITIVE);
-        const glm::vec3 forward = glm::normalize(camera_->target - transform_->worldPosition());
+        const glm::vec3 forward = glm::normalize(eye_to_target);
         const glm::vec3 side = glm::normalize(glm::cross(up, forward));
-        transform_->translate(side * dx - up * dy);
-        camera_->target += side * dx - up * dy;
+        transform_->translate(side * pan_side_offset + up * pan_up_offset);
+        camera_->target += side * pan_side_offset + up * pan_up_offset;
         last_px_ = x;
         last_py_ = y;
     }

@@ -24,7 +24,7 @@ class OrbitCameraController
         glm::pi<float>(); /// Maximum vertical angle (radians) to constrain the camera (default:
                           /// +\pi)
     float rotate_speed = 4.0f; /// Speed of orbiting motion
-    float pan_speed = 4.0f;    /// Speed of panning motion
+    float pan_speed = 1.0f;    /// Speed of panning motion
     float zoom_speed = 0.5f;   /// Speed of zooming motion
 
     void drawGUI();

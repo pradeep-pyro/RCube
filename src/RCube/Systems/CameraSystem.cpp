@@ -17,6 +17,55 @@ unsigned int CameraSystem::priority() const
     return 200;
 }
 
+void CameraSystem::fitToExtents(Camera *cam, Transform *tr, const AABB &scene_bounding_box_world_space)
+{
+    const glm::vec3 center = scene_bounding_box_world_space.center();
+    float bounding_size = scene_bounding_box_world_space
+                              .size()[glm::length_t(scene_bounding_box_world_space.longestAxis())];
+    // Don't try to fit if the bounding box is empty
+    if (bounding_size < 1e-5)
+    {
+        return;
+    }
+    float approx_radius = -1.f;
+    for (const glm::vec3 &corner : scene_bounding_box_world_space.corners())
+    {
+        approx_radius = std::max(approx_radius, glm::length(center - corner));
+    }
+    float distance = approx_radius / std::sin(0.5f * cam->fov);
+    glm::vec3 forward = glm::normalize(cam->target - tr->position());
+    cam->target = center;
+    tr->setPosition(center - forward * distance);
+}
+
+void CameraSystem::fitNearFarPlanes(Camera *cam, const AABB &scene_bounding_box_world_space)
+{
+    AABB view_bbox = cam->worldToView() * scene_bounding_box_world_space;
+    // Find the closest and farthest z-coordinates to set the near and far planes
+    float min_z = std::numeric_limits<float>::infinity();
+    float max_z = -std::numeric_limits<float>::infinity();
+    for (const glm::vec3 &pt : view_bbox.corners())
+    {
+        min_z = std::min(min_z, pt.z);
+        max_z = std::max(max_z, pt.z);
+    }
+    cam->near_plane = std::abs(max_z * 0.8f);
+    cam->far_plane = std::abs(min_z * 1.2f);
+}
+
+void CameraSystem::preUpdate()
+{
+    for (const Entity &e : registered_entities_[filters_[0]])
+    {
+        Camera *cam = world_->getComponent<Camera>(e);
+        if (cam->needs_fit_to_extents_)
+        {
+            Transform *tr = world_->getComponent<Transform>(e);
+            fitToExtents(cam, tr, cam->fit_to_box_);
+        }
+    }
+}
+
 void CameraSystem::update(bool /* force */)
 {
     for (const Entity &e : registered_entities_[filters_[0]])
@@ -46,6 +95,19 @@ void CameraSystem::update(bool /* force */)
         {
             cam->view_to_projection =
                 glm::perspective(cam->fov, aspect_ratio, cam->near_plane, cam->far_plane);
+        }
+    }
+}
+
+void CameraSystem::postUpdate()
+{
+    for (const Entity &e : registered_entities_[filters_[0]])
+    {
+        Camera *cam = world_->getComponent<Camera>(e);
+        if (cam->needs_fit_to_extents_)
+        {
+            fitNearFarPlanes(cam, cam->fit_to_box_);
+            cam->needs_fit_to_extents_ = false;
         }
     }
 }

@@ -254,7 +254,6 @@ void RCubeViewer::draw()
     // Render everything in the scene
     double now = time();
     double delta_time = now - last_time_;
-    if (delta_time >= time_per_frame_)
     {
         // Initialize ImGui frame
         ImGui_ImplOpenGL3_NewFrame();

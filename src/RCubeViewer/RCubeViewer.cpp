@@ -789,24 +789,8 @@ AABB RCubeViewer::worldBoundingBox()
 void RCubeViewer::fitCameraExtents()
 {
     Camera *cam = camera().get<Camera>();
-    Transform *cam_tr = camera().get<Transform>();
     AABB world_bbox = worldBoundingBox();
-    const glm::vec3 center = world_bbox.center();
-    float bounding_size = world_bbox.size()[glm::length_t(world_bbox.longestAxis())];
-    // Don't try to fit if the bounding box is empty
-    if (bounding_size < 1e-5)
-    {
-        return;
-    }
-    float approx_radius = -1.f;
-    for (const glm::vec3 &corner : world_bbox.corners())
-    {
-        approx_radius = std::max(approx_radius, glm::length(center - corner));
-    }
-    float distance = approx_radius / std::sin(0.5f * cam->fov);
-    glm::vec3 forward = glm::normalize(cam->target - cam_tr->position());
-    cam->target = center;
-    cam_tr->setPosition(center - forward * distance);
+    cam->fitToExtents(world_bbox);
 }
 
 } // namespace viewer

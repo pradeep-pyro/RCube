@@ -433,11 +433,6 @@ void RCubeViewer::drawMainMenuBarGUI()
     ImGui::EndMainMenuBar();
 }
 
-void RCubeViewer::drawControls()
-{
-    ImGui::Begin("Entity Inspector");
-}
-
 void RCubeViewer::drawEntityInspectorGUI()
 {
     ImGui::Begin("Entity Inspector");
@@ -790,6 +785,7 @@ void RCubeViewer::fitCameraExtents()
     Camera *cam = camera().get<Camera>();
     AABB world_bbox = worldBoundingBox();
     cam->fitToExtents(world_bbox);
+    ctrl_.zoom_speed = world_bbox.diagonal() * 0.1f;
 }
 
 } // namespace viewer

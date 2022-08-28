@@ -56,6 +56,7 @@ class OrbitCameraController
     bool panning_ = false;
     double last_px_ = 0;
     double last_py_ = 0;
+    double min_zoom_ = 0.1;
     Camera *camera_ = nullptr;
     Transform *transform_ = nullptr;
 };

@@ -59,8 +59,8 @@ void OrbitCameraController::startRotation(const glm::dvec2 &pos)
 void OrbitCameraController::stopRotation()
 {
     orbiting_ = false;
-    //last_ox_ = x;
-    //last_oy_ = y;
+    // last_ox_ = x;
+    // last_oy_ = y;
 }
 
 void OrbitCameraController::startPanning(double x, double y)
@@ -79,8 +79,8 @@ void OrbitCameraController::startPanning(const glm::dvec2 &pos)
 void OrbitCameraController::stopPanning()
 {
     panning_ = false;
-    //last_px_ = x;
-    //last_py_ = y;
+    // last_px_ = x;
+    // last_py_ = y;
 }
 
 void OrbitCameraController::rotate(double x, double y)
@@ -153,8 +153,14 @@ void OrbitCameraController::zoom(double amount)
     }
     if (std::abs(amount) > 1e-6)
     {
-        const glm::vec3 forward = glm::normalize(camera_->target - transform_->worldPosition());
-        const glm::vec3 offset = forward * static_cast<float>(amount) * zoom_speed;
+        glm::vec3 unnormalized_forward = camera_->target - transform_->worldPosition();
+        float target_dist = glm::length(unnormalized_forward);
+        const glm::vec3 forward = glm::normalize(unnormalized_forward);
+        glm::vec3 offset = forward * static_cast<float>(amount) * zoom_speed;
+        while (glm::length(offset) > target_dist + min_zoom_)
+        {
+            offset /= glm::vec3(2.f);
+        }
         glm::vec3 updated_world_pos = transform_->worldPosition() + offset;
         if (glm::dot(glm::normalize(camera_->target - updated_world_pos), forward) > 0)
         {

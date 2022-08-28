@@ -58,6 +58,7 @@ class Camera : public Component<Camera>
     std::shared_ptr<TextureCubemap> prefilter;
     std::shared_ptr<Texture2D> brdfLUT;
     float bloom_threshold = 1000.f;
+    
     /**
      * Computes and returns the frustum representing the camera's view
      * @return View frustum
@@ -79,11 +80,13 @@ class Camera : public Component<Camera>
         return projection_to_viewport;
     }
 
+    void fitToExtents(const AABB &box_in_world_space);
+
     void createGradientSkyBox(const glm::vec3 &color_top, const glm::vec3 &color_bot);
 
     void drawGUI();
 
-    glm::vec3 viewportToWorld(glm::vec2 xy, float distance_from_camera);
+    glm::vec3 screenToWorld(glm::vec2 xy, float distance_from_camera);
 
   private:
     friend class CameraSystem;         // This will update the camera matrices
@@ -92,7 +95,9 @@ class Camera : public Component<Camera>
     friend class ForwardRenderSystem;
     glm::mat4 world_to_view;           /// World to camera transformation
     glm::mat4 view_to_projection;      /// Camera to projection transformation
-    glm::mat4 projection_to_viewport;  /// Projectin to viewport transformation
+    glm::mat4 projection_to_viewport;  /// Projection to viewport transformation
+    AABB fit_to_box_;
+    bool needs_fit_to_extents_ = false;
 };
 
 } // namespace rcube

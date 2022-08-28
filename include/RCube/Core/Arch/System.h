@@ -97,7 +97,13 @@ class System
     virtual void initialize()
     {
     }
+    virtual void preUpdate()
+    {
+    }
     virtual void update(bool force) = 0;
+    virtual void postUpdate()
+    {
+    }
     virtual void cleanup()
     {
     }

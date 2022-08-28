@@ -388,7 +388,6 @@ glm::dvec2 Window::getMousePosition() const
 void Window::execute()
 {
     initialize(); // User should override this method
-    glfwSwapInterval(0);
     while (!glfwWindowShouldClose(window_))
     {
         glfwPollEvents();
@@ -424,11 +423,13 @@ void Window::setFullscreen(bool flag)
         GLFWmonitor *primary = glfwGetPrimaryMonitor();
         const GLFWvidmode *mode = glfwGetVideoMode(primary);
         glfwSetWindowMonitor(window_, primary, 0, 0, mode->width, mode->height, 0);
+        glfwSwapInterval(1);
     }
     else
     {
         // restore last window size and position
         glfwSetWindowMonitor(window_, nullptr, wndpos_.x, wndpos_.y, wndsz_.x, wndsz_.y, 0);
+        glfwSwapInterval(1);
     }
     fullscreen_ = flag;
 }

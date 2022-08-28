@@ -57,7 +57,7 @@ size_t World::numEntities() const
     return entity_mgr_.count();
 }
 
-void World::update(float delta_time)
+void World::update()
 {
     for (const auto &sys : systems_)
     {
